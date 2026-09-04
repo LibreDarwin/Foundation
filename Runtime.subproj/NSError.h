@@ -19,6 +19,12 @@
 typedef NSString *NSErrorDomain;
 typedef NSString *NSErrorUserInfoKey;
 
+/* The domain for the codes in FoundationErrors.h. */
+FOUNDATION_EXPORT NSErrorDomain const NSCocoaErrorDomain;
+FOUNDATION_EXPORT NSErrorDomain const NSPOSIXErrorDomain;
+FOUNDATION_EXPORT NSErrorDomain const NSOSStatusErrorDomain;
+FOUNDATION_EXPORT NSErrorDomain const NSMachErrorDomain;
+
 @interface NSError : NSObject
 
 + (instancetype)errorWithDomain:(NSString *)domain code:(NSInteger)code;

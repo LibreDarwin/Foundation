@@ -12,6 +12,8 @@
 #include <dispatch/dispatch.h>
 
 #import <Foundation/NSObjCRuntime.h>
+#import <Foundation/NSObject.h>
+#import <Foundation/NSCoder.h>
 #import <Foundation/FoundationErrors.h>
 #import <Foundation/NSError.h>
 #import <Foundation/NSArray.h>

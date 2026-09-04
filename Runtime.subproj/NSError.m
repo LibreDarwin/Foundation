@@ -10,6 +10,11 @@
 #import <Foundation/NSString.h>
 #include <CoreFoundation/CFString.h>
 
+NSErrorDomain const NSCocoaErrorDomain = @"NSCocoaErrorDomain";
+NSErrorDomain const NSPOSIXErrorDomain = @"NSPOSIXErrorDomain";
+NSErrorDomain const NSOSStatusErrorDomain = @"NSOSStatusErrorDomain";
+NSErrorDomain const NSMachErrorDomain = @"NSMachErrorDomain";
+
 @implementation NSError {
     NSString *_domain;
     NSInteger _code;

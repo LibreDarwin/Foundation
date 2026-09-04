@@ -9,5 +9,17 @@
 #ifndef FoundationErrors_h
 #define FoundationErrors_h
 
+#import <Foundation/NSObjCRuntime.h>
+
+/* NSCocoaErrorDomain codes.  Only the archiving range is filled in so far;
+ * the file, formatting, validation and property list ranges belong here too
+ * and keep the numbers Apple gave them. */
+enum {
+    NSCoderReadCorruptError = 4864,
+    NSCoderValueNotFoundError = 4865,
+    NSCoderInvalidValueError = 4866,
+    NSCoderErrorMinimum = 4864,
+    NSCoderErrorMaximum = 4991,
+};
 
 #endif /* FoundationErrors_h */

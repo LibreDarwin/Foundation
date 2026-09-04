@@ -14,6 +14,8 @@
 #import <Foundation/NSZone.h>
 #include <CoreFoundation/CFBase.h>
 
+@class NSCoder;
+
 /* The two bridging casts ARC code uses to hand an object to CoreFoundation and
  * back. They are inlines rather than functions so the __bridge_retained and
  * __bridge_transfer casts happen in the caller, where ARC can see them. */
@@ -31,6 +33,21 @@ static inline id _Nullable CFBridgingRelease(CFTypeRef CF_RELEASES_ARGUMENT _Nul
 
 @protocol NSMutableCopying
 - (id)mutableCopyWithZone:(NSZone *)zone;
+@end
+
+@protocol NSCoding
+- (void)encodeWithCoder:(NSCoder *)coder;
+- (instancetype _Nullable)initWithCoder:(NSCoder *)coder;
+@end
+
+/* A secure coder will not instantiate a class that does not adopt this, and
+ * checks every object it decodes against a list of allowed classes.  A
+ * subclass that overrides -initWithCoder: has to re-answer +supportsSecureCoding
+ * for itself; inheriting the superclass's YES would vouch for code the
+ * superclass never saw. */
+@protocol NSSecureCoding <NSCoding>
+@required
+@property (class, readonly) BOOL supportsSecureCoding;
 @end
 
 #endif /* ! __FOUNDATION_NSOBJECT__ */

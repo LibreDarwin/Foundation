@@ -45,6 +45,26 @@
     #define NS_CONSUMES_SELF __attribute__((ns_consumes_self))
 #endif
 
+/* Swift interop: what the Swift importer hides outright, and what it renames
+ * with a leading underscore so an overlay can present it properly. */
+#ifndef NS_SWIFT_UNAVAILABLE
+    #define NS_SWIFT_UNAVAILABLE(_msg) __attribute__((availability(swift, unavailable, message=_msg)))
+#endif
+
+#ifndef NS_REFINED_FOR_SWIFT
+    #define NS_REFINED_FOR_SWIFT __attribute__((swift_private))
+#endif
+
+/* Zone and retain-count plumbing that ARC does not let anyone call. */
+#ifndef NS_AUTOMATED_REFCOUNT_UNAVAILABLE
+    #if __has_feature(objc_arc)
+        #define NS_AUTOMATED_REFCOUNT_UNAVAILABLE \
+            __attribute__((unavailable("not available in automatic reference counting mode")))
+    #else
+        #define NS_AUTOMATED_REFCOUNT_UNAVAILABLE
+    #endif
+#endif
+
 typedef struct _NSZone NSZone;
 
 #ifndef __has_attribute
