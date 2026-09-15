@@ -16,17 +16,25 @@
 #import <Foundation/NSDictionary.h>
 #import <Foundation/NSString.h>
 
+/*
+ * Properties, as Foundation declares them, rather than methods: the
+ * Objective-C calls are the same either way, but Swift imports a class
+ * method returning the class as an initializer, so +processInfo came
+ * through as an unusable init() and ProcessInfo.processInfo did not
+ * exist.  And nonnull, as Foundation's are: without it environment is
+ * an Optional in Swift, and environment["X"] does not compile.
+ */
 @interface NSProcessInfo : NSObject
 
-+ (NSProcessInfo *)processInfo;
+@property (class, readonly, strong, nonnull) NSProcessInfo *processInfo;
 
-- (NSArray<NSString *> *)arguments;
-- (NSDictionary<NSString *, NSString *> *)environment;
-- (NSString *)processName;
-- (int)processIdentifier;
-- (NSString *)hostName;
-- (NSUInteger)processorCount;
-- (unsigned long long)physicalMemory;
+@property (readonly, copy, nonnull) NSDictionary<NSString *, NSString *> *environment;
+@property (readonly, copy, nonnull) NSArray<NSString *> *arguments;
+@property (readonly, copy, nonnull) NSString *hostName;
+@property (copy, nonnull) NSString *processName;
+@property (readonly) int processIdentifier;
+@property (readonly) NSUInteger processorCount;
+@property (readonly) unsigned long long physicalMemory;
 
 @end
 
