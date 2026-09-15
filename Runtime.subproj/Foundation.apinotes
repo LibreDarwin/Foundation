@@ -1,0 +1,50 @@
+#
+# Copyright (C) 2026, Sunneva N. Mariu.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# The Swift names of the classes these headers declare, installed beside
+# them in Foundation.framework/Headers, where the compiler looks for a
+# framework's API notes.
+#
+# Swift drops the NS prefix from some of Foundation's classes and not
+# others -- ProcessInfo, but NSString and NSURL, which have value types of
+# those names -- and which is which is not something the compiler works
+# out: Foundation's API notes say so class by class.  Without them
+# NSProcessInfo stays NSProcessInfo and every Package.swift that says
+# ProcessInfo fails to compile.  Only the classes here that Swift renames
+# are listed.
+#
+# The same file says which classes bridge to Swift's own types, and the
+# importer maps NSString *, NSArray * and NSDictionary * in a signature to
+# String, Array and Dictionary only because it does.  Without it the
+# conformances in Swift.subproj's interface load and change nothing:
+# ProcessInfo.processInfo.environment stays an NSDictionary.  Only the
+# three the interface declares are here.
+---
+Name: Foundation
+Classes:
+- Name: NSArray
+  SwiftBridge: Swift.Array
+- Name: NSDictionary
+  SwiftBridge: Swift.Dictionary
+- Name: NSString
+  SwiftBridge: Swift.String
+- Name: NSBundle
+  SwiftName: Bundle
+- Name: NSFileHandle
+  SwiftName: FileHandle
+- Name: NSFileManager
+  SwiftName: FileManager
+- Name: NSInputStream
+  SwiftName: InputStream
+- Name: NSOutputStream
+  SwiftName: OutputStream
+- Name: NSProcessInfo
+  SwiftName: ProcessInfo
+- Name: NSStream
+  SwiftName: Stream
+- Name: NSUserDefaults
+  SwiftName: UserDefaults

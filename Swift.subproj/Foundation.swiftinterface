@@ -1,0 +1,53 @@
+// swift-interface-format-version: 1.0
+// swift-module-flags: -enable-objc-interop -enable-library-evolution -swift-version 5 -module-name Foundation
+//
+// Copyright (C) 2026, Sunneva N. Mariu.
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+//
+// Foundation's Swift overlay, as an interface and nothing more.
+//
+// On Darwin, Swift's Foundation is the Objective-C framework plus an
+// overlay that makes String, Array and Dictionary bridge to NSString,
+// NSArray and NSDictionary.  Without the overlay a Swift program can
+// import these headers but cannot so much as pass a String where an
+// NSString is wanted, and an NSDictionary never becomes a [String:
+// String] -- ProcessInfo.processInfo.environment, the one thing every
+// Package.swift reaches for, is unusable.
+//
+// The overlay's code is not ours to supply and does not need to be: the
+// system's Foundation binary carries it, and exports the conformances
+// and the bridging functions under their Swift names.  So this declares
+// them, with the signatures that mangle to those exports, and anything
+// built against it links to the implementation already on the system --
+// the Swift counterpart of a .tbd.  Only declarations the system
+// exports belong here.
+
+@_exported import Foundation
+import Swift
+
+extension Swift.String : Swift._ObjectiveCBridgeable {
+  @_semantics("convertToObjectiveC") public func _bridgeToObjectiveC() -> Foundation.NSString
+  public static func _forceBridgeFromObjectiveC(_ x: Foundation.NSString, result: inout Swift.String?)
+  public static func _conditionallyBridgeFromObjectiveC(_ x: Foundation.NSString, result: inout Swift.String?) -> Swift.Bool
+  @_effects(readonly) public static func _unconditionallyBridgeFromObjectiveC(_ source: Foundation.NSString?) -> Swift.String
+  public typealias _ObjectiveCType = Foundation.NSString
+}
+
+extension Swift.Array : Swift._ObjectiveCBridgeable {
+  @_semantics("convertToObjectiveC") public func _bridgeToObjectiveC() -> Foundation.NSArray
+  public static func _forceBridgeFromObjectiveC(_ source: Foundation.NSArray, result: inout Swift.Array<Element>?)
+  public static func _conditionallyBridgeFromObjectiveC(_ source: Foundation.NSArray, result: inout Swift.Array<Element>?) -> Swift.Bool
+  @_effects(readonly) public static func _unconditionallyBridgeFromObjectiveC(_ source: Foundation.NSArray?) -> Swift.Array<Element>
+  public typealias _ObjectiveCType = Foundation.NSArray
+}
+
+extension Swift.Dictionary : Swift._ObjectiveCBridgeable {
+  @_semantics("convertToObjectiveC") public func _bridgeToObjectiveC() -> Foundation.NSDictionary
+  public static func _forceBridgeFromObjectiveC(_ d: Foundation.NSDictionary, result: inout Swift.Dictionary<Key, Value>?)
+  public static func _conditionallyBridgeFromObjectiveC(_ x: Foundation.NSDictionary, result: inout Swift.Dictionary<Key, Value>?) -> Swift.Bool
+  @_effects(readonly) public static func _unconditionallyBridgeFromObjectiveC(_ d: Foundation.NSDictionary?) -> Swift.Dictionary<Key, Value>
+  public typealias _ObjectiveCType = Foundation.NSDictionary
+}
