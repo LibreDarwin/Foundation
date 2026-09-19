@@ -17,6 +17,7 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+#include <math.h>
 
 static void JSONSetError(NSError **error) {
     if (error != NULL) {
@@ -214,7 +215,8 @@ static void JSONAppendString(NSMutableData *data, NSString *string) {
     const unichar *characters = NULL;
     NSUInteger length = [string length];
     unichar *buffer = malloc(sizeof(unichar) * length);
-    if (buffer != NULL) {
+    if (buffer == NULL && length != 0) return;
+    if (length != 0) {
         [string getCharacters:buffer range:NSMakeRange(0, length)];
         characters = buffer;
     }
@@ -265,6 +267,8 @@ static BOOL JSONWriteValue(id object, NSMutableData *data, NSJSONWritingOptions 
             [data appendBytes:literal length:strlen(literal)];
             return YES;
         }
+        if ((strcmp(type, @encode(float)) == 0 || strcmp(type, @encode(double)) == 0) &&
+            !isfinite([object doubleValue])) return NO;
         NSString *text = [object descriptionWithLocale:nil];
         [data appendData:[text dataUsingEncoding:NSUTF8StringEncoding]];
         return YES;
@@ -319,7 +323,14 @@ static BOOL JSONWriteValue(id object, NSMutableData *data, NSJSONWritingOptions 
 
 BOOL NSJSONSerializationIsValidJSONObject(id object) {
     if (object == [NSNull null] || [object isKindOfClass:[NSString class]] ||
-        [object isKindOfClass:[NSNumber class]]) return YES;
+        [object isKindOfClass:[NSNumber class]]) {
+        if ([object isKindOfClass:[NSNumber class]]) {
+            const char *type = [object objCType];
+            if ((strcmp(type, @encode(float)) == 0 || strcmp(type, @encode(double)) == 0) &&
+                !isfinite([object doubleValue])) return NO;
+        }
+        return YES;
+    }
     if ([object isKindOfClass:[NSArray class]]) {
         for (NSUInteger i = 0; i < [object count]; i++)
             if (!NSJSONSerializationIsValidJSONObject([object objectAtIndex:i])) return NO;
