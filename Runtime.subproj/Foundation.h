@@ -18,6 +18,10 @@
 #import <Foundation/NSError.h>
 #import <Foundation/NSArray.h>
 #import <Foundation/NSEnumerator.h>
+#import <Foundation/NSLock.h>
+#import <Foundation/NSCondition.h>
+#import <Foundation/NSConditionLock.h>
+#import <Foundation/NSRecursiveLock.h>
 #import <Foundation/NSData.h>
 #import <Foundation/NSDictionary.h>
 #import <Foundation/NSNumber.h>
