@@ -11,28 +11,50 @@
 #include <CoreFoundation/CFArray.h>
 #include <CoreFoundation/ForFoundationOnly.h>
 #include <objc/runtime.h>
+#include <stdlib.h>
+
+#if __has_feature(objc_arc)
+#define NSARRAY_ID(value) ((__bridge_transfer id)(value))
+#define NSARRAY_BORROWED(value) ((__bridge id)(value))
+#define NSARRAY_CF(type, value) ((__bridge type)(value))
+#else
+#define NSARRAY_ID(value) ((id)(value))
+#define NSARRAY_BORROWED(value) ((id)(value))
+#define NSARRAY_CF(type, value) ((type)(value))
+#endif
+
+static CFArrayRef NSNSArrayCreate(const id *objects, NSUInteger count) {
+    const void **values = count == 0 ? NULL : malloc(count * sizeof(*values));
+    if (count != 0 && values == NULL) return NULL;
+    for (NSUInteger index = 0; index < count; index++) {
+        values[index] = NSARRAY_CF(const void *, objects[index]);
+    }
+    CFArrayRef result = CFArrayCreate(kCFAllocatorDefault, values, (CFIndex)count,
+                                      &kCFTypeArrayCallBacks);
+    free(values);
+    return result;
+}
 
 @implementation NSArray
 
 + (instancetype)array {
-    return (id)CFArrayCreate(kCFAllocatorDefault, NULL, 0, &kCFTypeArrayCallBacks);
+    return NSARRAY_ID(CFArrayCreate(kCFAllocatorDefault, NULL, 0, &kCFTypeArrayCallBacks));
 }
 
 + (instancetype)arrayWithObjects:(const id *)objects count:(NSUInteger)count {
-    return (id)CFArrayCreate(kCFAllocatorDefault, (const void **)objects,
-                             (CFIndex)count, &kCFTypeArrayCallBacks);
+    return NSARRAY_ID(NSNSArrayCreate(objects, count));
 }
 
 + (instancetype)arrayWithArray:(NSArray *)array {
-    return (id)CFArrayCreateCopy(kCFAllocatorDefault, (CFArrayRef)array);
+    return NSARRAY_ID(CFArrayCreateCopy(kCFAllocatorDefault, NSARRAY_CF(CFArrayRef, array)));
 }
 
 - (NSUInteger)count {
-    return (NSUInteger)CFArrayGetCount((CFArrayRef)self);
+    return (NSUInteger)CFArrayGetCount(NSARRAY_CF(CFArrayRef, self));
 }
 
 - (id)objectAtIndex:(NSUInteger)index {
-    return (id)CFArrayGetValueAtIndex((CFArrayRef)self, (CFIndex)index);
+    return NSARRAY_BORROWED(CFArrayGetValueAtIndex(NSARRAY_CF(CFArrayRef, self), (CFIndex)index));
 }
 
 - (id)objectAtIndexedSubscript:(NSUInteger)index {
@@ -40,27 +62,28 @@
 }
 
 - (BOOL)containsObject:(id)object {
-    CFIndex n = CFArrayGetCount((CFArrayRef)self);
-    return CFArrayContainsValue((CFArrayRef)self, CFRangeMake(0, n),
-                                (const void *)object) ? YES : NO;
+    CFArrayRef array = NSARRAY_CF(CFArrayRef, self);
+    CFIndex n = CFArrayGetCount(array);
+    return CFArrayContainsValue(array, CFRangeMake(0, n),
+                                NSARRAY_CF(const void *, object)) ? YES : NO;
 }
 
 - (BOOL)isEqualToArray:(NSArray *)array {
-    return array != nil && CFEqual((CFTypeRef)self, (CFTypeRef)array);
+    return array != nil && CFEqual(NSARRAY_CF(CFTypeRef, self), NSARRAY_CF(CFTypeRef, array));
 }
 
 - (NSUInteger)hash {
-    return (NSUInteger)CFHash((CFTypeRef)self);
+    return (NSUInteger)CFHash(NSARRAY_CF(CFTypeRef, self));
 }
 
 - (id)copyWithZone:(NSZone *)zone {
     (void)zone;
-    return (id)CFArrayCreateCopy(kCFAllocatorDefault, (CFArrayRef)self);
+    return NSARRAY_ID(CFArrayCreateCopy(kCFAllocatorDefault, NSARRAY_CF(CFArrayRef, self)));
 }
 
 - (id)mutableCopyWithZone:(NSZone *)zone {
     (void)zone;
-    return (id)CFArrayCreateMutableCopy(kCFAllocatorDefault, 0, (CFArrayRef)self);
+    return NSARRAY_ID(CFArrayCreateMutableCopy(kCFAllocatorDefault, 0, NSARRAY_CF(CFArrayRef, self)));
 }
 
 - (NSEnumerator *)objectEnumerator {
@@ -76,8 +99,8 @@
 @implementation NSMutableArray
 
 + (instancetype)arrayWithCapacity:(NSUInteger)capacity {
-    return (id)CFArrayCreateMutable(kCFAllocatorDefault, (CFIndex)capacity,
-                                    &kCFTypeArrayCallBacks);
+    return NSARRAY_ID(CFArrayCreateMutable(kCFAllocatorDefault, (CFIndex)capacity,
+                                            &kCFTypeArrayCallBacks));
 }
 
 + (instancetype)array {
@@ -85,21 +108,22 @@
 }
 
 - (void)addObject:(id)object {
-    CFArrayAppendValue((CFMutableArrayRef)self, (const void *)object);
+    CFArrayAppendValue(NSARRAY_CF(CFMutableArrayRef, self), NSARRAY_CF(const void *, object));
 }
 
 - (void)addObjectsFromArray:(NSArray *)array {
-    CFIndex n = CFArrayGetCount((CFArrayRef)array);
-    CFArrayAppendArray((CFMutableArrayRef)self, (CFArrayRef)array,
+    CFArrayRef source = NSARRAY_CF(CFArrayRef, array);
+    CFIndex n = CFArrayGetCount(source);
+    CFArrayAppendArray(NSARRAY_CF(CFMutableArrayRef, self), source,
                        CFRangeMake(0, n));
 }
 
 - (void)removeObjectAtIndex:(NSUInteger)index {
-    CFArrayRemoveValueAtIndex((CFMutableArrayRef)self, (CFIndex)index);
+    CFArrayRemoveValueAtIndex(NSARRAY_CF(CFMutableArrayRef, self), (CFIndex)index);
 }
 
 - (void)removeAllObjects {
-    CFArrayRemoveAllValues((CFMutableArrayRef)self);
+    CFArrayRemoveAllValues(NSARRAY_CF(CFMutableArrayRef, self));
 }
 
 @end

@@ -20,6 +20,38 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if __has_feature(objc_arc)
+#define NSDICT_ID(value) ((__bridge_transfer id)(value))
+#define NSDICT_BORROWED(value) ((__bridge id)(value))
+#define NSDICT_CF(type, value) ((__bridge type)(value))
+#else
+#define NSDICT_ID(value) ((id)(value))
+#define NSDICT_BORROWED(value) ((id)(value))
+#define NSDICT_CF(type, value) ((type)(value))
+#endif
+
+static CFDictionaryRef NSNSDictionaryCreate(const id *objects, const id *keys,
+                                             NSUInteger count) {
+    const void **objectValues = count == 0 ? NULL : malloc(count * sizeof(*objectValues));
+    const void **keyValues = count == 0 ? NULL : malloc(count * sizeof(*keyValues));
+    if ((count != 0 && objectValues == NULL) || (count != 0 && keyValues == NULL)) {
+        free(objectValues);
+        free(keyValues);
+        return NULL;
+    }
+    for (NSUInteger index = 0; index < count; index++) {
+        objectValues[index] = NSDICT_CF(const void *, objects[index]);
+        keyValues[index] = NSDICT_CF(const void *, keys[index]);
+    }
+    CFDictionaryRef result = CFDictionaryCreate(kCFAllocatorDefault, keyValues, objectValues,
+                                                (CFIndex)count,
+                                                &kCFTypeDictionaryKeyCallBacks,
+                                                &kCFTypeDictionaryValueCallBacks);
+    free(objectValues);
+    free(keyValues);
+    return result;
+}
+
 /* Read a whole file into a CFData. CFReadStream would do, but plists are small
  * and stdio keeps this independent of the stream machinery. */
 static CFDataRef pd_read_file(CFStringRef path) {
@@ -75,24 +107,20 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
 @implementation NSDictionary
 
 + (instancetype)dictionary {
-    return (id)CFDictionaryCreate(kCFAllocatorDefault, NULL, NULL, 0,
-                                  &kCFTypeDictionaryKeyCallBacks,
-                                  &kCFTypeDictionaryValueCallBacks);
+    return NSDICT_ID(CFDictionaryCreate(kCFAllocatorDefault, NULL, NULL, 0,
+                                        &kCFTypeDictionaryKeyCallBacks,
+                                        &kCFTypeDictionaryValueCallBacks));
 }
 
 /* CFDictionaryCreate takes keys first, the ObjC spelling takes objects first. */
 + (instancetype)dictionaryWithObjects:(const id *)objects
                               forKeys:(const id *)keys
                                 count:(NSUInteger)count {
-    return (id)CFDictionaryCreate(kCFAllocatorDefault,
-                                  (const void **)keys, (const void **)objects,
-                                  (CFIndex)count,
-                                  &kCFTypeDictionaryKeyCallBacks,
-                                  &kCFTypeDictionaryValueCallBacks);
+    return NSDICT_ID(NSNSDictionaryCreate(objects, keys, count));
 }
 
 - (void)enumerateKeysAndObjectsUsingBlock:(void (^)(id, id, BOOL *))block {
-    CFIndex n = CFDictionaryGetCount((CFDictionaryRef)self);
+    CFIndex n = CFDictionaryGetCount(NSDICT_CF(CFDictionaryRef, self));
     if (n <= 0 || block == NULL) {
         return;
     }
@@ -104,10 +132,10 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
         return;
     }
     /* Snapshot first: the block is allowed to mutate a mutable receiver. */
-    CFDictionaryGetKeysAndValues((CFDictionaryRef)self, keys, values);
+    CFDictionaryGetKeysAndValues(NSDICT_CF(CFDictionaryRef, self), keys, values);
     BOOL stop = NO;
     for (CFIndex i = 0; i < n && !stop; i++) {
-        block((__bridge id)keys[i], (__bridge id)values[i], &stop);
+        block(NSDICT_BORROWED(keys[i]), NSDICT_BORROWED(values[i]), &stop);
     }
     free(keys);
     free(values);
@@ -122,28 +150,29 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
         return nil;
     }
 
-    CFStringRef path = CFURLCopyFileSystemPath((CFURLRef)url, kCFURLPOSIXPathStyle);
+    CFStringRef path = CFURLCopyFileSystemPath(NSDICT_CF(CFURLRef, url), kCFURLPOSIXPathStyle);
     if (path == NULL) {
         return nil;
     }
     CFPropertyListRef plist = pd_plist_from_path(path);
     CFRelease(path);
-    return (id)plist;
+    return NSDICT_ID(plist);
 }
 
 + (nullable instancetype)dictionaryWithContentsOfFile:(NSString *)path {
     if (path == nil) {
         return nil;
     }
-    return (id)pd_plist_from_path((CFStringRef)path);
+    return NSDICT_ID(pd_plist_from_path(NSDICT_CF(CFStringRef, path)));
 }
 
 - (NSUInteger)count {
-    return (NSUInteger)CFDictionaryGetCount((CFDictionaryRef)self);
+    return (NSUInteger)CFDictionaryGetCount(NSDICT_CF(CFDictionaryRef, self));
 }
 
 - (nullable id)objectForKey:(id)key {
-    return (id)CFDictionaryGetValue((CFDictionaryRef)self, (const void *)key);
+    return NSDICT_BORROWED(CFDictionaryGetValue(NSDICT_CF(CFDictionaryRef, self),
+                                                NSDICT_CF(const void *, key)));
 }
 
 - (nullable id)objectForKeyedSubscript:(id)key {
@@ -151,34 +180,36 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
 }
 
 - (BOOL)isEqualToDictionary:(NSDictionary *)dictionary {
-    return dictionary != nil && CFEqual((CFTypeRef)self, (CFTypeRef)dictionary);
+    return dictionary != nil && CFEqual(NSDICT_CF(CFTypeRef, self),
+                                        NSDICT_CF(CFTypeRef, dictionary));
 }
 
 - (NSUInteger)hash {
-    return (NSUInteger)CFHash((CFTypeRef)self);
+    return (NSUInteger)CFHash(NSDICT_CF(CFTypeRef, self));
 }
 
 - (id)copyWithZone:(NSZone *)zone {
     (void)zone;
-    return (id)CFDictionaryCreateCopy(kCFAllocatorDefault, (CFDictionaryRef)self);
+    return NSDICT_ID(CFDictionaryCreateCopy(kCFAllocatorDefault, NSDICT_CF(CFDictionaryRef, self)));
 }
 
 - (id)mutableCopyWithZone:(NSZone *)zone {
     (void)zone;
-    return (id)CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, (CFDictionaryRef)self);
+    return NSDICT_ID(CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0,
+                                                    NSDICT_CF(CFDictionaryRef, self)));
 }
 
 - (NSArray *)allKeys {
-    CFIndex n = CFDictionaryGetCount((CFDictionaryRef)self);
+    CFIndex n = CFDictionaryGetCount(NSDICT_CF(CFDictionaryRef, self));
     const void **keys = malloc(sizeof(void *) * (size_t)(n > 0 ? n : 1));
     if (keys == NULL) {
         return nil;
     }
-    CFDictionaryGetKeysAndValues((CFDictionaryRef)self, keys, NULL);
+    CFDictionaryGetKeysAndValues(NSDICT_CF(CFDictionaryRef, self), keys, NULL);
     CFArrayRef array = CFArrayCreate(kCFAllocatorDefault, keys, n,
                                      &kCFTypeArrayCallBacks);
     free(keys);
-    return (NSArray *)array;
+    return NSDICT_ID(array);
 }
 
 @end
@@ -186,9 +217,9 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
 @implementation NSMutableDictionary
 
 + (instancetype)dictionaryWithCapacity:(NSUInteger)capacity {
-    return (id)CFDictionaryCreateMutable(kCFAllocatorDefault, (CFIndex)capacity,
-                                         &kCFTypeDictionaryKeyCallBacks,
-                                         &kCFTypeDictionaryValueCallBacks);
+    return NSDICT_ID(CFDictionaryCreateMutable(kCFAllocatorDefault, (CFIndex)capacity,
+                                               &kCFTypeDictionaryKeyCallBacks,
+                                               &kCFTypeDictionaryValueCallBacks));
 }
 
 + (instancetype)dictionary {
@@ -196,8 +227,8 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
 }
 
 - (void)setObject:(id)object forKey:(id)key {
-    CFDictionarySetValue((CFMutableDictionaryRef)self, (const void *)key,
-                         (const void *)object);
+    CFDictionarySetValue(NSDICT_CF(CFMutableDictionaryRef, self),
+                         NSDICT_CF(const void *, key), NSDICT_CF(const void *, object));
 }
 
 - (void)setObject:(id)object forKeyedSubscript:(id)key {
@@ -205,7 +236,8 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
 }
 
 - (void)removeObjectForKey:(id)key {
-    CFDictionaryRemoveValue((CFMutableDictionaryRef)self, (const void *)key);
+    CFDictionaryRemoveValue(NSDICT_CF(CFMutableDictionaryRef, self),
+                            NSDICT_CF(const void *, key));
 }
 
 @end
