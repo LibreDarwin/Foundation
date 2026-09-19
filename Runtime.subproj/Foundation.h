@@ -31,6 +31,8 @@
 #import <Foundation/NSDecimalNumber.h>
 #import <Foundation/NSLocale.h>
 #import <Foundation/NSDate.h>
+#import <Foundation/NSDateComponents.h>
+#import <Foundation/NSCalendar.h>
 #import <Foundation/NSRunLoop.h>
 #import <Foundation/NSTimer.h>
 #import <Foundation/NSNotification.h>
