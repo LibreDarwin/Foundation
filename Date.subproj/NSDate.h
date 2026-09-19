@@ -18,6 +18,8 @@ typedef double NSTimeInterval;
 
 + (instancetype)date;
 + (instancetype)now;
++ (instancetype)distantFuture;
++ (instancetype)distantPast;
 + (instancetype)dateWithTimeIntervalSinceNow:(NSTimeInterval)seconds;
 + (instancetype)dateWithTimeIntervalSinceReferenceDate:(NSTimeInterval)seconds;
 + (instancetype)dateWithTimeIntervalSince1970:(NSTimeInterval)seconds;

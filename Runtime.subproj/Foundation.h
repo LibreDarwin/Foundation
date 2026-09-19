@@ -27,6 +27,8 @@
 #import <Foundation/NSDictionary.h>
 #import <Foundation/NSNumber.h>
 #import <Foundation/NSDate.h>
+#import <Foundation/NSRunLoop.h>
+#import <Foundation/NSTimer.h>
 #import <Foundation/NSNotification.h>
 #import <Foundation/NSNotificationCenter.h>
 #import <Foundation/NSURL.h>

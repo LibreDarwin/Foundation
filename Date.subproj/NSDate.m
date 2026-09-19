@@ -23,6 +23,17 @@
     return [self date];
 }
 
+/* The two sentinel dates are fixed points, not "far enough away" guesses: they
+ * are the same values the rest of the family uses, so a date produced here
+ * compares and sorts against them the way callers expect. */
++ (instancetype)distantFuture {
+    return [self dateWithTimeIntervalSinceReferenceDate:63113904000.0];
+}
+
++ (instancetype)distantPast {
+    return [self dateWithTimeIntervalSinceReferenceDate:-63114076800.0];
+}
+
 + (instancetype)dateWithTimeIntervalSinceNow:(NSTimeInterval)seconds {
     return [self dateWithTimeIntervalSinceReferenceDate:CFAbsoluteTimeGetCurrent() + seconds];
 }
