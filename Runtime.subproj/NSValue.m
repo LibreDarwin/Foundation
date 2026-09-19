@@ -13,6 +13,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if __has_feature(objc_arc)
+#define NSVALUE_TRANSFER(value) (__bridge_transfer id)(value)
+#else
+#define NSVALUE_TRANSFER(value) [(id)(value) autorelease]
+#endif
+
+static void NSValueRequireType(const char *actualType, const char *expectedType,
+                               const char *accessor) {
+    if (strcmp(actualType, expectedType) != 0) {
+        [NSException raise:NSInvalidArgumentException
+                    format:@"%s cannot be used with NSValue type %s",
+                           accessor, actualType];
+    }
+}
+
 @implementation NSValue {
     void *_bytes;
     NSUInteger _size;
@@ -20,6 +35,11 @@
 }
 
 + (instancetype)valueWithBytes:(const void *)bytes objCType:(const char *)type {
+    if (bytes == NULL || type == NULL) {
+        [NSException raise:NSInvalidArgumentException
+                    format:@"NSValue requires non-null bytes and objCType"];
+    }
+
     NSUInteger size = 0;
     NSGetSizeAndAlignment(type, &size, NULL);
 
@@ -67,6 +87,10 @@
 }
 
 - (void)getValue:(void *)buffer {
+    if (buffer == NULL) {
+        [NSException raise:NSInvalidArgumentException
+                    format:@"NSValue getValue: requires a non-null buffer"];
+    }
     memcpy(buffer, _bytes, _size);
 }
 
@@ -75,36 +99,42 @@
 }
 
 - (void *)pointerValue {
+    NSValueRequireType(_type, @encode(void *), "pointerValue");
     void *pointer = NULL;
     [self getValue:&pointer];
     return pointer;
 }
 
 - (id)nonretainedObjectValue {
+    NSValueRequireType(_type, @encode(id), "nonretainedObjectValue");
     id object = nil;
     [self getValue:&object];
     return object;
 }
 
 - (NSRange)rangeValue {
+    NSValueRequireType(_type, @encode(NSRange), "rangeValue");
     NSRange range;
     [self getValue:&range];
     return range;
 }
 
 - (NSPoint)pointValue {
+    NSValueRequireType(_type, @encode(NSPoint), "pointValue");
     NSPoint point;
     [self getValue:&point];
     return point;
 }
 
 - (NSSize)sizeValue {
+    NSValueRequireType(_type, @encode(NSSize), "sizeValue");
     NSSize size;
     [self getValue:&size];
     return size;
 }
 
 - (NSRect)rectValue {
+    NSValueRequireType(_type, @encode(NSRect), "rectValue");
     NSRect rect;
     [self getValue:&rect];
     return rect;
@@ -131,8 +161,8 @@
 }
 
 - (NSString *)description {
-    return (NSString *)CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
-                                                CFSTR("<NSValue %s>"), _type);
+    return NSVALUE_TRANSFER(CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
+                                                      CFSTR("<NSValue %s>"), _type));
 }
 
 @end
