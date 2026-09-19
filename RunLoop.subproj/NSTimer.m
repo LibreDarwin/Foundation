@@ -30,14 +30,9 @@
 #define NS_UNRETAINED
 #endif
 
-/* DEPLOYMENT_RUNTIME_OBJC selects the Objective-C deployment of
- * CoreFoundation, which is the only one that keeps an Objective-C class table
- * for its types. No header in this tree declares the entry point - it exists
- * solely as an exported symbol of the CF side - so it is declared here, next to
- * the one call this file makes. */
-#if DEPLOYMENT_RUNTIME_OBJC
-extern void _CFRuntimeBridgeClasses(CFTypeID typeID, const char *className);
-#endif
+/* _CFRuntimeBridgeClasses() is declared in NSObjCRuntime.h for the whole tree;
+ * the calls that use it are gated on DEPLOYMENT_RUNTIME_OBJC, the CoreFoundation
+ * deployment that has a class table of its own. */
 
 /* What the timer was asked for. The CF timer keeps its own fire date, interval,
  * validity and tolerance; this record carries the pieces CF has no accessor for

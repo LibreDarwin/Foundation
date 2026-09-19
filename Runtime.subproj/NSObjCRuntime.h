@@ -95,6 +95,27 @@ typedef struct _NSZone NSZone;
 #define NS_STRING_ENUM              _NS_TYPED_ENUM
 #define NS_EXTENSIBLE_STRING_ENUM   _NS_TYPED_EXTENSIBLE_ENUM
 
+/*
+ * Bridging a CoreFoundation type to an Objective-C class
+ *
+ * The Objective-C deployment of CoreFoundation keeps a table from CF type ID to
+ * Objective-C class. The class registered against a type ID is the class that
+ * instances of that type are given when they cross into Objective-C, and
+ * CoreFoundation then goes on treating such an instance as a CF type rather than
+ * dispatching Objective-C messages to it. It is how NSDate, NSDictionary,
+ * NSCFString and the rest are CF objects with an Objective-C surface.
+ *
+ * CoreFoundation exports the entry point but declares it nowhere - not in the
+ * SDK, not in the sources in this tree - so it is declared here, once, for the
+ * initializers that call it. It is CoreFoundation's symbol and not Foundation's:
+ * no FOUNDATION_EXPORT, no implementation here, and the callers gate their calls
+ * on DEPLOYMENT_RUNTIME_OBJC, the deployment that has a class table at all.
+ */
+#include <CoreFoundation/CFBase.h>
+
+extern void _CFRuntimeBridgeClasses(CFTypeID typeID, const char *className);
+
+
 
 /*
  * While we're here...
