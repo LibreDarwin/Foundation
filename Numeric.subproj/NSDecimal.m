@@ -281,8 +281,20 @@ NSCalculationError NSDecimalMultiplyByPowerOf10(NSDecimal *result, const NSDecim
 
 NSCalculationError NSDecimalPower(NSDecimal *result, const NSDecimal *number, NSUInteger power, NSRoundingMode mode) {
     NSDecimal base = *number, value = {0}; value._mantissa[0] = 1; value._length = 1; value._isCompact = 1;
-    while (power != 0) { if (power & 1) NSDecimalMultiply(&value, &value, &base, mode); power >>= 1; if (power) NSDecimalMultiply(&base, &base, &base, mode); }
-    *result = value; return NSCalculationNoError;
+    NSCalculationError error = NSCalculationNoError;
+    while (power != 0) {
+        if (power & 1) {
+            NSCalculationError step = NSDecimalMultiply(&value, &value, &base, mode);
+            if (error == NSCalculationNoError) error = step;
+        }
+        power >>= 1;
+        if (power != 0) {
+            NSCalculationError step = NSDecimalMultiply(&base, &base, &base, mode);
+            if (error == NSCalculationNoError) error = step;
+        }
+    }
+    *result = value;
+    return error;
 }
 
 static void decimal_integer_append(DecimalDigits *decimal, unsigned char digit) {
