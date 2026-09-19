@@ -50,5 +50,7 @@
 #import <Foundation/NSPathUtilities.h>
 #import <Foundation/NSFileManager.h>
 #import <Foundation/NSFileHandle.h>
+#import <Foundation/NSPipe.h>
+#import <Foundation/NSTask.h>
 
 #endif /* ! __FOUNDATION_FOUNDATION__ */
