@@ -34,6 +34,7 @@
 #import <Foundation/NSDateComponents.h>
 #import <Foundation/NSCalendar.h>
 #import <Foundation/NSDateFormatter.h>
+#import <Foundation/NSJSONSerialization.h>
 #import <Foundation/NSRunLoop.h>
 #import <Foundation/NSTimer.h>
 #import <Foundation/NSNotification.h>
