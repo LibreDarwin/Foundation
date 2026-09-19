@@ -29,6 +29,10 @@ typedef double NSTimeInterval;
 - (NSTimeInterval)timeIntervalSinceReferenceDate;
 - (NSTimeInterval)timeIntervalSince1970;
 - (instancetype)dateByAddingTimeInterval:(NSTimeInterval)seconds;
+- (NSComparisonResult)compare:(NSDate *)other;
+- (BOOL)isEqualToDate:(NSDate *)other;
+- (NSUInteger)hash;
+- (id)copyWithZone:(NSZone *)zone;
 
 @end
 

@@ -10,6 +10,14 @@
 #include <CoreFoundation/CFDate.h>
 #include <CoreFoundation/ForFoundationOnly.h>
 
+#if __has_feature(objc_arc)
+#define NSDATE_TRANSFER(value) ((__bridge_transfer id)(value))
+#define NSDATE_CF(type, value) ((__bridge type)(value))
+#else
+#define NSDATE_TRANSFER(value) ((id)CFAutorelease(value))
+#define NSDATE_CF(type, value) ((type)(value))
+#endif
+
 /* NSDate and CFDate share the same epoch - 2001-01-01 00:00:00 GMT - so the
  * reference-date interval passes through untouched. Only the 1970 accessors
  * need the offset. */
@@ -40,7 +48,7 @@
 
 + (instancetype)dateWithTimeIntervalSinceReferenceDate:(NSTimeInterval)seconds {
     CFDateRef result = CFDateCreate(kCFAllocatorDefault, (CFAbsoluteTime)seconds);
-    return (id)CFAutorelease(result);
+    return NSDATE_TRANSFER(result);
 }
 
 + (instancetype)dateWithTimeIntervalSince1970:(NSTimeInterval)seconds {
@@ -49,7 +57,7 @@
 }
 
 - (NSTimeInterval)timeIntervalSinceReferenceDate {
-    return (NSTimeInterval)CFDateGetAbsoluteTime((CFDateRef)self);
+    return (NSTimeInterval)CFDateGetAbsoluteTime(NSDATE_CF(CFDateRef, self));
 }
 
 - (NSTimeInterval)timeIntervalSince1970 {
@@ -57,8 +65,8 @@
 }
 
 - (NSTimeInterval)timeIntervalSinceDate:(NSDate *)other {
-    return (NSTimeInterval)CFDateGetTimeIntervalSinceDate((CFDateRef)self,
-                                                          (CFDateRef)other);
+    return (NSTimeInterval)CFDateGetTimeIntervalSinceDate(NSDATE_CF(CFDateRef, self),
+                                                          NSDATE_CF(CFDateRef, other));
 }
 
 - (NSTimeInterval)timeIntervalSinceNow {
@@ -68,6 +76,30 @@
 - (instancetype)dateByAddingTimeInterval:(NSTimeInterval)seconds {
     return [NSDate dateWithTimeIntervalSinceReferenceDate:
             [self timeIntervalSinceReferenceDate] + seconds];
+}
+
+- (NSComparisonResult)compare:(NSDate *)other {
+    return (NSComparisonResult)CFDateCompare(NSDATE_CF(CFDateRef, self),
+                                             NSDATE_CF(CFDateRef, other), NULL);
+}
+
+- (BOOL)isEqualToDate:(NSDate *)other {
+    return other != nil && [self compare:other] == NSOrderedSame;
+}
+
+- (BOOL)isEqual:(id)object {
+    return object != nil && CFEqual(NSDATE_CF(CFTypeRef, self),
+                                    NSDATE_CF(CFTypeRef, object));
+}
+
+- (NSUInteger)hash {
+    return (NSUInteger)CFHash(NSDATE_CF(CFTypeRef, self));
+}
+
+- (id)copyWithZone:(NSZone *)zone {
+    (void)zone;
+    return NSDATE_TRANSFER(CFDateCreate(kCFAllocatorDefault,
+                                        CFDateGetAbsoluteTime(NSDATE_CF(CFDateRef, self))));
 }
 
 @end
