@@ -9,6 +9,8 @@
 #import "NSDecimalNumber.h"
 #import <Foundation/NSString.h>
 #import <Foundation/NSObject.h>
+#import <Foundation/NSException.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -22,8 +24,12 @@ static id <NSDecimalNumberBehaviors> __NSDecimalDefaultBehavior;
 
 #if __has_feature(objc_arc)
 #define __NSDECIMAL_AUTORELEASE(object) (object)
+#define __NSDECIMAL_RETAIN(object) (object)
+#define __NSDECIMAL_RELEASE(object) ((void)0)
 #else
 #define __NSDECIMAL_AUTORELEASE(object) [(object) autorelease]
+#define __NSDECIMAL_RETAIN(object) [(object) retain]
+#define __NSDECIMAL_RELEASE(object) [(object) release]
 #endif
 
 static NSDecimal __NSDecimalFromString(NSString *string) {
@@ -95,12 +101,26 @@ static NSDecimalNumber *__NSDecimalApplyBehavior(NSCalculationError error, id <N
 + (instancetype)decimalNumberWithString:(NSString *)string locale:(id)locale { return __NSDECIMAL_AUTORELEASE([[self alloc] initWithString:string locale:locale]); }
 + (instancetype)zero { return [self decimalNumberWithMantissa:0 exponent:0 isNegative:NO]; }
 + (instancetype)one { return [self decimalNumberWithMantissa:1 exponent:0 isNegative:NO]; }
-+ (instancetype)minimumDecimalNumber { return [self decimalNumberWithMantissa:1 exponent:SCHAR_MIN isNegative:NO]; }
-+ (instancetype)maximumDecimalNumber { return [self decimalNumberWithMantissa:ULLONG_MAX exponent:SCHAR_MAX isNegative:NO]; }
++ (instancetype)minimumDecimalNumber {
+    NSDecimal decimal = {0};
+    decimal._mantissa[0] = 1;
+    decimal._length = 1;
+    decimal._exponent = SCHAR_MIN;
+    decimal._isCompact = 1;
+    return [self decimalNumberWithDecimal:decimal];
+}
++ (instancetype)maximumDecimalNumber {
+    return [self decimalNumberWithString:@"99999999999999999999999999999999999999e90"];
+}
 + (instancetype)notANumber { NSDecimal decimal = {0}; decimal._isNegative = 1; return [self decimalNumberWithDecimal:decimal]; }
 
 + (id <NSDecimalNumberBehaviors>)defaultBehavior { if (__NSDecimalDefaultBehavior == nil) __NSDecimalDefaultBehavior = [[NSDecimalNumberHandler alloc] initWithRoundingMode:NSRoundPlain scale:NSDecimalNoScale]; return __NSDecimalDefaultBehavior; }
-+ (void)setDefaultBehavior:(id <NSDecimalNumberBehaviors>)behavior { __NSDecimalDefaultBehavior = behavior; }
++ (void)setDefaultBehavior:(id <NSDecimalNumberBehaviors>)behavior {
+    if (__NSDecimalDefaultBehavior == behavior) return;
+    id <NSDecimalNumberBehaviors> retained = __NSDECIMAL_RETAIN((id)behavior);
+    __NSDECIMAL_RELEASE((id)__NSDecimalDefaultBehavior);
+    __NSDecimalDefaultBehavior = retained;
+}
 
 - (NSDecimal)decimalValue { return _decimal; }
 - (NSComparisonResult)compare:(NSNumber *)number { if ([number isKindOfClass:[NSDecimalNumber class]]) { NSDecimal other = [(NSDecimalNumber *)number decimalValue]; return NSDecimalCompare(&_decimal, &other); } double left = [self doubleValue], right = [number doubleValue]; return left < right ? NSOrderedAscending : left > right ? NSOrderedDescending : NSOrderedSame; }
@@ -131,5 +151,18 @@ static NSDecimalNumber *__NSDecimalApplyBehavior(NSCalculationError error, id <N
 - (NSRoundingMode)roundingMode { return _roundingMode; }
 - (short)scale { return _scale; }
 + (instancetype)defaultDecimalNumberHandler { return __NSDECIMAL_AUTORELEASE([[self alloc] initWithRoundingMode:NSRoundPlain scale:NSDecimalNoScale]); }
-- (NSDecimalNumber *)exceptionDuringOperation:(SEL)operation error:(NSCalculationError)error leftOperand:(NSDecimalNumber *)leftOperand rightOperand:(NSDecimalNumber *)rightOperand { (void)operation; (void)error; (void)leftOperand; (void)rightOperand; return nil; }
+- (NSDecimalNumber *)exceptionDuringOperation:(SEL)operation error:(NSCalculationError)error leftOperand:(NSDecimalNumber *)leftOperand rightOperand:(NSDecimalNumber *)rightOperand {
+    (void)leftOperand;
+    (void)rightOperand;
+    NSExceptionName name = NSDecimalNumberExactnessException;
+    switch (error) {
+        case NSCalculationUnderflow: name = NSDecimalNumberUnderflowException; break;
+        case NSCalculationOverflow: name = NSDecimalNumberOverflowException; break;
+        case NSCalculationDivideByZero: name = NSDecimalNumberDivideByZeroException; break;
+        case NSCalculationLossOfPrecision: name = NSDecimalNumberExactnessException; break;
+        case NSCalculationNoError: return nil;
+    }
+    [NSException raise:name format:@"decimal operation %s failed", sel_getName(operation)];
+    return nil;
+}
 @end
