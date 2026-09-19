@@ -244,11 +244,27 @@ static void JSONAppendString(NSMutableData *data, NSString *string) {
     [data appendBytes:"\"" length:1];
 }
 
+static void JSONAppendIndent(NSMutableData *data, NSUInteger depth) {
+    for (NSUInteger i = 0; i < depth; i++) [data appendBytes:"  " length:2];
+}
+
+static int JSONCompareKeys(const void *left, const void *right) {
+    NSString *a = *(NSString * const *)left;
+    NSString *b = *(NSString * const *)right;
+    return strcmp([a UTF8String], [b UTF8String]);
+}
+
 static BOOL JSONWriteValue(id object, NSMutableData *data, NSJSONWritingOptions options,
                            NSUInteger depth) {
     BOOL pretty = (options & NSJSONWritingPrettyPrinted) != 0;
     if ([object isKindOfClass:[NSString class]]) { JSONAppendString(data, object); return YES; }
     if ([object isKindOfClass:[NSNumber class]]) {
+        const char *type = [object objCType];
+        if (strcmp(type, @encode(BOOL)) == 0 || strcmp(type, "c") == 0 || strcmp(type, "B") == 0) {
+            const char *literal = [object boolValue] ? "true" : "false";
+            [data appendBytes:literal length:strlen(literal)];
+            return YES;
+        }
         NSString *text = [object descriptionWithLocale:nil];
         [data appendData:[text dataUsingEncoding:NSUTF8StringEncoding]];
         return YES;
@@ -259,27 +275,42 @@ static BOOL JSONWriteValue(id object, NSMutableData *data, NSJSONWritingOptions 
         [data appendBytes:"[" length:1];
         for (NSUInteger i = 0; i < [array count]; i++) {
             if (i != 0) [data appendBytes:"," length:1];
-            if (pretty) [data appendBytes:"\n" length:1];
+            if (pretty) { [data appendBytes:"\n" length:1]; JSONAppendIndent(data, depth + 1); }
             if (!JSONWriteValue([array objectAtIndex:i], data, options, depth + 1)) return NO;
         }
-        if (pretty && [array count] != 0) [data appendBytes:"\n" length:1];
+        if (pretty && [array count] != 0) {
+            [data appendBytes:"\n" length:1];
+            JSONAppendIndent(data, depth);
+        }
         [data appendBytes:"]" length:1];
         return YES;
     }
     if ([object isKindOfClass:[NSDictionary class]]) {
         NSDictionary *dictionary = object;
         NSArray *keys = [dictionary allKeys];
+        if (options & NSJSONWritingSortedKeys) {
+            NSUInteger count = [keys count];
+            NSString *__unsafe_unretained *sorted = (NSString *__unsafe_unretained *)calloc(count, sizeof(*sorted));
+            if (sorted == NULL && count != 0) return NO;
+            for (NSUInteger i = 0; i < count; i++) sorted[i] = [keys objectAtIndex:i];
+            qsort(sorted, count, sizeof(*sorted), JSONCompareKeys);
+            keys = [NSArray arrayWithObjects:sorted count:count];
+            free(sorted);
+        }
         [data appendBytes:"{" length:1];
         for (NSUInteger i = 0; i < [keys count]; i++) {
             if (i != 0) [data appendBytes:"," length:1];
-            if (pretty) [data appendBytes:"\n" length:1];
+            if (pretty) { [data appendBytes:"\n" length:1]; JSONAppendIndent(data, depth + 1); }
             id key = [keys objectAtIndex:i];
             if (![key isKindOfClass:[NSString class]]) return NO;
             JSONAppendString(data, key);
             [data appendBytes:":" length:1];
             if (!JSONWriteValue([dictionary objectForKey:key], data, options, depth + 1)) return NO;
         }
-        if (pretty && [keys count] != 0) [data appendBytes:"\n" length:1];
+        if (pretty && [keys count] != 0) {
+            [data appendBytes:"\n" length:1];
+            JSONAppendIndent(data, depth);
+        }
         [data appendBytes:"}" length:1];
         return YES;
     }
@@ -322,11 +353,44 @@ BOOL NSJSONSerializationIsValidJSONObject(id object) {
     return object;
 }
 
++ (id)JSONObjectWithStream:(NSInputStream *)stream options:(NSJSONReadingOptions)options error:(NSError **)error {
+    if (stream == nil) { JSONSetError(error); return nil; }
+    NSMutableData *data = [NSMutableData data];
+    uint8_t buffer[4096];
+    [stream open];
+    while ([stream hasBytesAvailable]) {
+        NSInteger count = [stream read:buffer maxLength:sizeof(buffer)];
+        if (count < 0) { [stream close]; JSONSetError(error); return nil; }
+        if (count == 0) break;
+        [data appendBytes:buffer length:(NSUInteger)count];
+    }
+    [stream close];
+    return [self JSONObjectWithData:data options:options error:error];
+}
+
 + (NSData *)dataWithJSONObject:(id)object options:(NSJSONWritingOptions)options error:(NSError **)error {
     if (!NSJSONSerializationIsValidJSONObject(object)) { JSONSetError(error); return nil; }
     NSMutableData *data = [NSMutableData data];
     if (!JSONWriteValue(object, data, options, 0)) { JSONSetError(error); return nil; }
     return data;
+}
+
++ (BOOL)writeJSONObject:(id)object toStream:(NSOutputStream *)stream
+                options:(NSJSONWritingOptions)options error:(NSError **)error {
+    if (stream == nil) { JSONSetError(error); return NO; }
+    NSData *data = [self dataWithJSONObject:object options:options error:error];
+    if (data == nil) return NO;
+    [stream open];
+    const uint8_t *bytes = [data bytes];
+    NSUInteger remaining = [data length];
+    while (remaining != 0) {
+        NSInteger count = [stream write:bytes maxLength:remaining];
+        if (count <= 0) { [stream close]; JSONSetError(error); return NO; }
+        bytes += count;
+        remaining -= (NSUInteger)count;
+    }
+    [stream close];
+    return YES;
 }
 
 @end

@@ -11,6 +11,7 @@
 
 #import <Foundation/NSObject.h>
 #import <Foundation/NSData.h>
+#import <Foundation/NSStream.h>
 
 @class NSError, NSInputStream, NSOutputStream;
 
@@ -30,7 +31,9 @@ FOUNDATION_EXPORT BOOL NSJSONSerializationIsValidJSONObject(id object);
 @interface NSJSONSerialization : NSObject
 
 + (id)JSONObjectWithData:(NSData *)data options:(NSJSONReadingOptions)options error:(NSError **)error;
++ (id)JSONObjectWithStream:(NSInputStream *)stream options:(NSJSONReadingOptions)options error:(NSError **)error;
 + (NSData *)dataWithJSONObject:(id)object options:(NSJSONWritingOptions)options error:(NSError **)error;
++ (BOOL)writeJSONObject:(id)object toStream:(NSOutputStream *)stream options:(NSJSONWritingOptions)options error:(NSError **)error;
 
 @end
 
