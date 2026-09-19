@@ -28,6 +28,7 @@
 #import <Foundation/NSSet.h>
 #import <Foundation/NSNumber.h>
 #import <Foundation/NSDecimal.h>
+#import <Foundation/NSDecimalNumber.h>
 #import <Foundation/NSDate.h>
 #import <Foundation/NSRunLoop.h>
 #import <Foundation/NSTimer.h>
