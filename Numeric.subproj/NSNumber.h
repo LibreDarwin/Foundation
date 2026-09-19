@@ -52,6 +52,11 @@
 @property (readonly) NSUInteger unsignedIntegerValue;
 @property (readonly) NSString *stringValue;
 
+- (const char *)objCType;
+- (NSComparisonResult)compare:(NSNumber *)number;
+- (BOOL)isEqualToNumber:(NSNumber *)number;
+- (NSString *)descriptionWithLocale:(id)locale;
+
 @end
 
 #endif /* NSNumber_h */

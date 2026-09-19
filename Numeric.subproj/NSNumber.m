@@ -146,6 +146,45 @@ __NSNUMBER_GETTER(integerValue, NSInteger, kCFNumberNSIntegerType)
     return [self longLongValue] != 0;
 }
 
+- (const char *)objCType {
+    switch (CFNumberGetType((CFNumberRef)self)) {
+        case kCFNumberCharType: return @encode(char);
+        case kCFNumberShortType: return @encode(short);
+        case kCFNumberIntType: return @encode(int);
+        case kCFNumberLongType: return @encode(long);
+        case kCFNumberLongLongType: return @encode(long long);
+        case kCFNumberFloatType: return @encode(float);
+        case kCFNumberDoubleType: return @encode(double);
+        case kCFNumberCFIndexType: return @encode(CFIndex);
+        case kCFNumberNSIntegerType: return @encode(NSInteger);
+        default: return @encode(double);
+    }
+}
+
+- (NSComparisonResult)compare:(NSNumber *)number {
+    if (number == nil) return NSOrderedDescending;
+    if (![number respondsToSelector:@selector(decimalValue)] &&
+        CFGetTypeID((CFTypeRef)number) == CFNumberGetTypeID()) {
+        return (NSComparisonResult)CFNumberCompare((CFNumberRef)self, (CFNumberRef)number, NULL);
+    }
+    double left = [self doubleValue];
+    double right = [number doubleValue];
+    return left < right ? NSOrderedAscending : left > right ? NSOrderedDescending : NSOrderedSame;
+}
+
+- (BOOL)isEqualToNumber:(NSNumber *)number {
+    return number != nil && [self compare:number] == NSOrderedSame;
+}
+
+- (NSUInteger)hash {
+    return (NSUInteger)CFHash((CFTypeRef)self);
+}
+
+- (NSString *)descriptionWithLocale:(id)locale {
+    (void)locale;
+    return [self stringValue];
+}
+
 @end
 
 #if DEPLOYMENT_RUNTIME_OBJC
