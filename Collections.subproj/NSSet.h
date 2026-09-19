@@ -38,6 +38,9 @@
 - (BOOL)containsObject:(ObjectType)object;
 - (BOOL)intersectsSet:(NSSet<ObjectType> *)otherSet;
 - (BOOL)isEqualToSet:(NSSet<ObjectType> *)otherSet;
+- (NSUInteger)hash;
+- (id)copyWithZone:(NSZone *)zone;
+- (id)mutableCopyWithZone:(NSZone *)zone;
 - (BOOL)isSubsetOfSet:(NSSet<ObjectType> *)otherSet;
 - (NSSet<ObjectType> *)setByAddingObject:(ObjectType)object;
 - (NSSet<ObjectType> *)setByAddingObjectsFromSet:(NSSet<ObjectType> *)set;

@@ -15,7 +15,7 @@
 
 @class NSURL, NSError, NSString;
 
-@interface NSDictionary<__covariant KeyType, __covariant ObjectType> : NSObject
+@interface NSDictionary<__covariant KeyType, __covariant ObjectType> : NSObject <NSCopying, NSMutableCopying>
 
 + (instancetype)dictionary;
 /* The compiler emits +dictionaryWithObjects:forKeys:count: for a @{...}
@@ -33,6 +33,10 @@
 - (NSUInteger)count;
 - (nullable id)objectForKey:(id)key;
 - (nullable id)objectForKeyedSubscript:(id)key;
+- (BOOL)isEqualToDictionary:(NSDictionary<KeyType, ObjectType> *)dictionary;
+- (NSUInteger)hash;
+- (id)copyWithZone:(NSZone *)zone;
+- (id)mutableCopyWithZone:(NSZone *)zone;
 - (NSArray<KeyType> *)allKeys;
 - (void)enumerateKeysAndObjectsUsingBlock:(void (^)(KeyType key, ObjectType obj, BOOL *stop))block;
 

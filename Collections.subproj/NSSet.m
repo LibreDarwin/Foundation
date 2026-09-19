@@ -202,6 +202,20 @@ static void _NSSetAddValue(const void *value, void *context) {
     return [self isSubsetOfSet:otherSet];
 }
 
+- (NSUInteger)hash {
+    return (NSUInteger)CFHash(NSSET_CF(CFTypeRef, self));
+}
+
+- (id)copyWithZone:(NSZone *)zone {
+    (void)zone;
+    return NSSET_ID(id, CFSetCreateCopy(kCFAllocatorDefault, NSSET_CF(CFSetRef, self)));
+}
+
+- (id)mutableCopyWithZone:(NSZone *)zone {
+    (void)zone;
+    return NSSET_ID(id, CFSetCreateMutableCopy(kCFAllocatorDefault, 0, NSSET_CF(CFSetRef, self)));
+}
+
 - (BOOL)isSubsetOfSet:(NSSet *)otherSet {
     CFIndex count = CFSetGetCount(NSSET_CF(CFSetRef, self));
     const void **values = count ? (const void **)malloc((size_t)count * sizeof(*values)) : NULL;

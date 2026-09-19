@@ -150,6 +150,24 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
     return [self objectForKey:key];
 }
 
+- (BOOL)isEqualToDictionary:(NSDictionary *)dictionary {
+    return dictionary != nil && CFEqual((CFTypeRef)self, (CFTypeRef)dictionary);
+}
+
+- (NSUInteger)hash {
+    return (NSUInteger)CFHash((CFTypeRef)self);
+}
+
+- (id)copyWithZone:(NSZone *)zone {
+    (void)zone;
+    return (id)CFDictionaryCreateCopy(kCFAllocatorDefault, (CFDictionaryRef)self);
+}
+
+- (id)mutableCopyWithZone:(NSZone *)zone {
+    (void)zone;
+    return (id)CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, (CFDictionaryRef)self);
+}
+
 - (NSArray *)allKeys {
     CFIndex n = CFDictionaryGetCount((CFDictionaryRef)self);
     const void **keys = malloc(sizeof(void *) * (size_t)(n > 0 ? n : 1));

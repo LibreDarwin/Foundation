@@ -14,7 +14,7 @@
 
 @class NSEnumerator;
 
-@interface NSArray<__covariant ObjectType> : NSObject
+@interface NSArray<__covariant ObjectType> : NSObject <NSCopying, NSMutableCopying>
 
 + (instancetype)array;
 + (instancetype)arrayWithObjects:(const ObjectType _Nonnull [_Nullable])objects count:(NSUInteger)count;
@@ -24,6 +24,10 @@
 - (id)objectAtIndex:(NSUInteger)index;
 - (id)objectAtIndexedSubscript:(NSUInteger)index;
 - (BOOL)containsObject:(id)object;
+- (BOOL)isEqualToArray:(NSArray<ObjectType> *)array;
+- (NSUInteger)hash;
+- (id)copyWithZone:(NSZone *)zone;
+- (id)mutableCopyWithZone:(NSZone *)zone;
 - (NSEnumerator *)objectEnumerator;
 - (NSEnumerator *)reverseObjectEnumerator;
 

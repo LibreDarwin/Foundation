@@ -45,6 +45,24 @@
                                 (const void *)object) ? YES : NO;
 }
 
+- (BOOL)isEqualToArray:(NSArray *)array {
+    return array != nil && CFEqual((CFTypeRef)self, (CFTypeRef)array);
+}
+
+- (NSUInteger)hash {
+    return (NSUInteger)CFHash((CFTypeRef)self);
+}
+
+- (id)copyWithZone:(NSZone *)zone {
+    (void)zone;
+    return (id)CFArrayCreateCopy(kCFAllocatorDefault, (CFArrayRef)self);
+}
+
+- (id)mutableCopyWithZone:(NSZone *)zone {
+    (void)zone;
+    return (id)CFArrayCreateMutableCopy(kCFAllocatorDefault, 0, (CFArrayRef)self);
+}
+
 - (NSEnumerator *)objectEnumerator {
     return [[NSEnumerator_array alloc] initWithArray:self];
 }
