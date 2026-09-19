@@ -12,6 +12,8 @@
 #import <Foundation/NSObject.h>
 #import <Foundation/NSObjCRuntime.h>
 
+@class NSEnumerator;
+
 @interface NSArray<__covariant ObjectType> : NSObject
 
 + (instancetype)array;
@@ -22,6 +24,8 @@
 - (id)objectAtIndex:(NSUInteger)index;
 - (id)objectAtIndexedSubscript:(NSUInteger)index;
 - (BOOL)containsObject:(id)object;
+- (NSEnumerator *)objectEnumerator;
+- (NSEnumerator *)reverseObjectEnumerator;
 
 @end
 

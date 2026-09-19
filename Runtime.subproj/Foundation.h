@@ -17,6 +17,7 @@
 #import <Foundation/FoundationErrors.h>
 #import <Foundation/NSError.h>
 #import <Foundation/NSArray.h>
+#import <Foundation/NSEnumerator.h>
 #import <Foundation/NSData.h>
 #import <Foundation/NSDictionary.h>
 #import <Foundation/NSNumber.h>

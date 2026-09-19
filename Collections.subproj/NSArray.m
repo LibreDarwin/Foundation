@@ -7,6 +7,7 @@
  */
 
 #import <Foundation/NSArray.h>
+#import "NSEnumerator_array.h"
 #include <CoreFoundation/CFArray.h>
 #include <CoreFoundation/ForFoundationOnly.h>
 #include <objc/runtime.h>
@@ -42,6 +43,14 @@
     CFIndex n = CFArrayGetCount((CFArrayRef)self);
     return CFArrayContainsValue((CFArrayRef)self, CFRangeMake(0, n),
                                 (const void *)object) ? YES : NO;
+}
+
+- (NSEnumerator *)objectEnumerator {
+    return [[NSEnumerator_array alloc] initWithArray:self];
+}
+
+- (NSEnumerator *)reverseObjectEnumerator {
+    return [[NSEnumerator_arrayReverse alloc] initWithArray:self];
 }
 
 @end
