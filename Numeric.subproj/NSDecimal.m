@@ -1,0 +1,264 @@
+/*
+ * Copyright (C) 2026, Samuel Zormeister.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+#import "NSDecimal.h"
+#import <Foundation/NSString.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+
+#define DECIMAL_DIGITS 256
+#define DECIMAL_RESULT_DIGITS 38
+
+typedef struct {
+    unsigned char digits[DECIMAL_DIGITS];
+    unsigned int count;
+    int exponent;
+    BOOL negative;
+    BOOL nan;
+} DecimalDigits;
+
+static void decimal_clear(DecimalDigits *decimal) { memset(decimal, 0, sizeof(*decimal)); }
+
+static void decimal_trim(DecimalDigits *decimal) {
+    unsigned int offset = 0;
+    while (offset < decimal->count && decimal->digits[offset] == 0) offset++;
+    if (offset != 0) {
+        decimal->count -= offset;
+        memmove(decimal->digits, decimal->digits + offset, decimal->count);
+    }
+    while (decimal->count != 0 && decimal->digits[decimal->count - 1] == 0) {
+        decimal->count--;
+        decimal->exponent++;
+    }
+    if (decimal->count == 0) {
+        decimal->exponent = 0;
+        decimal->negative = NO;
+    }
+}
+
+static void decimal_from_ns(DecimalDigits *out, const NSDecimal *source) {
+    decimal_clear(out);
+    out->exponent = source->_exponent;
+    out->negative = source->_isNegative;
+    out->nan = NSDecimalIsNotANumber(source);
+    if (out->nan || source->_length == 0) return;
+
+    for (int word = source->_length - 1; word >= 0; word--) {
+        unsigned int carry = source->_mantissa[word];
+        for (int index = (int)out->count - 1; index >= 0; index--) {
+            unsigned int value = out->digits[index] * 65536U + carry;
+            out->digits[index] = (unsigned char)(value % 10U);
+            carry = value / 10U;
+        }
+        while (carry != 0) {
+            memmove(out->digits + 1, out->digits, out->count);
+            out->digits[0] = (unsigned char)(carry % 10U);
+            carry /= 10U;
+            out->count++;
+        }
+    }
+    decimal_trim(out);
+}
+
+static void decimal_from_ascii(DecimalDigits *out, const char *text) {
+    decimal_clear(out);
+    const char *cursor = text;
+    if (*cursor == '-') { out->negative = YES; cursor++; }
+    else if (*cursor == '+') cursor++;
+    int fractional = 0;
+    BOOL afterDecimal = NO;
+    while (*cursor != 0 && *cursor != 'e' && *cursor != 'E') {
+        if (*cursor == '.') { afterDecimal = YES; cursor++; continue; }
+        if (*cursor >= '0' && *cursor <= '9') {
+            if (out->count < DECIMAL_DIGITS) out->digits[out->count++] = (unsigned char)(*cursor - '0');
+            if (afterDecimal) fractional++;
+        }
+        cursor++;
+    }
+    int scientificExponent = 0;
+    if (*cursor == 'e' || *cursor == 'E') scientificExponent = (int)strtol(cursor + 1, NULL, 10);
+    out->exponent = scientificExponent - fractional;
+    decimal_trim(out);
+}
+
+static void decimal_to_ns(NSDecimal *out, DecimalDigits *source) {
+    decimal_trim(source);
+    memset(out, 0, sizeof(*out));
+    out->_exponent = source->exponent;
+    out->_isNegative = source->negative;
+    out->_isCompact = 1;
+    if (source->nan) {
+        out->_isNegative = 1;
+        return;
+    }
+    while (source->count > DECIMAL_RESULT_DIGITS) {
+        unsigned char dropped = source->digits[source->count - 1];
+        source->count--;
+        source->exponent++;
+        if (dropped >= 5) {
+            int index = (int)source->count - 1;
+            while (index >= 0 && source->digits[index] == 9) source->digits[index--] = 0;
+            if (index < 0) {
+                memmove(source->digits + 1, source->digits, source->count);
+                source->digits[0] = 1;
+                source->count++;
+            } else source->digits[index]++;
+        }
+    }
+    unsigned short words[NSDecimalMaxSize] = {0};
+    unsigned int wordCount = 0;
+    for (unsigned int i = 0; i < source->count; i++) {
+        unsigned int carry = source->digits[i];
+        for (unsigned int j = 0; j < wordCount; j++) {
+            unsigned int value = words[j] * 10U + carry;
+            words[j] = (unsigned short)(value & 0xffffU);
+            carry = value >> 16;
+        }
+        if (carry != 0 && wordCount < NSDecimalMaxSize) words[wordCount++] = (unsigned short)carry;
+    }
+    out->_length = wordCount;
+    for (unsigned int i = 0; i < wordCount; i++) out->_mantissa[i] = words[i];
+    if (wordCount == 0) out->_isNegative = 0;
+}
+
+static int decimal_magnitude_compare(const DecimalDigits *left, const DecimalDigits *right) {
+    int leftMagnitude = (int)left->count + left->exponent;
+    int rightMagnitude = (int)right->count + right->exponent;
+    if (leftMagnitude != rightMagnitude) return leftMagnitude < rightMagnitude ? -1 : 1;
+    unsigned int count = left->count < right->count ? left->count : right->count;
+    for (unsigned int i = 0; i < count; i++) if (left->digits[i] != right->digits[i]) return left->digits[i] < right->digits[i] ? -1 : 1;
+    for (unsigned int i = count; i < left->count; i++) if (left->digits[i] != 0) return 1;
+    for (unsigned int i = count; i < right->count; i++) if (right->digits[i] != 0) return -1;
+    return 0;
+}
+
+static BOOL decimal_scale_to(DecimalDigits *decimal, int exponent) {
+    if (decimal->count == 0 || decimal->exponent == exponent) return YES;
+    int zeros = decimal->exponent - exponent;
+    if (zeros < 0 || decimal->count + (unsigned int)zeros > DECIMAL_DIGITS) return NO;
+    memset(decimal->digits + decimal->count, 0, (size_t)zeros);
+    decimal->count += (unsigned int)zeros;
+    decimal->exponent = exponent;
+    return YES;
+}
+
+static NSCalculationError decimal_add_digits(DecimalDigits *out, DecimalDigits left, DecimalDigits right, NSRoundingMode mode) {
+    int exponent = left.exponent < right.exponent ? left.exponent : right.exponent;
+    decimal_scale_to(&left, exponent);
+    decimal_scale_to(&right, exponent);
+    unsigned int count = left.count > right.count ? left.count : right.count;
+    memset(out, 0, sizeof(*out));
+    out->count = count;
+    out->exponent = exponent;
+    int carry = 0;
+    for (int i = (int)count - 1; i >= 0; i--) {
+        int li = i - ((int)count - (int)left.count);
+        int ri = i - ((int)count - (int)right.count);
+        int value = (li >= 0 ? left.digits[li] : 0) + (ri >= 0 ? right.digits[ri] : 0) + carry;
+        out->digits[i] = (unsigned char)(value % 10);
+        carry = value / 10;
+    }
+    if (carry) { memmove(out->digits + 1, out->digits, out->count); out->digits[0] = (unsigned char)carry; out->count++; }
+    decimal_trim(out);
+    (void)mode;
+    return out->count > DECIMAL_RESULT_DIGITS ? NSCalculationLossOfPrecision : NSCalculationNoError;
+}
+
+static void decimal_subtract_digits(DecimalDigits *out, DecimalDigits left, DecimalDigits right) {
+    int exponent = left.exponent < right.exponent ? left.exponent : right.exponent;
+    decimal_scale_to(&left, exponent);
+    decimal_scale_to(&right, exponent);
+    out->count = left.count;
+    out->exponent = exponent;
+    out->negative = left.negative;
+    int borrow = 0;
+    for (int i = (int)left.count - 1; i >= 0; i--) {
+        int ri = i - ((int)left.count - (int)right.count);
+        int value = left.digits[i] - (ri >= 0 ? right.digits[ri] : 0) - borrow;
+        if (value < 0) { value += 10; borrow = 1; } else borrow = 0;
+        out->digits[i] = (unsigned char)value;
+    }
+    decimal_trim(out);
+}
+
+void NSDecimalCopy(NSDecimal *destination, const NSDecimal *source) { if (destination != source) memcpy(destination, source, sizeof(*destination)); }
+void NSDecimalCompact(NSDecimal *number) { DecimalDigits decimal; decimal_from_ns(&decimal, number); decimal_to_ns(number, &decimal); }
+
+NSComparisonResult NSDecimalCompare(const NSDecimal *left, const NSDecimal *right) {
+    DecimalDigits a, b; decimal_from_ns(&a, left); decimal_from_ns(&b, right);
+    if (a.nan || b.nan) return a.nan == b.nan ? NSOrderedSame : (a.nan ? NSOrderedAscending : NSOrderedDescending);
+    if (a.count == 0 && b.count == 0) return NSOrderedSame;
+    if (a.negative != b.negative) return a.negative ? NSOrderedAscending : NSOrderedDescending;
+    int comparison = decimal_magnitude_compare(&a, &b);
+    return a.negative ? (NSComparisonResult)-comparison : (NSComparisonResult)comparison;
+}
+
+void NSDecimalRound(NSDecimal *result, const NSDecimal *number, NSInteger scale, NSRoundingMode mode) {
+    DecimalDigits decimal; decimal_from_ns(&decimal, number);
+    if (!decimal.nan && decimal.count != 0 && scale != NSDecimalNoScale) {
+        int keep = (int)decimal.count + decimal.exponent + (int)scale;
+        if (keep <= 0) { decimal.count = 0; decimal.exponent = 0; decimal.negative = NO; }
+        else if ((unsigned int)keep < decimal.count) {
+            unsigned char guard = decimal.digits[keep];
+            BOOL roundUp = mode == NSRoundUp ? !decimal.negative : mode == NSRoundDown ? decimal.negative : guard > 5 || (guard == 5 && mode == NSRoundPlain);
+            decimal.count = (unsigned int)keep;
+            decimal.exponent = -(int)scale;
+            if (roundUp) { int i = (int)decimal.count - 1; while (i >= 0 && decimal.digits[i] == 9) decimal.digits[i--] = 0; if (i < 0) { memmove(decimal.digits + 1, decimal.digits, decimal.count); decimal.digits[0] = 1; decimal.count++; } else decimal.digits[i]++; }
+        }
+    }
+    decimal_to_ns(result, &decimal);
+}
+
+NSCalculationError NSDecimalNormalize(NSDecimal *number1, NSDecimal *number2, NSRoundingMode mode) {
+    DecimalDigits a, b; decimal_from_ns(&a, number1); decimal_from_ns(&b, number2);
+    if (a.nan || b.nan || a.count == 0 || b.count == 0 || a.exponent == b.exponent) return NSCalculationNoError;
+    int exponent = a.exponent < b.exponent ? a.exponent : b.exponent;
+    BOOL exact = decimal_scale_to(&a, exponent) && decimal_scale_to(&b, exponent);
+    decimal_to_ns(number1, &a); decimal_to_ns(number2, &b);
+    (void)mode;
+    return exact ? NSCalculationNoError : NSCalculationLossOfPrecision;
+}
+
+NSCalculationError NSDecimalAdd(NSDecimal *result, const NSDecimal *left, const NSDecimal *right, NSRoundingMode mode) {
+    DecimalDigits a, b, out; decimal_from_ns(&a, left); decimal_from_ns(&b, right); if (a.nan || b.nan) { memset(result, 0, sizeof(*result)); result->_isNegative = 1; return NSCalculationNoError; }
+    NSCalculationError error = NSCalculationNoError;
+    if (a.negative == b.negative) { error = decimal_add_digits(&out, a, b, mode); out.negative = a.negative; }
+    else { int comparison = decimal_magnitude_compare(&a, &b); if (comparison == 0) { decimal_clear(&out); } else if (comparison > 0) decimal_subtract_digits(&out, a, b); else { decimal_subtract_digits(&out, b, a); out.negative = b.negative; } }
+    decimal_to_ns(result, &out); return error;
+}
+
+NSCalculationError NSDecimalSubtract(NSDecimal *result, const NSDecimal *left, const NSDecimal *right, NSRoundingMode mode) {
+    NSDecimal inverted = *right; inverted._isNegative = !inverted._isNegative; return NSDecimalAdd(result, left, &inverted, mode);
+}
+
+NSCalculationError NSDecimalMultiply(NSDecimal *result, const NSDecimal *left, const NSDecimal *right, NSRoundingMode mode) {
+    DecimalDigits a, b, out; decimal_from_ns(&a, left); decimal_from_ns(&b, right); decimal_clear(&out); if (a.nan || b.nan) { out.nan = YES; decimal_to_ns(result, &out); return NSCalculationNoError; }
+    if (a.count == 0 || b.count == 0) { decimal_to_ns(result, &out); return NSCalculationNoError; }
+    unsigned int temp[DECIMAL_DIGITS * 2] = {0};
+    for (int i = (int)a.count - 1; i >= 0; i--) for (int j = (int)b.count - 1; j >= 0; j--) temp[i + j + 1] += a.digits[i] * b.digits[j];
+    unsigned int productCount = a.count + b.count;
+    for (int i = (int)productCount - 1; i > 0; i--) { temp[i - 1] += temp[i] / 10; temp[i] %= 10; }
+    unsigned int first = 0; while (first < productCount && temp[first] == 0) first++;
+    out.count = productCount - first; if (out.count > DECIMAL_DIGITS) out.count = DECIMAL_DIGITS;
+    for (unsigned int i = 0; i < out.count; i++) out.digits[i] = (unsigned char)temp[first + i];
+    out.exponent = a.exponent + b.exponent; out.negative = a.negative != b.negative; decimal_trim(&out); (void)mode; NSCalculationError error = out.count > DECIMAL_RESULT_DIGITS ? NSCalculationLossOfPrecision : NSCalculationNoError; decimal_to_ns(result, &out); return error;
+}
+
+NSCalculationError NSDecimalMultiplyByPowerOf10(NSDecimal *result, const NSDecimal *number, short power, NSRoundingMode mode) { DecimalDigits decimal; decimal_from_ns(&decimal, number); int exponent = decimal.exponent + power; (void)mode; if (exponent > SCHAR_MAX) { decimal.nan = YES; decimal_to_ns(result, &decimal); return NSCalculationOverflow; } if (exponent < SCHAR_MIN) { decimal_clear(&decimal); decimal_to_ns(result, &decimal); return NSCalculationUnderflow; } decimal.exponent = exponent; decimal_to_ns(result, &decimal); return NSCalculationNoError; }
+
+NSCalculationError NSDecimalPower(NSDecimal *result, const NSDecimal *number, NSUInteger power, NSRoundingMode mode) {
+    NSDecimal base = *number, value = {0}; value._mantissa[0] = 1; value._length = 1; value._isCompact = 1;
+    while (power != 0) { if (power & 1) NSDecimalMultiply(&value, &value, &base, mode); power >>= 1; if (power) NSDecimalMultiply(&base, &base, &base, mode); }
+    *result = value; return NSCalculationNoError;
+}
+
+NSCalculationError NSDecimalDivide(NSDecimal *result, const NSDecimal *left, const NSDecimal *right, NSRoundingMode mode) { if (right->_length == 0) return NSCalculationDivideByZero; DecimalDigits a, b, quotient; decimal_from_ns(&a, left); decimal_from_ns(&b, right); long double av = 0, bv = 0; for (unsigned int i = 0; i < a.count; i++) av = av * 10 + a.digits[i]; for (unsigned int i = 0; i < b.count; i++) bv = bv * 10 + b.digits[i]; av *= powl(10, a.exponent); bv *= powl(10, b.exponent); char buffer[96]; snprintf(buffer, sizeof(buffer), "%.38Le", av / bv); decimal_from_ascii(&quotient, buffer); (void)mode; decimal_to_ns(result, &quotient); return NSCalculationLossOfPrecision; }
+
+NSString *NSDecimalString(const NSDecimal *decimal, NSDictionary *locale) { (void)locale; DecimalDigits value; decimal_from_ns(&value, decimal); if (value.nan) return [NSString stringWithUTF8String:"NaN"]; char buffer[DECIMAL_DIGITS + 64]; unsigned int position = 0; if (value.negative) buffer[position++] = '-'; if (value.count == 0) { buffer[position++] = '0'; buffer[position++] = '.'; buffer[position++] = '0'; } else if (value.exponent >= 0) { for (unsigned int i = 0; i < value.count; i++) buffer[position++] = (char)('0' + value.digits[i]); while (value.exponent-- > 0) buffer[position++] = '0'; } else { int point = (int)value.count + value.exponent; if (point > 0) { for (int i = 0; i < point; i++) buffer[position++] = (char)('0' + value.digits[i]); buffer[position++] = '.'; for (unsigned int i = (unsigned int)point; i < value.count; i++) buffer[position++] = (char)('0' + value.digits[i]); } else { buffer[position++] = '0'; buffer[position++] = '.'; while (point++ < 0) buffer[position++] = '0'; for (unsigned int i = 0; i < value.count; i++) buffer[position++] = (char)('0' + value.digits[i]); } } buffer[position] = 0; return [NSString stringWithUTF8String:buffer]; }
