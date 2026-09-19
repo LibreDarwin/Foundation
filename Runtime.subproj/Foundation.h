@@ -22,6 +22,7 @@
 #import <Foundation/NSCondition.h>
 #import <Foundation/NSConditionLock.h>
 #import <Foundation/NSRecursiveLock.h>
+#import <Foundation/NSThread.h>
 #import <Foundation/NSData.h>
 #import <Foundation/NSDictionary.h>
 #import <Foundation/NSNumber.h>
