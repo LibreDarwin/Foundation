@@ -45,10 +45,10 @@
 #import <Foundation/NSUserDefaults.h>
 #import <Foundation/NSMapTable.h>
 #import <Foundation/NSCharacterSet.h>
+#import <Foundation/NSScanner.h>
 #import <Foundation/NSPathUtilities.h>
 #import <Foundation/NSFileManager.h>
 #import <Foundation/NSFileHandle.h>
 
 #endif /* ! __FOUNDATION_FOUNDATION__ */
-
 

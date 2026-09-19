@@ -27,6 +27,13 @@ __NSStringCFEncoding(NSStringEncoding encoding)
     return [[self alloc] initWithUTF8String:utf8String];
 }
 
++ (instancetype)stringWithCharacters:(const unichar *)characters length:(NSUInteger)length {
+    CFStringRef result = CFStringCreateWithCharacters(kCFAllocatorDefault,
+                                                       (const UniChar *)characters,
+                                                       (CFIndex)length);
+    return (id)result;
+}
+
 + (instancetype)stringWithFormat:(NSString *)format, ... {
     va_list args;
     va_start(args, format);

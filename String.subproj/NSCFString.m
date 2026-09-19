@@ -20,6 +20,20 @@
     return (unichar)CFStringGetCharacterAtIndex((CFStringRef)self, (CFIndex)index);
 }
 
+- (NSString *)substringWithRange:(NSRange)range {
+    CFStringRef result = CFStringCreateWithSubstring(kCFAllocatorDefault,
+                                                     (CFStringRef)self,
+                                                     CFRangeMake((CFIndex)range.location,
+                                                                 (CFIndex)range.length));
+    return (NSString *)CFAutorelease(result);
+}
+
+- (void)getCharacters:(unichar *)buffer range:(NSRange)range {
+    CFStringGetCharacters((CFStringRef)self,
+                           CFRangeMake((CFIndex)range.location, (CFIndex)range.length),
+                           (UniChar *)buffer);
+}
+
 - (const char *)UTF8String {
     const char *direct = CFStringGetCStringPtr((CFStringRef)self, kCFStringEncodingUTF8);
     if (direct) {

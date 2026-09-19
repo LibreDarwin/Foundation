@@ -50,6 +50,7 @@ typedef NS_ENUM(NSUInteger, NSStringEncoding) {
 @interface NSString : NSObject
 
 + (instancetype)stringWithUTF8String:(const char *)utf8String;
++ (instancetype)stringWithCharacters:(const unichar *)characters length:(NSUInteger)length;
 + (instancetype)stringWithFormat:(NSString *)format, ...;
 
 - (instancetype)initWithUTF8String:(const char *)utf8String;
@@ -61,6 +62,8 @@ typedef NS_ENUM(NSUInteger, NSStringEncoding) {
 
 - (NSUInteger)length;
 - (unichar)characterAtIndex:(NSUInteger)index;
+- (NSString *)substringWithRange:(NSRange)range;
+- (void)getCharacters:(unichar *)buffer range:(NSRange)range;
 - (const char *)UTF8String;
 
 - (BOOL)getBytes:(void *)buffer
