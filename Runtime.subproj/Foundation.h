@@ -27,6 +27,8 @@
 #import <Foundation/NSDictionary.h>
 #import <Foundation/NSNumber.h>
 #import <Foundation/NSDate.h>
+#import <Foundation/NSNotification.h>
+#import <Foundation/NSNotificationCenter.h>
 #import <Foundation/NSURL.h>
 #import <Foundation/NSString.h>
 #import <Foundation/NSStream.h>
