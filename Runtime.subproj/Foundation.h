@@ -25,6 +25,7 @@
 #import <Foundation/NSThread.h>
 #import <Foundation/NSData.h>
 #import <Foundation/NSDictionary.h>
+#import <Foundation/NSSet.h>
 #import <Foundation/NSNumber.h>
 #import <Foundation/NSDate.h>
 #import <Foundation/NSRunLoop.h>
@@ -51,4 +52,3 @@
 #import <Foundation/NSFileHandle.h>
 
 #endif /* ! __FOUNDATION_FOUNDATION__ */
-
