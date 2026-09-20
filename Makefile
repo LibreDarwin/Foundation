@@ -1,0 +1,117 @@
+# =====================================================================
+#  Foundation.framework — bmake build
+# ---------------------------------------------------------------------
+#  Main build file for the LibreDarwin Foundation.framework.
+#
+#  * Generates an umbrella header in build/gen/ from the subprojects'
+#    own headers, so <Foundation/...> includes resolve here.
+#  * Compiles every .m file under the subprojects with ARC and links
+#    against CoreFoundation and the system libraries.
+#  * Checks that every method declared in String.subproj/NSString.h is
+#    implemented in String.subproj/NSString.m, failing the build when
+#    a declaration is left unimplemented.
+#
+#  Uses bmake constructs only (.for loops, := and != assignments; no
+#  GNU make functions or modifiers).
+# =====================================================================
+
+# ---- toolchain ----
+# Builds against the LibreDarwin Internal SDK (the macOS SDK this framework
+# drops into). Point RN elsewhere on the command line (bmake RN=...) for a
+# dev build against Apple's SDK.
+CC  != xcrun --find clang
+RN  = /Users/sunneva/xnuports-root/devel/xcode-tools/build/release/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.Internal.sdk
+
+# ---- framework locations ----
+FW      = build/release/Foundation.framework
+DYLIB   = ${FW}/Versions/A/Foundation
+
+# ---- sources ----
+# bmake != assigns the shell output; it is evaluated each run.
+HDRS != find . \( -path './build' -o -path './local' \) -prune -o -name '*.h' -type f -print | sort
+MSRC != find . \( -path './build' -o -path './local' \) -prune -o -name '*.m' -type f -print | sort
+# Object paths mirror the source tree under build/objects/.
+OBJECTS != find . \( -path './build' -o -path './local' \) -prune -o -name '*.m' -type f -print | sed 's|^\./|build/objects/|; s|\.m$$|.o|' | sort
+
+# ---- compiler flags ----
+# Some subprojects include CoreFoundation's private headers
+# (ForFoundationOnly.h and friends). They are only present once the
+# LibreDarwin CoreFoundation build has been installed into the Internal SDK
+# (its install rule populates CoreFoundation.framework/PrivateHeaders);
+# add that directory when present so a full build finds everything.
+CF_PRIV != { test -d ${RN}/System/Library/Frameworks/CoreFoundation.framework/PrivateHeaders && echo -I${RN}/System/Library/Frameworks/CoreFoundation.framework/PrivateHeaders; } || true
+
+CFLAGS  = -fobjc-arc -fblocks -fobjc-runtime=macosx \
+          -isysroot ${RN} \
+          -I${RN}/System/Library/Frameworks/CoreFoundation.framework/Headers \
+          ${CF_PRIV} \
+          -I build/gen
+LDFLAGS = -dynamiclib -fobjc-arc -isysroot ${RN} \
+          -F${RN}/System/Library/Frameworks -framework CoreFoundation \
+          -install_name @rpath/Foundation.framework/Versions/A/Foundation
+
+.PHONY: all release pairing-instrument umbrella clean gitignore
+
+all: release
+
+# =====================================================================
+#  Pairing check: every method declared in NSString.h must also be
+#  implemented in NSString.m. Exits non-zero when they disagree.
+#  The $$0 escapes keep AWK's record variable from being expanded by
+#  make first.
+# =====================================================================
+pairing-instrument:
+	@awk 'function c(x){gsub(/\r/,"",x);sub(/^[-+][[:space:]]*\(/,"",x);sub(/\).*/,"",x);gsub(/[[:space:]]/,"",x);return x} \
+	      NR==FNR{if(/^[-+][[:space:]]*\(/)a[c($$0)]=1;next} \
+	      /^[-+][[:space:]]*\(/{b[c($$0)]=1} \
+	      END{for(k in a)if(!(k in b)){printf "   MISSING %s\n",k;m++} \
+	          for(k in b)if(!(k in a)){printf "   EXTRA   %s\n",k;x++} \
+	          printf "   PAIRING GATE: declared=%d implemented=%d missing=%d extra=%d FAIL=%d\n",length(a),length(b),m+0,x+0,((m+x)>0); \
+	          exit((m+x)>0)}' \
+	      String.subproj/NSString.h String.subproj/NSString.m
+
+# =====================================================================
+#  Umbrella header: copied from the subprojects' own headers and
+#  gathered into build/gen/Foundation/Foundation.h.
+# =====================================================================
+umbrella: build/gen/Foundation/Foundation.h
+
+build/gen/Foundation/Foundation.h: pairing-instrument
+	@mkdir -p build/gen/Foundation
+	@rm -f $@
+	@for h in ${HDRS}; do hb="$${h##*/}"; cp "$$h" build/gen/Foundation/; done
+	@{  echo '// Foundation.h — generated from this project'"'"'s subproject headers'; \
+	    for h in ${HDRS}; do hb="$${h##*/}"; echo "#include <Foundation/$$hb>"; done; \
+	} > $@
+
+# =====================================================================
+#  Object files: one .o per .m source, compiled with ARC. The
+#  :C modifiers turn './X.m' into 'build/objects/X.o' for the target.
+#  The umbrella header is a prerequisite because every source
+#  includes <Foundation/...> from build/gen.
+# =====================================================================
+.for src in ${MSRC}
+${src:C|^\./|build/objects/|:C|\.m$|.o|}: ${src} build/gen/Foundation/Foundation.h
+	@mkdir -p ${.TARGET:H}
+	@${CC} ${CFLAGS} -c ${src} -o ${.TARGET}
+.endfor
+
+# =====================================================================
+#  Framework bundle
+# =====================================================================
+release: umbrella ${DYLIB}
+
+${DYLIB}: ${OBJECTS}
+	@mkdir -p ${DYLIB:H} ${FW}/Versions/A/Headers ${FW}/Versions/A/Resources
+	@${CC} ${LDFLAGS} -o $@ ${OBJECTS}
+	@cp build/gen/Foundation/*.h ${FW}/Versions/A/Headers/
+	@cp Info.plist ${FW}/Versions/A/Resources/
+	@ln -sfn A ${FW}/Versions/Current
+	@ln -sfn Versions/Current/Foundation ${FW}/Foundation
+	@ln -sfn Versions/Current/Headers ${FW}/Headers
+
+clean:
+	@rm -rf build
+
+gitignore:
+	@grep -q '^build/$$' .gitignore || printf 'build/\n' >> .gitignore
