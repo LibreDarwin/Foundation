@@ -45,6 +45,14 @@
     #define NS_CONSUMES_SELF __attribute__((ns_consumes_self))
 #endif
 
+/* Format-attribute macros: NSString.text-style format checking. */
+#ifndef NS_FORMAT_FUNCTION
+    #define NS_FORMAT_FUNCTION(F, A) __attribute__((format(__NSString__, F, A)))
+#endif
+#ifndef NS_FORMAT_ARGUMENT
+    #define NS_FORMAT_ARGUMENT(A) __attribute__((format_arg(A)))
+#endif
+
 /* Swift interop: what the Swift importer hides outright, and what it renames
  * with a leading underscore so an overlay can present it properly. */
 #ifndef NS_SWIFT_UNAVAILABLE

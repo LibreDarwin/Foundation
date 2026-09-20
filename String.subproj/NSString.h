@@ -123,6 +123,11 @@ typedef NS_OPTIONS(NSUInteger, NSStringCompareOptions) {
 - (NSString *)substringFromIndex:(NSUInteger)from;
 - (NSString *)substringToIndex:(NSUInteger)to;
 
+/* The two legacy percent-escape selectors bridge to the CFURL percent
+ * creators. Deprecated in Apple's API surface; kept for parity. */
+- (nullable NSString *)stringByAddingPercentEscapesUsingEncoding:(NSStringEncoding)encoding;
+- (nullable NSString *)stringByReplacingPercentEscapesUsingEncoding:(NSStringEncoding)encoding;
+
 @end
 
 
@@ -150,8 +155,3 @@ typedef NS_OPTIONS(NSUInteger, NSStringCompareOptions) {
 @end
 
 #endif /* NSString_h */
-
-#pragma mark - Percent Escape Family
-
-- (nullable NSString *)stringByAddingPercentEscapesUsingEncoding:(NSStringEncoding)encoding;
-- (nullable NSString *)stringByReplacingPercentEscapesUsingEncoding:(NSStringEncoding)encoding;

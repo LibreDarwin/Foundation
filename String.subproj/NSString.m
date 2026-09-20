@@ -13,6 +13,9 @@
 #include <CoreFoundation/CFString.h>
 #include <CoreFoundation/CFData.h>
 #include <CoreFoundation/CFCharacterSet.h>
+#include <CoreFoundation/CFURL.h>
+#include <objc/runtime.h>
+#include <stdlib.h>
 #include <stdarg.h>
 
 /* NSStringEncoding and CFStringEncoding are separate numbering schemes; only
@@ -355,7 +358,7 @@ __NSStringRaiseNil(NSString *method)
     return NSSTRING_FACTORY(result);
 }
 
-- (NSString *)stringByAddingPercentEscapesUsingEncoding:(NSStringEncoding)encoding {
+- (nullable NSString *)stringByAddingPercentEscapesUsingEncoding:(NSStringEncoding)encoding {
     CFStringRef result = CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,
                                                                 (CFStringRef)self,
                                                                 NULL,
@@ -364,11 +367,42 @@ __NSStringRaiseNil(NSString *method)
     return (__bridge_transfer NSString *)result;
 }
 
-- (NSString *)stringByReplacingPercentEscapesUsingEncoding:(NSStringEncoding)encoding {
-    CFStringRef result = CFURLCreateStringByReplacingPercentEscapes(kCFAllocatorDefault,
-                                                                   (CFStringRef)self,
-                                                                   (CFStringEncoding)encoding);
+- (nullable NSString *)stringByReplacingPercentEscapesUsingEncoding:(NSStringEncoding)encoding {
+    CFStringRef result = CFURLCreateStringByReplacingPercentEscapesUsingEncoding(kCFAllocatorDefault,
+                                                                                 (CFStringRef)self,
+                                                                                 NULL,
+                                                                                 (CFStringEncoding)encoding);
     return (__bridge_transfer NSString *)result;
+}
+
+- (unichar)characterAtIndex:(NSUInteger)index {
+    CFIndex length = CFStringGetLength((CFStringRef)self);
+    if ((CFIndex)index >= length) {
+        [NSException raise:NSRangeException
+                    format:@"*** -[NSString characterAtIndex:]: index (%lu) beyond bounds (%ld)",
+                           (unsigned long)index, (long)length];
+    }
+    return CFStringGetCharacterAtIndex((CFStringRef)self, (CFIndex)index);
+}
+
+- (const char *)UTF8String {
+    const char *ptr = CFStringGetCStringPtr((CFStringRef)self, kCFStringEncodingUTF8);
+    if (ptr != NULL) {
+        return ptr;
+    }
+    /* Fall back to rendering into a buffer that lives as long as the
+     * string, keyed by selector so repeated calls replace the old one. */
+    CFIndex length = CFStringGetLength((CFStringRef)self);
+    CFIndex maxSize = CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8);
+    char *buffer = malloc((size_t)maxSize + 1);
+    if (buffer == NULL ||
+        !CFStringGetCString((CFStringRef)self, buffer, maxSize + 1, kCFStringEncodingUTF8)) {
+        free(buffer);
+        return NULL;
+    }
+    NSData *data = [NSData dataWithBytesNoCopy:buffer length:(NSUInteger)(maxSize + 1) freeWhenDone:YES];
+    objc_setAssociatedObject(self, _cmd, data, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    return buffer;
 }
 
 @end
@@ -428,18 +462,20 @@ __NSStringRaiseNil(NSString *method)
     if (string == nil) {
         __NSStringRaiseNil(@"insertString:atIndex:");
     }
-    CFStringInsert((CFMutableStringRef)self, location, (CFStringRef)string);
+    CFStringInsert((CFMutableStringRef)self, (CFIndex)location, (CFStringRef)string);
 }
 
 - (void)deleteCharactersInRange:(NSRange)range {
-    CFStringDelete((CFMutableStringRef)self, range);
+    CFRange cfRange = CFRangeMake((CFIndex)range.location, (CFIndex)range.length);
+    CFStringDelete((CFMutableStringRef)self, cfRange);
 }
 
 - (void)replaceCharactersInRange:(NSRange)range withString:(NSString *)string {
     if (string == nil) {
         __NSStringRaiseNil(@"replaceCharactersInRange:withString:");
     }
-    CFStringReplace((CFMutableStringRef)self, range, (CFStringRef)string);
+    CFRange cfRange = CFRangeMake((CFIndex)range.location, (CFIndex)range.length);
+    CFStringReplace((CFMutableStringRef)self, cfRange, (CFStringRef)string);
 }
 
 - (NSUInteger)replaceOccurrencesOfString:(NSString *)target
@@ -452,7 +488,7 @@ __NSStringRaiseNil(NSString *method)
     CFIndex count = CFStringFindAndReplace((CFMutableStringRef)self,
                                             (CFStringRef)target,
                                             (CFStringRef)replacement,
-                                            searchRange,
+                                            CFRangeMake((CFIndex)searchRange.location, (CFIndex)searchRange.length),
                                             (CFOptionFlags)options);
     return (NSUInteger)count;
 }
