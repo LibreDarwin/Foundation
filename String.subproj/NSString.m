@@ -385,7 +385,60 @@ __NSStringRaiseNil(NSString *method)
 }
 
 - (void)setString:(NSString *)string {
+    if (string == nil) {
+        __NSStringRaiseNil(@"setString:");
+    }
     CFStringReplaceAll((CFMutableStringRef)self, (CFStringRef)string);
+}
+
+- (nullable instancetype)initWithCapacity:(NSUInteger)capacity {
+    /* Like +stringWithCapacity:, `capacity` is only a hint; CFStringCreateMutable's
+     * maxLength argument is a hard limit, so pass 0 to leave the string unbounded. */
+    (void)capacity;
+    CFMutableStringRef result = CFStringCreateMutable(kCFAllocatorDefault, 0);
+    return NSSTRING_INITIALIZED(result);
+}
+
+- (nullable instancetype)initWithString:(NSString *)string {
+    if (string == nil) {
+        __NSStringRaiseNil(@"initWithString:");
+    }
+    CFMutableStringRef result = CFStringCreateMutableCopy(kCFAllocatorDefault, 0,
+                                                          (CFStringRef)string);
+    return NSSTRING_INITIALIZED(result);
+}
+
+- (void)insertString:(NSString *)string atIndex:(NSUInteger)location {
+    if (string == nil) {
+        __NSStringRaiseNil(@"insertString:atIndex:");
+    }
+    CFStringInsert((CFMutableStringRef)self, location, (CFStringRef)string);
+}
+
+- (void)deleteCharactersInRange:(NSRange)range {
+    CFStringDelete((CFMutableStringRef)self, range);
+}
+
+- (void)replaceCharactersInRange:(NSRange)range withString:(NSString *)string {
+    if (string == nil) {
+        __NSStringRaiseNil(@"replaceCharactersInRange:withString:");
+    }
+    CFStringReplace((CFMutableStringRef)self, range, (CFStringRef)string);
+}
+
+- (NSUInteger)replaceOccurrencesOfString:(NSString *)target
+                              withString:(NSString *)replacement
+                                 options:(NSStringCompareOptions)options
+                                   range:(NSRange)searchRange {
+    if (target == nil || replacement == nil) {
+        __NSStringRaiseNil(@"replaceOccurrencesOfString:withString:options:range:");
+    }
+    CFIndex count = CFStringFindAndReplace((CFMutableStringRef)self,
+                                            (CFStringRef)target,
+                                            (CFStringRef)replacement,
+                                            searchRange,
+                                            (CFOptionFlags)options);
+    return (NSUInteger)count;
 }
 
 @end

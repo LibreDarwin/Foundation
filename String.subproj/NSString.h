@@ -131,9 +131,21 @@ typedef NS_OPTIONS(NSUInteger, NSStringCompareOptions) {
 + (instancetype)string;
 + (instancetype)stringWithCapacity:(NSUInteger)capacity;
 
+- (nullable instancetype)initWithCapacity:(NSUInteger)capacity;
+- (nullable instancetype)initWithString:(NSString *)string;
+
+- (void)insertString:(NSString *)string atIndex:(NSUInteger)location;
+- (void)deleteCharactersInRange:(NSRange)range;
+
 - (void)appendString:(NSString *)string;
 - (void)appendFormat:(NSString *)format, ...;
 - (void)setString:(NSString *)string;
+
+- (void)replaceCharactersInRange:(NSRange)range withString:(NSString *)string;
+- (NSUInteger)replaceOccurrencesOfString:(NSString *)target
+                              withString:(NSString *)replacement
+                                 options:(NSStringCompareOptions)options
+                                   range:(NSRange)searchRange;
 
 @end
 
