@@ -13,7 +13,7 @@
 #import <Foundation/NSArray.h>
 #import <Foundation/NSEnumerator.h>
 
-@interface NSSet<__covariant ObjectType> : NSObject <NSCopying, NSMutableCopying> {
+@interface NSSet<__covariant ObjectType> : NSObject <NSCopying, NSMutableCopying, NSFastEnumeration> {
 }
 
 + (instancetype)set;

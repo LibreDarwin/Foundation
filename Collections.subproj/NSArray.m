@@ -94,6 +94,31 @@ static CFArrayRef NSNSArrayCreate(const id *objects, NSUInteger count) {
     return [[NSEnumerator_arrayReverse alloc] initWithArray:self];
 }
 
+/* Fast enumeration streams straight out of the CF array: one item per slot of
+ * the loop's stackbuf, the cursor kept in state->state (the runtime zeroes it
+ * once per fresh loop and preserves it between chunk calls), and a stable
+ * mutationsPtr that never changes so the loop can never be spurious-triggered.
+ * A full chunk signals "more coming"; a short chunk or zero ends the loop. */
+- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state
+                                 objects:(id __unsafe_unretained _Nullable[_Nonnull])stackbuf
+                                   count:(NSUInteger)len {
+    CFArrayRef array = NSARRAY_CF(CFArrayRef, self);
+    CFIndex total = CFArrayGetCount(array);
+    NSUInteger index = state->state;
+    if (index >= (NSUInteger)total) {
+        return 0;
+    }
+    state->mutationsPtr = &state->extra[0];
+    state->itemsPtr = stackbuf;
+    NSUInteger filled = 0;
+    while (index < (NSUInteger)total && filled < len) {
+        stackbuf[filled++] = NSARRAY_BORROWED(CFArrayGetValueAtIndex(array, (CFIndex)index));
+        index++;
+    }
+    state->state = index;
+    return filled;
+}
+
 @end
 
 @implementation NSMutableArray

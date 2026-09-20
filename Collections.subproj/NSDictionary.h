@@ -15,7 +15,7 @@
 
 @class NSURL, NSError, NSString;
 
-@interface NSDictionary<__covariant KeyType, __covariant ObjectType> : NSObject <NSCopying, NSMutableCopying>
+@interface NSDictionary<__covariant KeyType, __covariant ObjectType> : NSObject <NSCopying, NSMutableCopying, NSFastEnumeration>
 
 + (instancetype)dictionary;
 /* The compiler emits +dictionaryWithObjects:forKeys:count: for a @{...}

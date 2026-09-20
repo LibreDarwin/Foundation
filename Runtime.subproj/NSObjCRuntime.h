@@ -92,6 +92,41 @@ typedef struct _NSZone NSZone;
  */
 #include <CoreFoundation/CFAvailability.h>
 
+/* The LibreDarwin CFAvailability.h drop predates several macros the SDK's
+ * patched copy adds back (CF_CLOSED_ENUM, CF_STRING_ENUM and the _CF_TYPED_
+ * family).  Define them here under guards so the file works against either
+ * tree instead of relying on that patch. */
+#ifndef CF_CLOSED_ENUM
+    #ifndef __CF_CLOSED_ENUM_ATTRIBUTES
+        #if __has_attribute(enum_extensibility)
+            #define __CF_CLOSED_ENUM_ATTRIBUTES __attribute__((enum_extensibility(closed)))
+        #else
+            #define __CF_CLOSED_ENUM_ATTRIBUTES
+        #endif
+    #endif
+    #if (__cplusplus && (__has_extension(cxx_strong_enums) || __has_feature(objc_fixed_enum))) || \
+        (!__cplusplus && __has_feature(objc_fixed_enum))
+        #define CF_CLOSED_ENUM(_type, _name) \
+            enum __CF_CLOSED_ENUM_ATTRIBUTES _name : _type _name; enum _name : _type
+    #else
+        #define CF_CLOSED_ENUM(_type, _name) _type _name; enum
+    #endif
+#endif
+
+#ifndef CF_STRING_ENUM
+    #if __has_attribute(swift_wrapper)
+        #define CF_STRING_ENUM              __attribute__((swift_wrapper(enum)))
+        #define CF_EXTENSIBLE_STRING_ENUM   __attribute__((swift_wrapper(struct)))
+    #else
+        #define CF_STRING_ENUM
+        #define CF_EXTENSIBLE_STRING_ENUM
+    #endif
+    #define CF_TYPED_ENUM               CF_STRING_ENUM
+    #define CF_TYPED_EXTENSIBLE_ENUM    CF_EXTENSIBLE_STRING_ENUM
+    #define _CF_TYPED_ENUM              CF_STRING_ENUM
+    #define _CF_TYPED_EXTENSIBLE_ENUM   CF_EXTENSIBLE_STRING_ENUM
+#endif
+
 #define _NS_TYPED_ENUM              _CF_TYPED_ENUM
 #define _NS_TYPED_EXTENSIBLE_ENUM   _CF_TYPED_EXTENSIBLE_ENUM
 

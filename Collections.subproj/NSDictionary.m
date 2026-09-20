@@ -212,6 +212,49 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
     return NSDICT_ID(array);
 }
 
+/* Fast enumeration walks the keys.  A dictionary instance is a bare
+ * CFDictionary (bridged, not a laid-out ObjC object), so the once-per-loop
+ * keys snapshot cannot live in an ivar; it is parked in an associated object,
+ * which works on bridged instances and is released at the end of the loop.
+ * Like NSArray, the cursor rides in state->state and mutationsPtr points at
+ * state->extra[0], which is never written. */
+static const void *NSDICT_FastEnumerationKeysKey = &NSDICT_FastEnumerationKeysKey;
+
+- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state
+                                 objects:(id __unsafe_unretained _Nullable[_Nonnull])stackbuf
+                                   count:(NSUInteger)len {
+    NSUInteger index = state->state;
+    NSArray *keys;
+    if (index == 0) {
+        keys = [self allKeys];
+        if (keys == nil) {
+            return 0;
+        }
+        objc_setAssociatedObject(self, NSDICT_FastEnumerationKeysKey, keys,
+                                 OBJC_ASSOCIATION_RETAIN);
+    } else {
+        keys = objc_getAssociatedObject(self, NSDICT_FastEnumerationKeysKey);
+        if (keys == nil) {
+            return 0;
+        }
+    }
+    NSUInteger total = keys.count;
+    if (index >= total) {
+        objc_setAssociatedObject(self, NSDICT_FastEnumerationKeysKey, nil,
+                                 OBJC_ASSOCIATION_RETAIN);
+        return 0;
+    }
+    state->mutationsPtr = &state->extra[0];
+    state->itemsPtr = stackbuf;
+    NSUInteger filled = 0;
+    while (index < total && filled < len) {
+        stackbuf[filled++] = [keys objectAtIndex:index];
+        index++;
+    }
+    state->state = index;
+    return filled;
+}
+
 @end
 
 @implementation NSMutableDictionary

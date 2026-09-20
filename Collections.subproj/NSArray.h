@@ -14,7 +14,7 @@
 
 @class NSEnumerator;
 
-@interface NSArray<__covariant ObjectType> : NSObject <NSCopying, NSMutableCopying>
+@interface NSArray<__covariant ObjectType> : NSObject <NSCopying, NSMutableCopying, NSFastEnumeration>
 
 + (instancetype)array;
 + (instancetype)arrayWithObjects:(const ObjectType _Nonnull [_Nullable])objects count:(NSUInteger)count;

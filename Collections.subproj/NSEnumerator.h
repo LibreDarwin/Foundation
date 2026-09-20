@@ -31,19 +31,6 @@
 
 #import <Foundation/NSArray.h>
 
-typedef struct {
-    unsigned long state;
-    id __unsafe_unretained _Nullable *_Nonnull itemsPtr;
-    unsigned long *_Nullable mutationsPtr;
-    unsigned long extra[5];
-} NSFastEnumerationState;
-
-@protocol NSFastEnumeration
-- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state
-                                  objects:(id __unsafe_unretained _Nullable[_Nonnull])stackbuf
-                                    count:(NSUInteger)len;
-@end
-
 @interface NSEnumerator<__covariant ObjectType> : NSObject <NSFastEnumeration>
 
 - (nullable ObjectType)nextObject;

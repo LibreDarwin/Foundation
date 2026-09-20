@@ -36,14 +36,21 @@ OBJECTS != find . \( -path './build' -o -path './local' \) -prune -o -name '*.m'
 
 # ---- compiler flags ----
 # Some subprojects include CoreFoundation's private headers
-# (ForFoundationOnly.h and friends). They are only present once the
+# (ForFoundationOnly.h and friends).  They are only present once the
 # LibreDarwin CoreFoundation build has been installed into the Internal SDK
-# (its install rule populates CoreFoundation.framework/PrivateHeaders);
-# add that directory when present so a full build finds everything.
+# (its install rule populates CoreFoundation.framework/PrivateHeaders).  Until
+# then the coherent LibreDarwin CF header tree is vendored under local/include
+# (gitignored: <repo>/devel/CoreFoundation's headers, with the defect-free
+# CFBase.h that defines ScriptCode & friends).  It must precede the SDK's CF
+# headers so the LibreDarwin tree wins the include; NSBUILDINGFOUNDATION
+# satisfies ForFoundationOnly.h's !CF_BUILDING_CF guard.
 CF_PRIV != { test -d ${RN}/System/Library/Frameworks/CoreFoundation.framework/PrivateHeaders && echo -I${RN}/System/Library/Frameworks/CoreFoundation.framework/PrivateHeaders; } || true
+CF_LOCAL != { test -d local/include/CoreFoundation && echo -I local/include; } || true
 
 CFLAGS  = -fobjc-arc -fblocks -fobjc-runtime=macosx \
           -isysroot ${RN} \
+          -DNSBUILDINGFOUNDATION \
+          ${CF_LOCAL} \
           -I${RN}/System/Library/Frameworks/CoreFoundation.framework/Headers \
           ${CF_PRIV} \
           -I build/gen

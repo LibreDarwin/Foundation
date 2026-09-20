@@ -17,6 +17,7 @@
 #include <CoreFoundation/CFSet.h>
 #include <CoreFoundation/CFDictionary.h>
 #include <CoreFoundation/ForFoundationOnly.h>
+#include <objc/runtime.h>
 #include <stdarg.h>
 
 #if __has_feature(objc_arc)
@@ -242,6 +243,49 @@ static void _NSSetAddValue(const void *value, void *context) {
     NSMutableSet *result = [[NSMutableSet alloc] initWithSet:self];
     [result addObjectsFromArray:array];
     return result;
+}
+
+/* Fast enumeration snaps the members into an array once per loop and streams
+ * that snapshot, for the same reason NSDictionary does: a set is a bridged
+ * CFSet, so there is no ivar room.  The snapshot is an associated object,
+ * kept only for the duration of one loop.  The cursor rides in state->state;
+ * mutationsPtr points at state->extra[0], which is never written. */
+static const void *NSSET_FastEnumerationObjectsKey = &NSSET_FastEnumerationObjectsKey;
+
+- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state
+                                 objects:(id __unsafe_unretained _Nullable[_Nonnull])stackbuf
+                                   count:(NSUInteger)len;
+{
+    NSUInteger index = state->state;
+    NSArray *objects;
+    if (index == 0) {
+        objects = [self allObjects];
+        if (objects == nil) {
+            return 0;
+        }
+        objc_setAssociatedObject(self, NSSET_FastEnumerationObjectsKey, objects,
+                                 OBJC_ASSOCIATION_RETAIN);
+    } else {
+        objects = objc_getAssociatedObject(self, NSSET_FastEnumerationObjectsKey);
+        if (objects == nil) {
+            return 0;
+        }
+    }
+    NSUInteger total = objects.count;
+    if (index >= total) {
+        objc_setAssociatedObject(self, NSSET_FastEnumerationObjectsKey, nil,
+                                 OBJC_ASSOCIATION_RETAIN);
+        return 0;
+    }
+    state->mutationsPtr = &state->extra[0];
+    state->itemsPtr = stackbuf;
+    NSUInteger filled = 0;
+    while (index < total && filled < len) {
+        stackbuf[filled++] = [objects objectAtIndex:index];
+        index++;
+    }
+    state->state = index;
+    return filled;
 }
 
 @end

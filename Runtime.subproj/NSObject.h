@@ -50,4 +50,30 @@ static inline id _Nullable CFBridgingRelease(CFTypeRef CF_RELEASES_ARGUMENT _Nul
 @property (class, readonly) BOOL supportsSecureCoding;
 @end
 
+/* Fast enumeration: the runtime-and-ABI contract between a collection and a
+ * for-in loop.  It lives here (GNUstep keeps it in NSObject.h too) rather
+ * than in NSEnumerator.h because every class that conforms imports
+ * NSObject.h, and the generated umbrella includes headers in name order, so
+ * this block has to be seen before NSArray.h's interface.
+ *
+ * state->state is the cursor across calls; the runtime zeroes it once at the
+ * head of a fresh loop and preserves it between chunk calls.  state->itemsPtr
+ * is the buffer the collection fills and state->mutationsPtr a stable
+ * location whose value must not change between calls - point it at
+ * state->extra[0] and never write there.  Returning a full buffer (len)
+ * means more chunks are coming; returning a short count or zero ends the
+ * loop. */
+typedef struct {
+    unsigned long state;
+    id __unsafe_unretained _Nullable *_Nonnull itemsPtr;
+    unsigned long *_Nullable mutationsPtr;
+    unsigned long extra[5];
+} NSFastEnumerationState;
+
+@protocol NSFastEnumeration
+- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state
+                                  objects:(id __unsafe_unretained _Nullable[_Nonnull])stackbuf
+                                    count:(NSUInteger)len;
+@end
+
 #endif /* ! __FOUNDATION_NSOBJECT__ */
