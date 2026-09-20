@@ -11,10 +11,14 @@
 
 #import <Foundation/NSObjCRuntime.h>
 
+@class NSString;
+
 typedef struct _NSRange {
     NSUInteger location;
     NSUInteger length;
 } NSRange;
+
+typedef NSRange *NSRangePointer;
 
 NS_INLINE NSRange NSMakeRange(NSUInteger loc, NSUInteger len) {
     NSRange r;
@@ -34,5 +38,10 @@ NS_INLINE BOOL NSLocationInRange(NSUInteger loc, NSRange range) {
 NS_INLINE BOOL NSEqualRanges(NSRange a, NSRange b) {
     return a.location == b.location && a.length == b.length;
 }
+
+FOUNDATION_EXPORT NSRange NSUnionRange(NSRange range1, NSRange range2);
+FOUNDATION_EXPORT NSRange NSIntersectionRange(NSRange range1, NSRange range2);
+FOUNDATION_EXPORT NSString *NSStringFromRange(NSRange range);
+FOUNDATION_EXPORT NSRange NSRangeFromString(NSString *aString);
 
 #endif /* NSRange_h */
