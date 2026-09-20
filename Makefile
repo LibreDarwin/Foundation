@@ -106,6 +106,7 @@ build/gen/Foundation/Foundation.h: pairing-instrument
 #  (see CF_PRIV above).
 # =====================================================================
 MRC_SOURCES = ./Collections.subproj/NSMapTable.m \
+              ./Collections.subproj/NSData.m \
               ./FileManager.subproj/NSFileHandle.m \
               ./FileManager.subproj/NSFileManager.m \
               ./FileManager.subproj/NSPathUtilities.m \
