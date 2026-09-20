@@ -9,13 +9,22 @@
 #import <Foundation/NSCharacterSet.h>
 #include <CoreFoundation/CFCharacterSet.h>
 
-/* Bridged straight onto CFCharacterSet, the same way NSArray is onto CFArray. */
+/* Bridged straight onto CFCharacterSet, the same way NSArray is onto CFArray.
+ *
+ * Every CF creation below returns a +1 object; the factory methods hand it to
+ * callers at +0, so under MRC the object is autoreleased and under ARC it is
+ * bridge-transferred. */
+#if __has_feature(objc_arc)
+#define NSCHARACTERSET_FACTORY(value) ((__bridge_transfer id)(value))
+#else
+#define NSCHARACTERSET_FACTORY(value) [(id)(value) autorelease]
+#endif
 
 @implementation NSCharacterSet
 
 static NSCharacterSet *_predefined(CFCharacterSetPredefinedSet which) {
-    return (NSCharacterSet *)CFCharacterSetCreateCopy(kCFAllocatorDefault,
-                                                      CFCharacterSetGetPredefined(which));
+    return NSCHARACTERSET_FACTORY(CFCharacterSetCreateCopy(kCFAllocatorDefault,
+                                                           CFCharacterSetGetPredefined(which)));
 }
 
 + (NSCharacterSet *)alphanumericCharacterSet {
@@ -59,13 +68,13 @@ static NSCharacterSet *_predefined(CFCharacterSetPredefinedSet which) {
 }
 
 + (NSCharacterSet *)characterSetWithCharactersInString:(NSString *)string {
-    return (NSCharacterSet *)CFCharacterSetCreateWithCharactersInString(
-        kCFAllocatorDefault, (CFStringRef)string);
+    return NSCHARACTERSET_FACTORY(CFCharacterSetCreateWithCharactersInString(
+        kCFAllocatorDefault, (CFStringRef)string));
 }
 
 + (NSCharacterSet *)characterSetWithRange:(NSRange)range {
-    return (NSCharacterSet *)CFCharacterSetCreateWithCharactersInRange(
-        kCFAllocatorDefault, CFRangeMake((CFIndex)range.location, (CFIndex)range.length));
+    return NSCHARACTERSET_FACTORY(CFCharacterSetCreateWithCharactersInRange(
+        kCFAllocatorDefault, CFRangeMake((CFIndex)range.location, (CFIndex)range.length)));
 }
 
 - (BOOL)characterIsMember:(unichar)character {
@@ -74,8 +83,8 @@ static NSCharacterSet *_predefined(CFCharacterSetPredefinedSet which) {
 }
 
 - (NSCharacterSet *)invertedSet {
-    return (NSCharacterSet *)CFCharacterSetCreateInvertedSet(kCFAllocatorDefault,
-                                                             (CFCharacterSetRef)self);
+    return NSCHARACTERSET_FACTORY(CFCharacterSetCreateInvertedSet(kCFAllocatorDefault,
+                                                                  (CFCharacterSetRef)self));
 }
 
 @end
@@ -86,7 +95,7 @@ static NSCharacterSet *_predefined(CFCharacterSetPredefinedSet which) {
     CFMutableCharacterSetRef set = CFCharacterSetCreateMutable(kCFAllocatorDefault);
     CFCharacterSetAddCharactersInRange(set, CFRangeMake((CFIndex)range.location,
                                                         (CFIndex)range.length));
-    return (NSMutableCharacterSet *)set;
+    return NSCHARACTERSET_FACTORY(set);
 }
 
 - (void)addCharactersInRange:(NSRange)range {
