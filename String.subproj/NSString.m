@@ -7,9 +7,12 @@
  */
 
 #import <Foundation/NSString.h>
+#import <Foundation/NSCharacterSet.h>
 #import <Foundation/NSData.h>
+#import <Foundation/NSException.h>
 #include <CoreFoundation/CFString.h>
 #include <CoreFoundation/CFData.h>
+#include <CoreFoundation/CFCharacterSet.h>
 #include <stdarg.h>
 
 /* NSStringEncoding and CFStringEncoding are separate numbering schemes; only
@@ -21,6 +24,43 @@ __NSStringCFEncoding(NSStringEncoding encoding)
                                               : kCFStringEncodingASCII;
 }
 
+/* The file builds under both ARC and MRC. Every CF creation below returns a
+ * +1 object; factories hand it to callers at +0 (autoreleased under MRC,
+ * bridge-transferred under ARC), while initializers hand it over at +1. */
+#if __has_feature(objc_arc)
+#define NSSTRING_FACTORY(value)      ((__bridge_transfer id)(value))
+#define NSSTRING_INITIALIZED(value)  ((__bridge_transfer id)(value))
+#else
+#define NSSTRING_FACTORY(value)      [(id)(value) autorelease]
+#define NSSTRING_INITIALIZED(value)  ((id)(value))
+#endif
+
+/* NSStringCompareOptions carry the same bit values as the kCFCompare* flags,
+ * so the two pass straight through. NSLiteralSearch (2) is the default state
+ * and has no flag of its own; NSRegularExpressionSearch is accepted here but
+ * not implemented. */
+static CFStringCompareFlags
+__NSStringCompareFlags(NSStringCompareOptions mask)
+{
+    return (CFStringCompareFlags)mask;
+}
+
+static NSComparisonResult
+__NSStringFromCFResult(CFComparisonResult result)
+{
+    if (result == kCFCompareEqualTo) {
+        return NSOrderedSame;
+    }
+    return (result == kCFCompareLessThan) ? NSOrderedAscending : NSOrderedDescending;
+}
+
+static void
+__NSStringRaiseNil(NSString *method)
+{
+    [NSException raise:NSInvalidArgumentException
+                format:@"%@ called with nil argument", method];
+}
+
 @implementation NSString
 
 + (instancetype)stringWithUTF8String:(const char *)utf8String {
@@ -28,10 +68,13 @@ __NSStringCFEncoding(NSStringEncoding encoding)
 }
 
 + (instancetype)stringWithCharacters:(const unichar *)characters length:(NSUInteger)length {
+    if (characters == NULL && length != 0) {
+        __NSStringRaiseNil(@"stringWithCharacters:length:");
+    }
     CFStringRef result = CFStringCreateWithCharacters(kCFAllocatorDefault,
                                                        (const UniChar *)characters,
                                                        (CFIndex)length);
-    return (id)result;
+    return NSSTRING_FACTORY(result);
 }
 
 + (instancetype)stringWithFormat:(NSString *)format, ... {
@@ -39,12 +82,12 @@ __NSStringCFEncoding(NSStringEncoding encoding)
     va_start(args, format);
     CFStringRef result = CFStringCreateWithFormatAndArguments(kCFAllocatorDefault, NULL, (CFStringRef)format, args);
     va_end(args);
-    return (id)result;
+    return NSSTRING_FACTORY(result);
 }
 
 - (instancetype)initWithUTF8String:(const char *)utf8String {
     CFStringRef result = CFStringCreateWithCString(kCFAllocatorDefault, utf8String, kCFStringEncodingUTF8);
-    return (id)result;
+    return NSSTRING_INITIALIZED(result);
 }
 
 - (instancetype)initWithBytes:(const void *)bytes
@@ -57,7 +100,7 @@ __NSStringCFEncoding(NSStringEncoding encoding)
                                                  (CFIndex)length,
                                                  __NSStringCFEncoding(encoding),
                                                  false);
-    return (id)result;
+    return NSSTRING_INITIALIZED(result);
 }
 
 - (NSData *)dataUsingEncoding:(NSStringEncoding)encoding {
@@ -68,7 +111,138 @@ __NSStringCFEncoding(NSStringEncoding encoding)
     if (result == NULL) {
         return nil;
     }
-    return (NSData *)CFAutorelease(result);
+    return (__bridge NSData *)CFAutorelease(result);
+}
+
+- (BOOL)isEqualToString:(NSString *)aString {
+    if (aString == nil) {
+        return NO;
+    }
+    return CFStringCompare((CFStringRef)self, (CFStringRef)aString, 0) == kCFCompareEqualTo;
+}
+
+- (BOOL)hasPrefix:(NSString *)aString {
+    if (aString == nil) {
+        __NSStringRaiseNil(@"hasPrefix:");
+    }
+    return CFStringHasPrefix((CFStringRef)self, (CFStringRef)aString);
+}
+
+- (BOOL)hasSuffix:(NSString *)aString {
+    if (aString == nil) {
+        __NSStringRaiseNil(@"hasSuffix:");
+    }
+    return CFStringHasSuffix((CFStringRef)self, (CFStringRef)aString);
+}
+
+- (BOOL)containsString:(NSString *)aString {
+    return [self rangeOfString:aString options:0].location != NSNotFound;
+}
+
+- (NSComparisonResult)compare:(NSString *)string {
+    return [self compare:string options:0 range:NSMakeRange(0, [self length])];
+}
+
+- (NSComparisonResult)compare:(NSString *)string options:(NSStringCompareOptions)mask {
+    return [self compare:string options:mask range:NSMakeRange(0, [self length])];
+}
+
+- (NSComparisonResult)compare:(NSString *)string
+                      options:(NSStringCompareOptions)mask
+                        range:(NSRange)range {
+    if (string == nil) {
+        __NSStringRaiseNil(@"compare:options:range:");
+    }
+    CFComparisonResult result = CFStringCompareWithOptions((CFStringRef)self,
+                                                           (CFStringRef)string,
+                                                           CFRangeMake((CFIndex)range.location, (CFIndex)range.length),
+                                                           __NSStringCompareFlags(mask));
+    return __NSStringFromCFResult(result);
+}
+
+- (NSComparisonResult)caseInsensitiveCompare:(NSString *)string {
+    return [self compare:string options:NSCaseInsensitiveSearch];
+}
+
+- (NSRange)rangeOfString:(NSString *)aString {
+    return [self rangeOfString:aString options:0];
+}
+
+- (NSRange)rangeOfString:(NSString *)aString options:(NSStringCompareOptions)mask {
+    if (aString == nil) {
+        __NSStringRaiseNil(@"rangeOfString:options:");
+    }
+    CFRange found = CFStringFind((CFStringRef)self, (CFStringRef)aString,
+                                 __NSStringCompareFlags(mask));
+    if (found.location == kCFNotFound) {
+        return NSMakeRange(NSNotFound, 0);
+    }
+    return NSMakeRange((NSUInteger)found.location, (NSUInteger)found.length);
+}
+
+- (NSString *)stringByAppendingString:(NSString *)aString {
+    if (aString == nil) {
+        __NSStringRaiseNil(@"stringByAppendingString:");
+    }
+    CFMutableStringRef result = CFStringCreateMutableCopy(kCFAllocatorDefault, 0, (CFStringRef)self);
+    CFStringAppend(result, (CFStringRef)aString);
+    return NSSTRING_FACTORY(result);
+}
+
+- (NSString *)lowercaseString {
+    CFMutableStringRef result = CFStringCreateMutableCopy(kCFAllocatorDefault, 0, (CFStringRef)self);
+    CFStringLowercase(result, NULL);
+    return NSSTRING_FACTORY(result);
+}
+
+- (NSString *)uppercaseString {
+    CFMutableStringRef result = CFStringCreateMutableCopy(kCFAllocatorDefault, 0, (CFStringRef)self);
+    CFStringUppercase(result, NULL);
+    return NSSTRING_FACTORY(result);
+}
+
+- (NSString *)stringByTrimmingCharactersInSet:(NSCharacterSet *)set {
+    if (set == nil) {
+        __NSStringRaiseNil(@"stringByTrimmingCharactersInSet:");
+    }
+    CFIndex length = CFStringGetLength((CFStringRef)self);
+    if (length == 0) {
+        return NSSTRING_FACTORY(CFStringCreateWithCString(kCFAllocatorDefault, "", kCFStringEncodingUTF8));
+    }
+    /* Trim is symmetric: the result is the span between the first character not
+     * in the set and the last character not in the set. Searching for non-members
+     * beats walking members, because on a fully-covering set the member search
+     * would run off the end of the string. */
+    CFCharacterSetRef nonMembers = CFCharacterSetCreateInvertedSet(kCFAllocatorDefault,
+                                                                   (CFCharacterSetRef)set);
+    CFRange range = CFRangeMake(0, length);
+    CFRange probe = CFRangeMake(0, 0);
+    CFStringFindCharacterFromSet((CFStringRef)self, nonMembers, range, 0, &probe);
+    if (probe.location == kCFNotFound) {
+        /* Every character is a member: the whole string trims away. */
+        CFRelease(nonMembers);
+        return NSSTRING_FACTORY(CFStringCreateWithCString(kCFAllocatorDefault, "", kCFStringEncodingUTF8));
+    }
+    CFIndex left = probe.location;
+    probe = CFRangeMake(0, 0);
+    CFStringFindCharacterFromSet((CFStringRef)self, nonMembers, range, kCFCompareBackwards, &probe);
+    CFIndex right = probe.location + 1;
+    CFRelease(nonMembers);
+    CFStringRef result = CFStringCreateWithSubstring(kCFAllocatorDefault, (CFStringRef)self,
+                                                     CFRangeMake(left, right - left));
+    return NSSTRING_FACTORY(result);
+}
+
+- (NSString *)stringByReplacingOccurrencesOfString:(NSString *)target
+                                        withString:(NSString *)replacement {
+    if (target == nil || replacement == nil) {
+        __NSStringRaiseNil(@"stringByReplacingOccurrencesOfString:withString:");
+    }
+    CFMutableStringRef result = CFStringCreateMutableCopy(kCFAllocatorDefault, 0, (CFStringRef)self);
+    CFStringFindAndReplace(result, (CFStringRef)target, (CFStringRef)replacement,
+                           CFRangeMake(0, CFStringGetLength(result)),
+                           __NSStringCompareFlags(NSLiteralSearch));
+    return NSSTRING_FACTORY(result);
 }
 
 @end
@@ -85,7 +259,7 @@ __NSStringCFEncoding(NSStringEncoding encoding)
 + (instancetype)stringWithCapacity:(NSUInteger)capacity {
     (void)capacity;
     CFMutableStringRef result = CFStringCreateMutable(kCFAllocatorDefault, 0);
-    return (id)CFAutorelease(result);
+    return NSSTRING_FACTORY(result);
 }
 
 - (void)appendString:(NSString *)string {

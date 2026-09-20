@@ -13,6 +13,7 @@
 #import <Foundation/NSRange.h>
 
 @class NSData;
+@class NSCharacterSet;
 
 typedef unsigned short unichar;
 
@@ -47,6 +48,22 @@ typedef NS_ENUM(NSUInteger, NSStringEncoding) {
     NSUTF32LittleEndianStringEncoding = 0x9c000100,
 };
 
+/* The option values mirror CoreFoundation's kCFCompare* flags so the compare
+ * flags can be passed through unchanged; NSLiteralSearch is the default
+ * (flag) state and NSRegularExpressionSearch is accepted but only meaningful
+ * to rangeOfString: callers that implement their own search. */
+typedef NS_OPTIONS(NSUInteger, NSStringCompareOptions) {
+    NSCaseInsensitiveSearch      = 1,
+    NSLiteralSearch              = 2,
+    NSBackwardsSearch            = 4,
+    NSAnchoredSearch             = 8,
+    NSNumericSearch              = 64,
+    NSDiacriticInsensitiveSearch = 128,
+    NSWidthInsensitiveSearch     = 256,
+    NSForcedOrderingSearch       = 512,
+    NSRegularExpressionSearch    = 1024,
+};
+
 @interface NSString : NSObject
 
 + (instancetype)stringWithUTF8String:(const char *)utf8String;
@@ -73,6 +90,28 @@ typedef NS_ENUM(NSUInteger, NSStringEncoding) {
          options:(NSStringEncodingConversionOptions)options
            range:(NSRange)range
   remainingRange:(NSRange *)leftover;
+
+- (BOOL)isEqualToString:(NSString *)aString;
+- (BOOL)hasPrefix:(NSString *)aString;
+- (BOOL)hasSuffix:(NSString *)aString;
+- (BOOL)containsString:(NSString *)aString;
+
+- (NSComparisonResult)compare:(NSString *)string;
+- (NSComparisonResult)compare:(NSString *)string options:(NSStringCompareOptions)mask;
+- (NSComparisonResult)compare:(NSString *)string
+                      options:(NSStringCompareOptions)mask
+                        range:(NSRange)range;
+- (NSComparisonResult)caseInsensitiveCompare:(NSString *)string;
+
+- (NSRange)rangeOfString:(NSString *)aString;
+- (NSRange)rangeOfString:(NSString *)aString options:(NSStringCompareOptions)mask;
+
+- (NSString *)stringByAppendingString:(NSString *)aString;
+- (NSString *)lowercaseString;
+- (NSString *)uppercaseString;
+- (NSString *)stringByTrimmingCharactersInSet:(NSCharacterSet *)set;
+- (NSString *)stringByReplacingOccurrencesOfString:(NSString *)target
+                                        withString:(NSString *)replacement;
 
 @end
 
