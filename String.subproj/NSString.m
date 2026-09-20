@@ -29,9 +29,31 @@ __NSStringCFEncoding(NSStringEncoding encoding)
  * bridge-transferred under ARC), while initializers hand it over at +1. */
 #if __has_feature(objc_arc)
 #define NSSTRING_FACTORY(value)      ((__bridge_transfer id)(value))
+#if __has_feature(objc_arc)
+#define NSARRAY_FACTORY(value)       ((__bridge_transfer NSArray *)(value))
+#else
+#define NSARRAY_FACTORY(value)       [(id)(value) autorelease]
+#endif
 #define NSSTRING_INITIALIZED(value)  ((__bridge_transfer id)(value))
 #else
 #define NSSTRING_FACTORY(value)      [(id)(value) autorelease]
+#if __has_feature(objc_arc)
+#define NSARRAY_FACTORY(value) ((__bridge_transfer id)(value))
+#else
+#define NSARRAY_FACTORY(value) [(id)(value) autorelease]
+#endif
+
+#if __has_feature(objc_arc)
+#define NSARRAY_FACTORY(value) ((__bridge_transfer NSArray *)(value))
+#else
+#define NSARRAY_FACTORY(value) [(NSArray *)(value) autorelease]
+#endif
+#if __has_feature(objc_arc)
+#define NSARRAY_FACTORY(value) ((__bridge_transfer id)(value))
+#else
+#define NSARRAY_FACTORY(value) [(id)(value) autorelease]
+#endif
+
 #define NSSTRING_INITIALIZED(value)  ((id)(value))
 #endif
 
@@ -172,13 +194,6 @@ __NSStringRaiseNil(NSString *method)
     return NSSTRING_FACTORY(result);
 }
 
-+ (instancetype)stringWithFormat:(NSString *)format, ... {
-    va_list args;
-    va_start(args, format);
-    CFStringRef result = CFStringCreateWithFormatAndArguments(kCFAllocatorDefault, NULL, (CFStringRef)format, args);
-    va_end(args);
-    return NSSTRING_FACTORY(result);
-}
 
 - (instancetype)initWithUTF8String:(const char *)utf8String {
     CFStringRef result = CFStringCreateWithCString(kCFAllocatorDefault, utf8String, kCFStringEncodingUTF8);
