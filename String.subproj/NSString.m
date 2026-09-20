@@ -355,6 +355,22 @@ __NSStringRaiseNil(NSString *method)
     return NSSTRING_FACTORY(result);
 }
 
+- (NSString *)stringByAddingPercentEscapesUsingEncoding:(NSStringEncoding)encoding {
+    CFStringRef result = CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,
+                                                                (CFStringRef)self,
+                                                                NULL,
+                                                                CFSTR("!*'();:@&=+$,/?%#[]"),
+                                                                (CFStringEncoding)encoding);
+    return (__bridge_transfer NSString *)result;
+}
+
+- (NSString *)stringByReplacingPercentEscapesUsingEncoding:(NSStringEncoding)encoding {
+    CFStringRef result = CFURLCreateStringByReplacingPercentEscapes(kCFAllocatorDefault,
+                                                                   (CFStringRef)self,
+                                                                   (CFStringEncoding)encoding);
+    return (__bridge_transfer NSString *)result;
+}
+
 @end
 
 /* CFStringCreateMutable takes maxLength, not a capacity hint: a non-zero value

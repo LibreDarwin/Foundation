@@ -150,3 +150,8 @@ typedef NS_OPTIONS(NSUInteger, NSStringCompareOptions) {
 @end
 
 #endif /* NSString_h */
+
+#pragma mark - Percent Escape Family
+
+- (nullable NSString *)stringByAddingPercentEscapesUsingEncoding:(NSStringEncoding)encoding;
+- (nullable NSString *)stringByReplacingPercentEscapesUsingEncoding:(NSStringEncoding)encoding;
