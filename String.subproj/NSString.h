@@ -14,6 +14,7 @@
 
 @class NSData;
 @class NSCharacterSet;
+@class NSArray;
 
 typedef unsigned short unichar;
 
@@ -68,9 +69,11 @@ typedef NS_OPTIONS(NSUInteger, NSStringCompareOptions) {
 
 + (instancetype)stringWithUTF8String:(const char *)utf8String;
 + (instancetype)stringWithCharacters:(const unichar *)characters length:(NSUInteger)length;
-+ (instancetype)stringWithFormat:(NSString *)format, ...;
++ (instancetype)stringWithFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
 
 - (instancetype)initWithUTF8String:(const char *)utf8String;
+- (instancetype)initWithFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+- (instancetype)initWithFormat:(NSString *)format arguments:(va_list)argList NS_FORMAT_FUNCTION(1,0);
 - (instancetype)initWithBytes:(const void *)bytes
                        length:(NSUInteger)length
                      encoding:(NSStringEncoding)encoding;
@@ -107,11 +110,18 @@ typedef NS_OPTIONS(NSUInteger, NSStringCompareOptions) {
 - (NSRange)rangeOfString:(NSString *)aString options:(NSStringCompareOptions)mask;
 
 - (NSString *)stringByAppendingString:(NSString *)aString;
+- (NSString *)stringByAppendingFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
 - (NSString *)lowercaseString;
 - (NSString *)uppercaseString;
 - (NSString *)stringByTrimmingCharactersInSet:(NSCharacterSet *)set;
 - (NSString *)stringByReplacingOccurrencesOfString:(NSString *)target
                                         withString:(NSString *)replacement;
+- (NSString *)stringByReplacingCharactersInRange:(NSRange)range
+                                      withString:(NSString *)replacement;
+
+- (NSArray *)componentsSeparatedByString:(NSString *)separator;
+- (NSString *)substringFromIndex:(NSUInteger)from;
+- (NSString *)substringToIndex:(NSUInteger)to;
 
 @end
 

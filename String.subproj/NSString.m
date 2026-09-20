@@ -63,7 +63,102 @@ __NSStringRaiseNil(NSString *method)
 
 @implementation NSString
 
-+ (instancetype)stringWithUTF8String:(const char *)utf8String {
+/* -(substringWithRange:) is an NSCFString cluster primitive, so the index-based
+ * substring accessors and the replacing API derive from it and from
+ * -(stringByReplacingOccurrencesOfString:withString:) rather than calling down
+ * through a second layer of massaging. */
+ - (instancetype)initWithFormat:(NSString *)format, ... {
+     va_list args;
+     va_start(args, format);
+     NSString *result = [self initWithFormat:format arguments:args];
+     va_end(args);
+     return result;
+ }
+
+ - (instancetype)initWithFormat:(NSString *)format arguments:(va_list)argList {
+     if (format == nil) {
+         __NSStringRaiseNil(@"initWithFormat:arguments:");
+     }
+     CFStringRef result = CFStringCreateWithFormatAndArguments(kCFAllocatorDefault,
+                                                               NULL,
+                                                               (CFStringRef)format,
+                                                               argList);
+     return NSSTRING_INITIALIZED(result);
+ }
+
++ (instancetype)stringWithFormat:(NSString *)format, ... {
+    va_list args;
+    va_start(args, format);
+    CFStringRef result = CFStringCreateWithFormatAndArguments(kCFAllocatorDefault,
+                                                              NULL,
+                                                              (CFStringRef)format,
+                                                              args);
+    va_end(args);
+    return NSSTRING_FACTORY(result);
+}
+
+- (NSString *)stringByAppendingFormat:(NSString *)format, ... {
+    if (format == nil) {
+        __NSStringRaiseNil(@"stringByAppendingFormat:");
+    }
+    va_list args;
+    va_start(args, format);
+    CFStringRef formatted = CFStringCreateWithFormatAndArguments(kCFAllocatorDefault,
+                                                                  NULL,
+                                                                  (CFStringRef)format,
+                                                                  args);
+    va_end(args);
+    CFMutableStringRef result = CFStringCreateMutableCopy(kCFAllocatorDefault,
+                                                          0,
+                                                          (CFStringRef)self);
+    CFStringAppend(result, formatted);
+    CFRelease(formatted);
+    return NSSTRING_FACTORY(result);
+}
+
+- (NSArray *)componentsSeparatedByString:(NSString *)separator {
+    if (separator == nil) {
+        __NSStringRaiseNil(@"componentsSeparatedByString:");
+    }
+    CFArrayRef array = CFStringCreateArrayBySeparatingStrings(kCFAllocatorDefault,
+                                                              (CFStringRef)self,
+                                                              (CFStringRef)separator);
+    /* The array and its elements are one +1 unit: CF's array callbacks retain
+     * each element on insert in return for the separator call's +1, so a single
+     * transfer hands the caller a fully-owned array. */
+    return NSARRAY_FACTORY(array);
+}
+
+- (NSString *)stringByReplacingCharactersInRange:(NSRange)range
+                                       withString:(NSString *)replacement {
+    if (replacement == nil) {
+        __NSStringRaiseNil(@"stringByReplacingCharactersInRange:withString:");
+    }
+    if (range.location > NSUIntegerMax - range.length ||
+        range.location + range.length > [self length]) {
+        [NSException raise:NSRangeException
+                    format:@"*** -[NSString stringByReplacingCharactersInRange:withString:]: "
+                           @"range {%lu, %lu} extends beyond the string's bounds {%lu, %lu}",
+                           (unsigned long)range.location, (unsigned long)range.length,
+                           (unsigned long)0, (unsigned long)[self length]];
+    }
+    CFMutableStringRef result = CFStringCreateMutableCopy(kCFAllocatorDefault,
+                                                          0,
+                                                          (CFStringRef)self);
+    CFStringReplace(result, CFRangeMake((CFIndex)range.location, (CFIndex)range.length),
+                    (CFStringRef)replacement);
+    return NSSTRING_FACTORY(result);
+}
+
+- (NSString *)substringFromIndex:(NSUInteger)from {
+    return [self substringWithRange:NSMakeRange(from, [self length] - from)];
+}
+
+- (NSString *)substringToIndex:(NSUInteger)to {
+    return [self substringWithRange:NSMakeRange(0, to)];
+}
+
+ + (instancetype)stringWithUTF8String:(const char *)utf8String {
     return [[self alloc] initWithUTF8String:utf8String];
 }
 
