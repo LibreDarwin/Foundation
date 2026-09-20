@@ -27,6 +27,13 @@ RN  = /Users/sunneva/xnuports-root/devel/xcode-tools/build/release/Developer/Pla
 FW      = build/release/Foundation.framework
 DYLIB   = ${FW}/Versions/A/Foundation
 
+# Public umbrella includes every subproject header EXCEPT NSCFTypeID.h, which
+# is internal-use-only: it includes the private <CoreFoundation/CFRuntime_Internal.h>,
+# so pulling it into Foundation.h would break a standalone
+# '#import <Foundation/Foundation.h>' for consumers without private CF headers.
+# The header still ships in the framework (explicit inclusion is an opt-in).
+UMBRELLA_HDRS = ${HDRS:N*NSCFTypeID*}
+
 # ---- sources ----
 # bmake != assigns the shell output; it is evaluated each run.
 HDRS != find . \( -path './build' -o -path './local' \) -prune -o -name '*.h' -type f -print | sort
@@ -35,6 +42,23 @@ MSRC != find . \( -path './build' -o -path './local' \) -prune -o -name '*.m' -t
 OBJECTS != find . \( -path './build' -o -path './local' \) -prune -o -name '*.m' -type f -print | sed 's|^\./|build/objects/|; s|\.m$$|.o|' | sort
 
 # ---- compiler flags ----
+# Why the linked dylib ends up with an LC_LOAD_DYLIB for /System/.../Foundation.framework
+# even though this Makefile only links CoreFoundation: clang's implicit ObjC autolink
+# injects '-framework Foundation' into every ObjC (ARC) link, and exactly one undefined
+# symbol binds against it — _OBJC_CLASS_$_NSAutoreleasePool, a vestigial __objc_classrefs
+# entry that clang's '^@autoreleasepool' lowering emits in Thread.subproj/NSThread.m even
+# though its code was optimized away (bound, never called). Verified partition of the
+# dylib's 367 undefineds: 190 CF_* -> CoreFoundation, 23 _objc_* -> libobjc, 2 NSObject
+# class+metaclass -> libobjc (libobjc.A.tbd and CoreFoundation.tbd both export), 1
+# _OBJC_CLASS_$_NSAutoreleasePool -> Foundation ONLY (libobjc.A.tbd and CF.tbd do not
+# export it; Foundation.tbd does — the one real Apple Foundation dependency), 151
+# libSystem/compiler-rt. A direct 'ld' link without '-framework Foundation' fails on
+# exactly that one symbol.
+# This project deliberately ships no NSAutoreleasePool, so until the target provides that
+# class (LibreDarwin's own Foundation must export it) a direct 'ld' link removes the
+# injected framework and then fails on '^_OBJC_CLASS_$_NSAutoreleasePool'. Keeping the
+# autolink is therefore the correct host-build accommodation; dropping Apple Foundation
+# requires the LibreDarwin Foundation to own that class symbol first.
 # Some subprojects include CoreFoundation's private headers
 # (ForFoundationOnly.h and friends).  They are only present once the
 # LibreDarwin CoreFoundation build has been installed into the Internal SDK
@@ -107,7 +131,7 @@ build/gen/Foundation/Foundation.h: pairing-instrument
 	@rm -f $@
 	@for h in ${HDRS}; do hb="$${h##*/}"; cp "$$h" build/gen/Foundation/; done
 	@{  echo '// Foundation.h — generated from this project'"'"'s subproject headers'; \
-	    for h in ${HDRS}; do hb="$${h##*/}"; echo "#include <Foundation/$$hb>"; done; \
+	    for h in ${UMBRELLA_HDRS}; do hb="$${h##*/}"; echo "#include <Foundation/$$hb>"; done; \
 	} > $@
 
 # =====================================================================
