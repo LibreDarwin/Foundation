@@ -5,8 +5,9 @@
 #
 #  * Generates an umbrella header in build/gen/ from the subprojects'
 #    own headers, so <Foundation/...> includes resolve here.
-#  * Compiles every .m file under the subprojects with ARC and links
-#    against CoreFoundation and the system libraries.
+#  * Compiles every .m file under the subprojects (ARC, except the few
+#    sources written for non-ARC) and links against CoreFoundation and
+#    the system libraries.
 #  * Checks that every method declared in String.subproj/NSString.h is
 #    implemented in String.subproj/NSString.m, failing the build when
 #    a declaration is left unimplemented.
@@ -85,15 +86,33 @@ build/gen/Foundation/Foundation.h: pairing-instrument
 	} > $@
 
 # =====================================================================
-#  Object files: one .o per .m source, compiled with ARC. The
-#  :C modifiers turn './X.m' into 'build/objects/X.o' for the target.
-#  The umbrella header is a prerequisite because every source
-#  includes <Foundation/...> from build/gen.
+#  Object files: one .o per .m source. Most sources are ARC; a handful
+#  were written for non-ARC (they cast raw CF objects without __bridge),
+#  so those get -fno-objc-arc. The :C modifiers turn './X.m' into
+#  'build/objects/X.o' for the target, and the umbrella header is a
+#  prerequisite because every source includes <Foundation/...> from
+#  build/gen.
+#
+#  Note: the build stops at the first source that includes
+#  CoreFoundation/ForFoundationOnly.h until the LibreDarwin
+#  CoreFoundation build has been installed into the Internal SDK
+#  (see CF_PRIV above).
 # =====================================================================
+MRC_SOURCES = ./Collections.subproj/NSMapTable.m \
+              ./FileManager.subproj/NSFileHandle.m \
+              ./FileManager.subproj/NSFileManager.m \
+              ./FileManager.subproj/NSPathUtilities.m \
+              ./Runtime.subproj/NSBundle.m \
+              ./Runtime.subproj/NSObjCRuntime.m \
+              ./Runtime.subproj/NSProcessInfo.m \
+              ./Runtime.subproj/NSUserDefaults.m \
+              ./Runtime.subproj/NSZone.m
+
 .for src in ${MSRC}
 ${src:C|^\./|build/objects/|:C|\.m$|.o|}: ${src} build/gen/Foundation/Foundation.h
 	@mkdir -p ${.TARGET:H}
-	@${CC} ${CFLAGS} -c ${src} -o ${.TARGET}
+	@FLAGS=; if test "${MRC_SOURCES:M${src}}" != ""; then FLAGS=-fno-objc-arc; fi; \
+	 ${CC} ${CFLAGS} $${FLAGS} -c ${src} -o ${.TARGET}
 .endfor
 
 # =====================================================================
