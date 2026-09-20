@@ -12,6 +12,7 @@
 #import <Foundation/NSNumber.h>
 #import <Foundation/NSNull.h>
 #import <Foundation/NSError.h>
+#import <Foundation/FoundationErrors.h>
 #import <Foundation/NSString.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,9 +20,11 @@
 #include <ctype.h>
 #include <math.h>
 
-static void JSONSetError(NSError **error) {
+static void JSONSetError(NSError **error, NSInteger code, NSString *reason) {
     if (error != NULL) {
-        *error = [NSError errorWithDomain:@"NSJSONSerializationErrorDomain" code:1];
+        *error = [NSError errorWithDomain:NSCocoaErrorDomain
+                                     code:code
+                                 userInfo:@{ NSLocalizedDescriptionKey: reason ?: @"" }];
     }
 }
 
@@ -351,27 +354,38 @@ BOOL NSJSONSerializationIsValidJSONObject(id object) {
 @implementation NSJSONSerialization
 
 + (id)JSONObjectWithData:(NSData *)data options:(NSJSONReadingOptions)options error:(NSError **)error {
-    if (data == nil) { JSONSetError(error); return nil; }
+    if (data == nil) {
+        JSONSetError(error, NSPropertyListReadCorruptError, @"The JSON data is nil.");
+        return nil;
+    }
     JSONParser parser = { [data bytes], [data length], 0, NO, options };
     id object = JSONParseValue(&parser);
     JSONSkipSpace(&parser);
     if (parser.failed || object == nil || parser.index != parser.length ||
         (!(options & NSJSONReadingAllowFragments) &&
          ![object isKindOfClass:[NSArray class]] && ![object isKindOfClass:[NSDictionary class]])) {
-        JSONSetError(error);
+        JSONSetError(error, NSPropertyListReadCorruptError,
+                     @"The data couldn’t be read because it isn’t valid JSON.");
         return nil;
     }
     return object;
 }
 
 + (id)JSONObjectWithStream:(NSInputStream *)stream options:(NSJSONReadingOptions)options error:(NSError **)error {
-    if (stream == nil) { JSONSetError(error); return nil; }
+    if (stream == nil) {
+        JSONSetError(error, NSPropertyListReadCorruptError, @"The JSON stream is nil.");
+        return nil;
+    }
     NSMutableData *data = [NSMutableData data];
     uint8_t buffer[4096];
     [stream open];
     while ([stream hasBytesAvailable]) {
         NSInteger count = [stream read:buffer maxLength:sizeof(buffer)];
-        if (count < 0) { [stream close]; JSONSetError(error); return nil; }
+        if (count < 0) {
+            [stream close];
+            JSONSetError(error, NSPropertyListReadStreamError, @"The JSON stream could not be read.");
+            return nil;
+        }
         if (count == 0) break;
         [data appendBytes:buffer length:(NSUInteger)count];
     }
@@ -380,15 +394,31 @@ BOOL NSJSONSerializationIsValidJSONObject(id object) {
 }
 
 + (NSData *)dataWithJSONObject:(id)object options:(NSJSONWritingOptions)options error:(NSError **)error {
-    if (!NSJSONSerializationIsValidJSONObject(object)) { JSONSetError(error); return nil; }
+    if (![object isKindOfClass:[NSArray class]] && ![object isKindOfClass:[NSDictionary class]]) {
+        JSONSetError(error, NSPropertyListWriteInvalidError,
+                     @"The top-level JSON object must be an array or dictionary.");
+        return nil;
+    }
+    if (!NSJSONSerializationIsValidJSONObject(object)) {
+        JSONSetError(error, NSPropertyListWriteInvalidError,
+                     @"The object is not a valid JSON object.");
+        return nil;
+    }
     NSMutableData *data = [NSMutableData data];
-    if (!JSONWriteValue(object, data, options, 0)) { JSONSetError(error); return nil; }
+    if (!JSONWriteValue(object, data, options, 0)) {
+        JSONSetError(error, NSPropertyListWriteInvalidError,
+                     @"The object could not be converted to JSON.");
+        return nil;
+    }
     return data;
 }
 
 + (BOOL)writeJSONObject:(id)object toStream:(NSOutputStream *)stream
                 options:(NSJSONWritingOptions)options error:(NSError **)error {
-    if (stream == nil) { JSONSetError(error); return NO; }
+    if (stream == nil) {
+        JSONSetError(error, NSPropertyListWriteInvalidError, @"The JSON stream is nil.");
+        return NO;
+    }
     NSData *data = [self dataWithJSONObject:object options:options error:error];
     if (data == nil) return NO;
     [stream open];
@@ -396,7 +426,11 @@ BOOL NSJSONSerializationIsValidJSONObject(id object) {
     NSUInteger remaining = [data length];
     while (remaining != 0) {
         NSInteger count = [stream write:bytes maxLength:remaining];
-        if (count <= 0) { [stream close]; JSONSetError(error); return NO; }
+        if (count <= 0) {
+            [stream close];
+            JSONSetError(error, NSPropertyListWriteStreamError, @"The JSON stream could not be written.");
+            return NO;
+        }
         bytes += count;
         remaining -= (NSUInteger)count;
     }

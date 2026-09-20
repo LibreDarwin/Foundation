@@ -11,15 +11,25 @@
 
 #import <Foundation/NSObjCRuntime.h>
 
-/* NSCocoaErrorDomain codes.  Only the archiving range is filled in so far;
- * the file, formatting, validation and property list ranges belong here too
- * and keep the numbers Apple gave them. */
+/* NSCocoaErrorDomain codes.  Only the archiving and property list ranges are
+ * filled in so far; the file, formatting, and validation ranges belong here
+ * too and keep the numbers Apple gave them.  The property list codes are what
+ * NSJSONSerialization reports for malformed data and invalid objects. */
 enum {
     NSCoderReadCorruptError = 4864,
     NSCoderValueNotFoundError = 4865,
     NSCoderInvalidValueError = 4866,
     NSCoderErrorMinimum = 4864,
     NSCoderErrorMaximum = 4991,
+};
+
+enum {
+    NSPropertyListReadCorruptError = 3840,
+    NSPropertyListReadUnknownVersionError = 3841,
+    NSPropertyListReadStreamError = 3842,
+    NSPropertyListWriteStreamError = 3851,
+    NSPropertyListWriteInvalidError = 3852,
+    NSPropertyListWriteUnknownVersionError = 3853,
 };
 
 #endif /* FoundationErrors_h */

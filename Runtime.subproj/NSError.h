@@ -25,12 +25,26 @@ FOUNDATION_EXPORT NSErrorDomain const NSPOSIXErrorDomain;
 FOUNDATION_EXPORT NSErrorDomain const NSOSStatusErrorDomain;
 FOUNDATION_EXPORT NSErrorDomain const NSMachErrorDomain;
 
+/* The standard userInfo keys. */
+FOUNDATION_EXPORT NSErrorUserInfoKey const NSLocalizedDescriptionKey;
+FOUNDATION_EXPORT NSErrorUserInfoKey const NSLocalizedFailureReasonErrorKey;
+FOUNDATION_EXPORT NSErrorUserInfoKey const NSLocalizedRecoverySuggestionErrorKey;
+FOUNDATION_EXPORT NSErrorUserInfoKey const NSUnderlyingErrorKey;
+
 @interface NSError : NSObject
 
 + (instancetype)errorWithDomain:(NSString *)domain code:(NSInteger)code;
++ (instancetype)errorWithDomain:(NSString *)domain
+                           code:(NSInteger)code
+                       userInfo:(NSDictionary *)userInfo;
+
+- (instancetype)initWithDomain:(NSString *)domain
+                          code:(NSInteger)code
+                      userInfo:(NSDictionary *)userInfo NS_DESIGNATED_INITIALIZER;
 
 - (NSInteger)code;
 - (NSString *)domain;
+- (NSDictionary *)userInfo;
 - (NSString *)localizedDescription;
 
 @end
