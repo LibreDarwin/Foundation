@@ -18,21 +18,23 @@
 }
 
 + (instancetype)fileURLWithPath:(NSString *)path {
-    return (id)CFURLCreateWithFileSystemPath(kCFAllocatorDefault,
-                                             (CFStringRef)path,
-                                             kCFURLPOSIXPathStyle, false);
+    return CFBridgingRelease(CFURLCreateWithFileSystemPath(kCFAllocatorDefault,
+                                                           (CFStringRef)path,
+                                                           kCFURLPOSIXPathStyle, false));
 }
 
 - (nullable instancetype)initWithString:(NSString *)string {
-    return (id)CFURLCreateWithString(kCFAllocatorDefault, (CFStringRef)string, NULL);
+    return CFBridgingRelease(CFURLCreateWithString(kCFAllocatorDefault,
+                                                   (CFStringRef)string, NULL));
 }
 
 - (nullable NSString *)absoluteString {
-    return (NSString *)CFURLGetString((CFURLRef)self);
+    return (__bridge NSString *)CFURLGetString((CFURLRef)self);
 }
 
 - (nullable NSString *)path {
-    return (NSString *)CFURLCopyFileSystemPath((CFURLRef)self, kCFURLPOSIXPathStyle);
+    return CFBridgingRelease(CFURLCopyFileSystemPath((CFURLRef)self,
+                                                     kCFURLPOSIXPathStyle));
 }
 
 - (BOOL)isFileURL {

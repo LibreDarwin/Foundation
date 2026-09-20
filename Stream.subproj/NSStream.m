@@ -142,7 +142,7 @@ static CFURLRef __NSStreamCopyFileURL(NSString *path) {
         return nil;
     }
 
-    NSOutputStream *stream = [self outputStreamWithURL:(NSURL *)url
+    NSOutputStream *stream = [self outputStreamWithURL:(__bridge NSURL *)url
                                                 append:shouldAppend];
     CFRelease(url);
     return stream;

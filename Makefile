@@ -45,9 +45,12 @@ OBJECTS != find . \( -path './build' -o -path './local' \) -prune -o -name '*.m'
 # tree wins the include; NSBUILDINGFOUNDATION satisfies ForFoundationOnly.h's
 # !CF_BUILDING_CF guard.
 #
-# The vendored tree carries four hand patches; re-apply them if it is re-vendored:
-#   * CFBase.h           - additive #ifndef-guarded typedefs (ScriptCode &
-#                          friends) that the trimmed Internal SDK MacTypes.h drops.
+# The vendored tree carries hand patches; re-apply them if it is re-vendored:
+#   * CFBase.h           - the additive #ifndef-guarded typedefs (ScriptCode &
+#                          friends) that the trimmed Internal SDK MacTypes.h drops,
+#                          plus the CF_ASSUME_NONNULL_BEGIN/END pair (guarded)
+#                          that LibreDarwin's CFBase.h omits but the SDK's
+#                          trimmed framework headers (CFCGTypes.h) rely on.
 #   * CFAvailability.h   - the string-enum family (CF_STRING_ENUM, _CF_TYPED_ENUM,
 #                          _CF_TYPED_EXTENSIBLE_ENUM, CF_TYPED_* spellings) that
 #                          LibreDarwin omits but Apple's extended enumerations
@@ -126,6 +129,7 @@ MRC_SOURCES = ./Collections.subproj/NSMapTable.m \
               ./FileManager.subproj/NSFileManager.m \
               ./FileManager.subproj/NSPathUtilities.m \
               ./Runtime.subproj/NSBundle.m \
+              ./Runtime.subproj/NSException.m \
               ./Runtime.subproj/NSObjCRuntime.m \
               ./Runtime.subproj/NSProcessInfo.m \
               ./Runtime.subproj/NSUserDefaults.m \

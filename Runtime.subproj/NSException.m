@@ -9,6 +9,7 @@
 #import <Foundation/NSException.h>
 #import <Foundation/NSArray.h>
 #import <Foundation/NSDictionary.h>
+#import <Foundation/NSNumber.h>
 #import <Foundation/NSString.h>
 #include <CoreFoundation/CFString.h>
 #include <execinfo.h>
