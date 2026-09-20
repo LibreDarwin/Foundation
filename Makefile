@@ -40,10 +40,25 @@ OBJECTS != find . \( -path './build' -o -path './local' \) -prune -o -name '*.m'
 # LibreDarwin CoreFoundation build has been installed into the Internal SDK
 # (its install rule populates CoreFoundation.framework/PrivateHeaders).  Until
 # then the coherent LibreDarwin CF header tree is vendored under local/include
-# (gitignored: <repo>/devel/CoreFoundation's headers, with the defect-free
-# CFBase.h that defines ScriptCode & friends).  It must precede the SDK's CF
-# headers so the LibreDarwin tree wins the include; NSBUILDINGFOUNDATION
-# satisfies ForFoundationOnly.h's !CF_BUILDING_CF guard.
+# (gitignored: <repo>/devel/CoreFoundation's headers, patched by hand so the
+# framework compiles).  It must precede the SDK's CF headers so the LibreDarwin
+# tree wins the include; NSBUILDINGFOUNDATION satisfies ForFoundationOnly.h's
+# !CF_BUILDING_CF guard.
+#
+# The vendored tree carries four hand patches; re-apply them if it is re-vendored:
+#   * CFBase.h           - additive #ifndef-guarded typedefs (ScriptCode &
+#                          friends) that the trimmed Internal SDK MacTypes.h drops.
+#   * CFAvailability.h   - the string-enum family (CF_STRING_ENUM, _CF_TYPED_ENUM,
+#                          _CF_TYPED_EXTENSIBLE_ENUM, CF_TYPED_* spellings) that
+#                          LibreDarwin omits but Apple's extended enumerations
+#                          rely on.
+#   * CFRunLoop.h        - 'typedef CFStringRef CFRunLoopMode CF_EXTENSIBLE_STRING_ENUM'
+#                          and the run-result enum promoted to
+#                          'typedef CF_ENUM(SInt32, CFRunLoopRunResult)', matching
+#                          Apple's public header.
+#   * ForFoundationOnly.h - _CFRunLoopFinished() declared unconditionally (Apple
+#                          declares it for the Foundation-facing surface; the
+#                          DEPLOYMENT_TARGET_* guard leaves it invisible here).
 CF_PRIV != { test -d ${RN}/System/Library/Frameworks/CoreFoundation.framework/PrivateHeaders && echo -I${RN}/System/Library/Frameworks/CoreFoundation.framework/PrivateHeaders; } || true
 CF_LOCAL != { test -d local/include/CoreFoundation && echo -I local/include; } || true
 
