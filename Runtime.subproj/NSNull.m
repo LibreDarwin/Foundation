@@ -7,12 +7,14 @@
  */
 
 #import <Foundation/NSNull.h>
+#import <Foundation/NSCoder.h>
 #import <Foundation/NSString.h>
 #include <CoreFoundation/CFString.h>
 
 @implementation NSNull
 
-/* NSNull is a singleton; equality is identity. */
+/* NSNull is a singleton; equality is identity, so every path that could hand
+ * back an instance hands back the shared one. */
 + (NSNull *)null {
     static NSNull *shared = nil;
     if (shared == nil) {
@@ -23,6 +25,26 @@
 
 - (NSString *)description {
     return (NSString *)CFSTR("<null>");
+}
+
+- (id)copyWithZone:(NSZone *)zone {
+    (void)zone;
+    return self;
+}
+
+/* The null placeholder carries no state: its archive is empty and both the
+ * keyed and unkeyed decoders resolve to the singleton. */
+- (void)encodeWithCoder:(NSCoder *)coder {
+    (void)coder;
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder {
+    (void)coder;
+    return [[self class] null];
+}
+
++ (BOOL)supportsSecureCoding {
+    return YES;
 }
 
 @end

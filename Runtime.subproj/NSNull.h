@@ -12,9 +12,16 @@
 #import <Foundation/NSObject.h>
 #import <Foundation/NSObjCRuntime.h>
 
-@interface NSNull : NSObject
+@class NSCoder;
+
+@interface NSNull : NSObject <NSCopying, NSSecureCoding>
 
 + (NSNull *)null;
+
+- (id)copyWithZone:(NSZone *)zone;
+- (void)encodeWithCoder:(NSCoder *)coder;
+- (instancetype)initWithCoder:(NSCoder *)coder;
++ (BOOL)supportsSecureCoding;
 
 @end
 
