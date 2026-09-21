@@ -663,6 +663,55 @@ static id NSCalendarCopySymbols(CFCalendarRef calendar, CFStringRef key) {
     return [NSDate dateWithTimeIntervalSinceReferenceDate:absoluteTime];
 }
 
+- (NSDate *)dateBySettingUnit:(NSCalendarUnit)unit
+                        value:(NSInteger)value
+                       ofDate:(NSDate *)date
+                      options:(NSCalendarOptions)opts {
+    NSCalendarUnit flags = (NSCalendarUnitEra | NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay |
+                            NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond | NSCalendarUnitNanosecond |
+                            NSCalendarUnitWeekday | NSCalendarUnitWeekdayOrdinal | NSCalendarUnitQuarter |
+                            NSCalendarUnitWeekOfMonth | NSCalendarUnitWeekOfYear | NSCalendarUnitYearForWeekOfYear);
+    NSDateComponents *components = [self components:flags fromDate:date];
+    [components setValue:value forComponent:unit];
+    NSDate *result = [self dateFromComponents:components];
+    if (!result) return nil;
+    if ((opts & NSCalendarMatchNextTime)) {
+        for (NSInteger i = 0; i < 3; i++) {
+            if ([result compare:date] == NSOrderedDescending) break;
+            NSDate *advanced = [self dateByAddingUnit:unit value:1 toDate:result options:0];
+            if (!advanced) break;
+            result = advanced;
+        }
+    }
+    return result;
+}
+
+- (NSDate *)dateBySettingHour:(NSInteger)hour
+                        minute:(NSInteger)minute
+                        second:(NSInteger)second
+                        ofDate:(NSDate *)date
+                       options:(NSCalendarOptions)opts {
+    NSCalendarUnit flags = (NSCalendarUnitEra | NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay |
+                            NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond | NSCalendarUnitNanosecond |
+                            NSCalendarUnitWeekday | NSCalendarUnitWeekdayOrdinal | NSCalendarUnitQuarter |
+                            NSCalendarUnitWeekOfMonth | NSCalendarUnitWeekOfYear | NSCalendarUnitYearForWeekOfYear);
+    NSDateComponents *components = [self components:flags fromDate:date];
+    components.hour = hour;
+    components.minute = minute;
+    components.second = second;
+    NSDate *result = [self dateFromComponents:components];
+    if (!result) return nil;
+    if ((opts & NSCalendarMatchNextTime)) {
+        for (NSInteger i = 0; i < 3; i++) {
+            if ([result compare:date] == NSOrderedDescending) break;
+            NSDate *advanced = [self dateByAddingUnit:NSCalendarUnitDay value:1 toDate:result options:0];
+            if (!advanced) break;
+            result = advanced;
+        }
+    }
+    return result;
+}
+
 - (NSRange)rangeOfUnit:(NSCalendarUnit)smaller inUnit:(NSCalendarUnit)larger forDate:(NSDate *)date {
     CFRange range = CFCalendarGetRangeOfUnit(NSCALENDAR_CF(CFCalendarRef, self),
                                              (CFCalendarUnit)smaller, (CFCalendarUnit)larger,

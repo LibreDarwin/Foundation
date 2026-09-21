@@ -147,6 +147,17 @@ yearForWeekOfYear:(NSInteger *)yearValuePointer
                  second:(NSInteger)secondValue
              nanosecond:(NSInteger)nanosecondValue;
 
+- (NSDate *)dateBySettingUnit:(NSCalendarUnit)unit
+                        value:(NSInteger)value
+                       ofDate:(NSDate *)date
+                      options:(NSCalendarOptions)opts;
+
+- (NSDate *)dateBySettingHour:(NSInteger)hour
+                        minute:(NSInteger)minute
+                        second:(NSInteger)second
+                        ofDate:(NSDate *)date
+                       options:(NSCalendarOptions)opts;
+
 - (NSDate *)startOfDayForDate:(NSDate *)date;
 
 - (NSComparisonResult)compareDate:(NSDate *)date1
