@@ -17,7 +17,7 @@
 /* The +numberWith... family is not just convenience API: the compiler emits
  * calls to it for boxed expressions, so @(x) needs whichever one matches the
  * static type of x. */
-@interface NSNumber : NSObject
+@interface NSNumber : NSObject <NSCopying, NSCoding, NSSecureCoding>
 
 + (instancetype)numberWithChar:(char)value;
 + (instancetype)numberWithUnsignedChar:(unsigned char)value;
@@ -34,6 +34,24 @@
 + (instancetype)numberWithBool:(BOOL)value;
 + (instancetype)numberWithInteger:(NSInteger)value;
 + (instancetype)numberWithUnsignedInteger:(NSUInteger)value;
+
+- (instancetype)initWithChar:(char)value;
+- (instancetype)initWithUnsignedChar:(unsigned char)value;
+- (instancetype)initWithShort:(short)value;
+- (instancetype)initWithUnsignedShort:(unsigned short)value;
+- (instancetype)initWithInt:(int)value;
+- (instancetype)initWithUnsignedInt:(unsigned int)value;
+- (instancetype)initWithLong:(long)value;
+- (instancetype)initWithUnsignedLong:(unsigned long)value;
+- (instancetype)initWithLongLong:(long long)value;
+- (instancetype)initWithUnsignedLongLong:(unsigned long long)value;
+- (instancetype)initWithFloat:(float)value;
+- (instancetype)initWithDouble:(double)value;
+- (instancetype)initWithBool:(BOOL)value;
+- (instancetype)initWithInteger:(NSInteger)value;
+- (instancetype)initWithUnsignedInteger:(NSUInteger)value;
+
+- (instancetype)init;
 
 @property (readonly) char charValue;
 @property (readonly) unsigned char unsignedCharValue;
@@ -56,6 +74,12 @@
 - (NSComparisonResult)compare:(NSNumber *)number;
 - (BOOL)isEqualToNumber:(NSNumber *)number;
 - (NSString *)descriptionWithLocale:(id)locale;
+
+- (id)copyWithZone:(NSZone *)zone;
+
+- (void)encodeWithCoder:(NSCoder *)coder;
+- (instancetype)initWithCoder:(NSCoder *)coder;
++ (BOOL)supportsSecureCoding;
 
 @end
 
