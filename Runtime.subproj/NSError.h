@@ -13,6 +13,9 @@
 #import <Foundation/NSObjCRuntime.h>
 
 @class NSString;
+@class NSArray;
+@class NSDictionary;
+@class NSCoder;
 
 /* NSErrorDomain and NSErrorUserInfoKey are typed NSString aliases; code that
  * declares an error domain constant spells it with the alias. */
@@ -29,9 +32,12 @@ FOUNDATION_EXPORT NSErrorDomain const NSMachErrorDomain;
 FOUNDATION_EXPORT NSErrorUserInfoKey const NSLocalizedDescriptionKey;
 FOUNDATION_EXPORT NSErrorUserInfoKey const NSLocalizedFailureReasonErrorKey;
 FOUNDATION_EXPORT NSErrorUserInfoKey const NSLocalizedRecoverySuggestionErrorKey;
+FOUNDATION_EXPORT NSErrorUserInfoKey const NSLocalizedRecoveryOptionsErrorKey;
+FOUNDATION_EXPORT NSErrorUserInfoKey const NSRecoveryAttempterErrorKey;
+FOUNDATION_EXPORT NSErrorUserInfoKey const NSHelpAnchorErrorKey;
 FOUNDATION_EXPORT NSErrorUserInfoKey const NSUnderlyingErrorKey;
 
-@interface NSError : NSObject
+@interface NSError : NSObject <NSCopying, NSSecureCoding>
 
 + (instancetype)errorWithDomain:(NSString *)domain code:(NSInteger)code;
 + (instancetype)errorWithDomain:(NSString *)domain
@@ -46,6 +52,20 @@ FOUNDATION_EXPORT NSErrorUserInfoKey const NSUnderlyingErrorKey;
 - (NSString *)domain;
 - (NSDictionary *)userInfo;
 - (NSString *)localizedDescription;
+- (NSString *)localizedFailureReason;
+- (NSString *)localizedRecoverySuggestion;
+- (NSArray *)localizedRecoveryOptions;
+- (id)recoveryAttempter;
+- (NSString *)helpAnchor;
+
+- (id)copyWithZone:(NSZone *)zone;
+- (void)encodeWithCoder:(NSCoder *)coder;
+- (instancetype)initWithCoder:(NSCoder *)coder;
++ (BOOL)supportsSecureCoding;
+
+- (BOOL)isEqual:(id)other;
+- (NSUInteger)hash;
+- (NSString *)description;
 
 @end
 
