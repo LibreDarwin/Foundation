@@ -7,6 +7,7 @@
  */
 
 #import <Foundation/NSValue.h>
+#import <Foundation/NSCoder.h>
 #import <Foundation/NSException.h>
 #import <Foundation/NSString.h>
 #include <CoreFoundation/CFString.h>
@@ -34,23 +35,27 @@ static void NSValueRequireType(const char *actualType, const char *expectedType,
     char *_type;
 }
 
-+ (instancetype)valueWithBytes:(const void *)bytes objCType:(const char *)type {
+/* The designated initialiser: copy the bytes and keep the type encoding, which
+ * is what every factory funnels through and what -initWithCoder: ends at. */
+- (instancetype)initWithBytes:(const void *)bytes objCType:(const char *)type {
     if (bytes == NULL || type == NULL) {
         [NSException raise:NSInvalidArgumentException
                     format:@"NSValue requires non-null bytes and objCType"];
     }
 
-    NSUInteger size = 0;
-    NSGetSizeAndAlignment(type, &size, NULL);
-
-    NSValue *value = [[self alloc] init];
-    if (value != nil) {
-        value->_size = size;
-        value->_bytes = malloc(size);
-        memcpy(value->_bytes, bytes, size);
-        value->_type = strdup(type);
+    if ((self = [super init]) != nil) {
+        NSUInteger size = 0;
+        NSGetSizeAndAlignment(type, &size, NULL);
+        _size = size;
+        _bytes = malloc(size);
+        memcpy(_bytes, bytes, size);
+        _type = strdup(type);
     }
-    return value;
+    return self;
+}
+
++ (instancetype)valueWithBytes:(const void *)bytes objCType:(const char *)type {
+    return NSVALUE_TRANSFER([[self alloc] initWithBytes:bytes objCType:type]);
 }
 
 + (instancetype)value:(const void *)bytes withObjCType:(const char *)type {
@@ -84,6 +89,9 @@ static void NSValueRequireType(const char *actualType, const char *expectedType,
 - (void)dealloc {
     free(_bytes);
     free(_type);
+#if !__has_feature(objc_arc)
+    [super dealloc];
+#endif
 }
 
 - (void)getValue:(void *)buffer {
@@ -92,6 +100,17 @@ static void NSValueRequireType(const char *actualType, const char *expectedType,
                     format:@"NSValue getValue: requires a non-null buffer"];
     }
     memcpy(buffer, _bytes, _size);
+}
+
+/* The bounded form: write as much as fits. A caller asking for fewer bytes
+ * than the value holds gets a truncated copy rather than an overrun; asking for
+ * more leaves the tail of their buffer untouched, as Apple does. */
+- (void)getValue:(void *)buffer size:(NSUInteger)size {
+    if (buffer == NULL) {
+        [NSException raise:NSInvalidArgumentException
+                    format:@"NSValue getValue:size: requires a non-null buffer"];
+    }
+    memcpy(buffer, _bytes, size < _size ? size : _size);
 }
 
 - (const char *)objCType {
@@ -140,16 +159,18 @@ static void NSValueRequireType(const char *actualType, const char *expectedType,
     return rect;
 }
 
+- (BOOL)isEqualToValue:(NSValue *)value {
+    if (value == nil || strcmp(_type, value->_type) != 0 || _size != value->_size) {
+        return NO;
+    }
+    return memcmp(_bytes, value->_bytes, _size) == 0;
+}
+
 - (BOOL)isEqual:(id)other {
     if (![other isKindOfClass:[NSValue class]]) {
         return NO;
     }
-
-    NSValue *value = (NSValue *)other;
-    if (strcmp(_type, value->_type) != 0 || _size != value->_size) {
-        return NO;
-    }
-    return memcmp(_bytes, value->_bytes, _size) == 0;
+    return [self isEqualToValue:(NSValue *)other];
 }
 
 - (NSUInteger)hash {
@@ -163,6 +184,53 @@ static void NSValueRequireType(const char *actualType, const char *expectedType,
 - (NSString *)description {
     return NSVALUE_TRANSFER(CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
                                                       CFSTR("<NSValue %s>"), _type));
+}
+
+/* Immutable: a copy is the same object, handed back owned. */
+- (id)copyWithZone:(NSZone *)zone {
+    (void)zone;
+    return [self retain];
+}
+
+/* The archive carries the type encoding as a string next to the raw bytes, in
+ * the keyed or the unkeyed slots so a coder that supports either can round-trip
+ * a value. Decoding rebuilds through the designated initialiser, refusing a
+ * byte count that disagrees with the type it is told to be. */
+- (void)encodeWithCoder:(NSCoder *)coder {
+    NSString *type = [NSString stringWithUTF8String:_type];
+    if ([coder allowsKeyedCoding]) {
+        [coder encodeObject:type forKey:@"NS.valueType"];
+        [coder encodeBytes:_bytes length:_size forKey:@"NS.valueBytes"];
+    } else {
+        [coder encodeObject:type];
+        [coder encodeBytes:_bytes length:_size];
+    }
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder {
+    NSString *type = nil;
+    const uint8_t *bytes = NULL;
+    NSUInteger length = 0;
+
+    if ([coder allowsKeyedCoding]) {
+        type = [coder decodeObjectForKey:@"NS.valueType"];
+        bytes = [coder decodeBytesForKey:@"NS.valueBytes" returnedLength:&length];
+    } else {
+        type = [coder decodeObject];
+        bytes = [coder decodeBytesWithReturnedLength:&length];
+    }
+
+    if (type == nil || bytes == NULL) return nil;
+
+    NSUInteger expected = 0;
+    NSGetSizeAndAlignment([type UTF8String], &expected, NULL);
+    if (length != expected) return nil;
+
+    return [self initWithBytes:bytes objCType:[type UTF8String]];
+}
+
++ (BOOL)supportsSecureCoding {
+    return YES;
 }
 
 @end

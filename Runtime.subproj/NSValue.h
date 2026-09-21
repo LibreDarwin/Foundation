@@ -15,8 +15,11 @@
 #import <Foundation/NSRange.h>
 
 @class NSString;
+@class NSCoder;
 
-@interface NSValue : NSObject
+@interface NSValue : NSObject <NSCopying, NSSecureCoding>
+
+- (instancetype)initWithBytes:(const void *)bytes objCType:(const char *)type;
 
 + (instancetype)valueWithBytes:(const void *)bytes objCType:(const char *)type;
 + (instancetype)value:(const void *)bytes withObjCType:(const char *)type;
@@ -28,6 +31,7 @@
 + (instancetype)valueWithRect:(NSRect)rect;
 
 - (void)getValue:(void *)buffer;
+- (void)getValue:(void *)buffer size:(NSUInteger)size;
 - (const char *)objCType NS_RETURNS_INNER_POINTER;
 
 - (void *)pointerValue;
@@ -36,6 +40,13 @@
 - (NSPoint)pointValue;
 - (NSSize)sizeValue;
 - (NSRect)rectValue;
+
+- (BOOL)isEqualToValue:(NSValue *)value;
+
+- (id)copyWithZone:(NSZone *)zone;
+- (void)encodeWithCoder:(NSCoder *)coder;
+- (instancetype)initWithCoder:(NSCoder *)coder;
++ (BOOL)supportsSecureCoding;
 
 @end
 

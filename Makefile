@@ -157,6 +157,7 @@ MRC_SOURCES = ./Collections.subproj/NSMapTable.m \
               ./Runtime.subproj/NSObjCRuntime.m \
               ./Runtime.subproj/NSProcessInfo.m \
               ./Runtime.subproj/NSUserDefaults.m \
+              ./Runtime.subproj/NSValue.m \
               ./Runtime.subproj/NSZone.m
 
 .for src in ${MSRC}
