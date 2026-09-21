@@ -25,6 +25,8 @@
 @class NSDictionary;
 @class NSString;
 
+typedef NSString *NSNotificationName;
+
 @interface NSNotification : NSObject {
     NSString *_name;
     id _object;
