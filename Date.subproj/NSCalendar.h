@@ -12,6 +12,7 @@
 #import <Foundation/NSObject.h>
 #import <Foundation/NSDate.h>
 #import <Foundation/NSDateComponents.h>
+#import <Foundation/NSRange.h>
 
 @class NSString;
 
@@ -42,9 +43,23 @@ typedef NS_OPTIONS(NSUInteger, NSCalendarUnit) {
 + (instancetype)calendarWithIdentifier:(NSCalendarIdentifier)identifier;
 - (instancetype)initWithCalendarIdentifier:(NSCalendarIdentifier)identifier;
 - (NSCalendarIdentifier)calendarIdentifier;
+
+/* The first weekday is 1-based, as in CFCalendar and the Gregorian tradition:
+ * Sunday is 1 and Saturday is 7. */
+@property NSUInteger firstWeekday;
+@property NSUInteger minimumDaysInFirstWeek;
+
 - (NSDateComponents *)components:(NSCalendarUnit)unitFlags fromDate:(NSDate *)date;
+- (NSDateComponents *)components:(NSCalendarUnit)unitFlags
+                        fromDate:(NSDate *)startingDate
+                          toDate:(NSDate *)resultDate
+                         options:(NSUInteger)options;
 - (NSDate *)dateFromComponents:(NSDateComponents *)components;
+- (NSDate *)dateByAddingComponents:(NSDateComponents *)comps
+                            toDate:(NSDate *)date
+                           options:(NSUInteger)options;
 - (NSDate *)dateByAddingUnit:(NSCalendarUnit)unit value:(NSInteger)value toDate:(NSDate *)date options:(NSUInteger)options;
+- (NSRange)rangeOfUnit:(NSCalendarUnit)smaller inUnit:(NSCalendarUnit)larger forDate:(NSDate *)date;
 - (id)copyWithZone:(NSZone *)zone;
 @end
 
