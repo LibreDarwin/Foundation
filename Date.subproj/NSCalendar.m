@@ -8,6 +8,7 @@
 
 #import <Foundation/NSCalendar.h>
 #import <Foundation/NSCoder.h>
+#import "NSCalendarSupport.h"
 #include <CoreFoundation/CFCalendar.h>
 #include <CoreFoundation/CFDateFormatter.h>
 #include <CoreFoundation/CFLocale.h>
@@ -358,6 +359,44 @@ static NSDateComponents *NSCalendarComponentsBetween(CFCalendarRef calendar,
     if (unitFlags & NSCalendarUnitMinute) components.minute = minute;
     if (unitFlags & NSCalendarUnitSecond) components.second = second;
     return components;
+}
+
+NSDate *NSCalendarDateFromComponents(NSCalendar *calendar, NSDateComponents *components) {
+    if (calendar == nil) return nil;
+    return NSCalendarMakeDate(NSCALENDAR_CF(CFCalendarRef, calendar), components);
+}
+
+BOOL NSCalendarDateComponentsAreValid(NSCalendar *calendar, NSDateComponents *components) {
+    if (calendar == nil || components == nil) return NO;
+    CFCalendarRef cfCalendar = NSCALENDAR_CF(CFCalendarRef, calendar);
+    NSDate *date = NSCalendarMakeDate(cfCalendar, components);
+    if (date == nil) return NO;
+
+    /* Compose the fields into a date, then decompose it back. Any field whose
+     * value changed did not name an existing date: composing Feb 30 yields
+     * Mar 2, so the day no longer matches. Only the fields actually set by the
+     * caller are examined. */
+    NSCalendarDecomposed recomposed;
+    if (!NSCalendarDecompose(cfCalendar, [date timeIntervalSinceReferenceDate], &recomposed)) return NO;
+#define NSCALENDAR_VALIDATE(property, field)                        \
+    if (components.property != NSDateComponentUndefined &&          \
+        components.property != recomposed.field) return NO;
+    NSCALENDAR_VALIDATE(era, era)
+    NSCALENDAR_VALIDATE(year, year)
+    NSCALENDAR_VALIDATE(quarter, quarter)
+    NSCALENDAR_VALIDATE(month, month)
+    NSCALENDAR_VALIDATE(weekOfMonth, weekOfMonth)
+    NSCALENDAR_VALIDATE(weekOfYear, weekOfYear)
+    NSCALENDAR_VALIDATE(yearForWeekOfYear, yearForWeekOfYear)
+    NSCALENDAR_VALIDATE(day, day)
+    NSCALENDAR_VALIDATE(dayOfYear, dayOfYear)
+    NSCALENDAR_VALIDATE(weekday, weekday)
+    NSCALENDAR_VALIDATE(weekdayOrdinal, weekdayOrdinal)
+    NSCALENDAR_VALIDATE(hour, hour)
+    NSCALENDAR_VALIDATE(minute, minute)
+    NSCALENDAR_VALIDATE(second, second)
+#undef NSCALENDAR_VALIDATE
+    return YES;
 }
 
 /* The localized name arrays are exposed by CFDateFormatter, not CFCalendar, so
