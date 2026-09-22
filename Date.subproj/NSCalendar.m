@@ -245,6 +245,67 @@ static Boolean NSCalendarUnitIsCoreFoundation(NSCalendarUnit unit) {
     }
 }
 
+/* A total ordering over the calendar units, coarser first. Used to find the
+ * highest specified unit of a match request and to decide which smaller units
+ * drop to their base value during probe composition. */
+static int NSCalendarUnitRank(NSCalendarUnit unit) {
+    switch (unit) {
+        case NSCalendarUnitEra: return 0;
+        case NSCalendarUnitYear: return 1;
+        case NSCalendarUnitQuarter: return 2;
+        case NSCalendarUnitMonth: return 3;
+        case NSCalendarUnitYearForWeekOfYear: return 4;
+        case NSCalendarUnitWeekOfYear:
+        case NSCalendarUnitWeekOfMonth: return 5;
+        case NSCalendarUnitDay: return 6;
+        case NSCalendarUnitWeekday: return 7;
+        case NSCalendarUnitHour: return 8;
+        case NSCalendarUnitMinute: return 9;
+        case NSCalendarUnitSecond: return 10;
+        case NSCalendarUnitNanosecond: return 11;
+        default: return 12;
+    }
+}
+
+/* The unit the forward search advances between probe periods: one level above
+ * the highest specified unit. Matching a month searches years, a day searches
+ * months, an hour searches days. Years step on years (era stepping is a
+ * no-op in most calendars); the year-only edges are handled by the no-progress
+ * guard rather than by stepping eras. */
+static NSCalendarUnit NSCalendarUnitStepForRank(int rank) {
+    switch (rank) {
+        case 0: return NSCalendarUnitYear;           /* era -> year */
+        case 1: return NSCalendarUnitYear;           /* year -> year */
+        case 2: return NSCalendarUnitYear;           /* quarter -> year */
+        case 3: return NSCalendarUnitYear;           /* month -> year */
+        case 4: return NSCalendarUnitYear;           /* yearForWeekOfYear -> year */
+        case 5: return NSCalendarUnitYear;           /* week of year -> year */
+        case 6: return NSCalendarUnitMonth;          /* day -> month */
+        case 7: return NSCalendarUnitDay;            /* weekday -> day */
+        case 8: return NSCalendarUnitDay;            /* hour -> day */
+        case 9: return NSCalendarUnitHour;           /* minute -> hour */
+        case 10: return NSCalendarUnitSecond;        /* second -> minute */
+        default: return NSCalendarUnitSecond;        /* nanosecond -> second */
+    }
+}
+
+/* Base (default) value for a unit that was not specified by the caller but is
+ * finer than the highest specified unit: month/day default to 1, the time
+ * units to 0, matching the composition conventions documented in NSCalendar.h
+ * ("a Day of 1, and an Hour, Minute, Second, and Nanosecond of 0"). */
+static int NSCalendarUnitBaseValue(NSCalendarUnit unit) {
+    switch (unit) {
+        case NSCalendarUnitQuarter:
+        case NSCalendarUnitMonth:
+        case NSCalendarUnitDay:
+        case NSCalendarUnitWeekOfMonth:
+        case NSCalendarUnitWeekOfYear:
+        case NSCalendarUnitWeekday: return 1;
+        case NSCalendarUnitEra: return 1;
+        default: return 0;
+    }
+}
+
 static NSDate *NSCalendarDateByAddingNanoseconds(NSDate *date, NSInteger nanoseconds) {
     if (date == nil || nanoseconds == NSDateComponentUndefined || nanoseconds == 0) return date;
     return [NSDate dateWithTimeIntervalSinceReferenceDate:
@@ -717,37 +778,160 @@ static id NSCalendarCopySymbols(CFCalendarRef calendar, CFStringRef key) {
                       options:(NSCalendarOptions)opts {
     if (!date || !requested) return nil;
 
-    /* Reconstruct the requested components with CFCalendar's native units,
-     * substituting port defaults for any component the caller left undefined.
-     * Components whose pointer fields the caller dislikes fall back to the
-     * dominant-era defaults, exactly as the rest of this surface does. */
-    NSCalendarUnit flags = (NSCalendarUnitEra | NSCalendarUnitYear | NSCalendarUnitYearForWeekOfYear |
-                            NSCalendarUnitQuarter | NSCalendarUnitMonth | NSCalendarUnitWeekOfMonth |
-                            NSCalendarUnitWeekOfYear | NSCalendarUnitDay | NSCalendarUnitWeekday |
-                            NSCalendarUnitWeekdayOrdinal | NSCalendarUnitHour | NSCalendarUnitMinute |
-                            NSCalendarUnitSecond | NSCalendarUnitNanosecond);
-
-    NSDate *result = [self dateFromComponents:requested];
-    if (!result) return nil;
-
-    /* Forward search. The port has no authoritative calendar-compare primitive
-     * lower in the tree, so the next iteration is produced by the bounded
-     * advance discipline the summary already documents: a fixed small number
-     * of dateByAddingUnit: advances (matching the existing best-effort loops). */
-    if (opts & NSCalendarMatchNextTime) {
-        for (NSInteger i = 0; i < 3; i++) {
-            if ([result compare:date] == NSOrderedDescending) break;
-            NSDate *advanced = [self dateByAddingUnit:NSCalendarUnitDay
-                                                value:1
-                                               toDate:result
-                                              options:0];
-            if (!advanced) break;
-            result = advanced;
-        }
+    /* Find the highest specified unit; with nothing to match, there is no
+     * result. Exact matching only ever checks specified (non-undefined)
+     * fields, via -date:matchesComponents:. */
+    NSCalendarUnit allFlags = (NSCalendarUnitEra | NSCalendarUnitYear | NSCalendarUnitYearForWeekOfYear |
+                               NSCalendarUnitQuarter | NSCalendarUnitMonth | NSCalendarUnitWeekOfMonth |
+                               NSCalendarUnitWeekOfYear | NSCalendarUnitDay | NSCalendarUnitWeekday |
+                               NSCalendarUnitWeekdayOrdinal | NSCalendarUnitHour | NSCalendarUnitMinute |
+                               NSCalendarUnitSecond);
+    NSCalendarUnit highest = 0;
+    BOOL any = NO;
+    BOOL usesWeekPath = NO;
+#define NSCALENDAR_HIGHEST(flag, field)                                        \
+    if (requested.field != NSDateComponentUndefined) {                         \
+        if (!any || NSCalendarUnitRank(flag) < NSCalendarUnitRank(highest)) {  \
+            highest = flag;                                                    \
+        }                                                                      \
+        any = YES;                                                             \
+        if (flag == NSCalendarUnitWeekday || flag == NSCalendarUnitWeekOfYear ||\
+            flag == NSCalendarUnitYearForWeekOfYear) {                         \
+            usesWeekPath = YES;                                                \
+        }                                                                      \
     }
+    NSCALENDAR_HIGHEST(NSCalendarUnitEra, era)
+    NSCALENDAR_HIGHEST(NSCalendarUnitYear, year)
+    NSCALENDAR_HIGHEST(NSCalendarUnitQuarter, quarter)
+    NSCALENDAR_HIGHEST(NSCalendarUnitMonth, month)
+    NSCALENDAR_HIGHEST(NSCalendarUnitWeekOfMonth, weekOfMonth)
+    NSCALENDAR_HIGHEST(NSCalendarUnitWeekOfYear, weekOfYear)
+    NSCALENDAR_HIGHEST(NSCalendarUnitYearForWeekOfYear, yearForWeekOfYear)
+    NSCALENDAR_HIGHEST(NSCalendarUnitDay, day)
+    NSCALENDAR_HIGHEST(NSCalendarUnitWeekday, weekday)
+    NSCALENDAR_HIGHEST(NSCalendarUnitHour, hour)
+    NSCALENDAR_HIGHEST(NSCalendarUnitMinute, minute)
+    NSCALENDAR_HIGHEST(NSCalendarUnitSecond, second)
+#undef NSCALENDAR_HIGHEST
+    if (!any) return nil;
 
-    (void)flags;
-    return result;
+    int highestRank = NSCalendarUnitRank(highest);
+    NSCalendarUnit stepUnit = NSCalendarUnitStepForRank(highestRank);
+
+    /* The forward probe: NSDateComponents filled from the probe date for every
+     * unit coarser than the highest specified one, from the request for
+     * specified units, and from the unit base conventions for finely-specified
+     * smaller units. Underspecified results compose to a concrete absolute
+     * date, exactly as -dateFromComponents: does elsewhere in this file. */
+    NSDate *probe = date;
+    NSDate *firstCandidateOfYear = nil;
+    NSInteger lastProbeYear = NSDateComponentUndefined;
+    const NSInteger strictLimit = 10000;
+    for (NSInteger iteration = 0; iteration < strictLimit; iteration++) {
+        NSDateComponents *fill = [self components:allFlags fromDate:probe];
+        if (fill == nil) return nil;
+        if (requested.era != NSDateComponentUndefined) fill.era = requested.era;
+        if (requested.year != NSDateComponentUndefined) fill.year = requested.year;
+        if (requested.quarter != NSDateComponentUndefined) fill.quarter = requested.quarter;
+        if (requested.month != NSDateComponentUndefined) {
+            fill.month = requested.month;
+        } else if (requested.quarter != NSDateComponentUndefined) {
+            /* dateFromComponents: cannot express a quarter, so a quarter-only
+             * request is anchored on the first month of that quarter. */
+            fill.month = (requested.quarter - 1) * 3 + 1;
+        }
+        if (requested.weekOfMonth != NSDateComponentUndefined) fill.weekOfMonth = requested.weekOfMonth;
+        if (requested.weekOfYear != NSDateComponentUndefined) fill.weekOfYear = requested.weekOfYear;
+        if (requested.yearForWeekOfYear != NSDateComponentUndefined) fill.yearForWeekOfYear = requested.yearForWeekOfYear;
+        if (requested.day != NSDateComponentUndefined) fill.day = requested.day;
+        if (requested.weekday != NSDateComponentUndefined) fill.weekday = requested.weekday;
+        if (requested.weekdayOrdinal != NSDateComponentUndefined) fill.weekdayOrdinal = requested.weekdayOrdinal;
+        if (requested.hour != NSDateComponentUndefined) fill.hour = requested.hour;
+        if (requested.minute != NSDateComponentUndefined) fill.minute = requested.minute;
+        if (requested.second != NSDateComponentUndefined) fill.second = requested.second;
+
+        /* Collapse units finer than the highest specified one down to their
+         * base default, so that, for example, a day request times out at
+         * 00:00:00 rather than inheriting the probe's wall clock. */
+#define NSCALENDAR_COLLAPSE(flag, field)                                  \
+        if (requested.field == NSDateComponentUndefined &&                \
+            NSCalendarUnitRank(flag) > highestRank) {                     \
+            fill.field = NSCalendarUnitBaseValue(flag);                   \
+        }
+        NSCALENDAR_COLLAPSE(NSCalendarUnitYear, year)
+        NSCALENDAR_COLLAPSE(NSCalendarUnitQuarter, quarter)
+        /* The month collapse is the one exception to the size rule: a quarter
+         * request anchors its month to the first month of the quarter up
+         * above, and that anchor must survive. */
+        if (requested.month == NSDateComponentUndefined &&
+            requested.quarter == NSDateComponentUndefined &&
+            NSCalendarUnitRank(NSCalendarUnitMonth) > highestRank) {
+            fill.month = NSCalendarUnitBaseValue(NSCalendarUnitMonth);
+        }
+        NSCALENDAR_COLLAPSE(NSCalendarUnitWeekOfMonth, weekOfMonth)
+        NSCALENDAR_COLLAPSE(NSCalendarUnitWeekOfYear, weekOfYear)
+        NSCALENDAR_COLLAPSE(NSCalendarUnitYearForWeekOfYear, yearForWeekOfYear)
+        NSCALENDAR_COLLAPSE(NSCalendarUnitDay, day)
+        NSCALENDAR_COLLAPSE(NSCalendarUnitWeekday, weekday)
+        NSCALENDAR_COLLAPSE(NSCalendarUnitHour, hour)
+        NSCALENDAR_COLLAPSE(NSCalendarUnitMinute, minute)
+        NSCALENDAR_COLLAPSE(NSCalendarUnitSecond, second)
+#undef NSCALENDAR_COLLAPSE
+
+        /* NSCalendarMakeDate() takes the week composition path ("GwYEHms")
+         * whenever any of weekday/weekOfYear/yearForWeekOfYear is non-
+         * undefined, and that path ignores the month/day fields. A request
+         * that names a week-based unit therefore composes on the probe's own
+         * weekOfYear/yearForWeekOfYear (already present from the full
+         * decomposition above); any other request must clear those three
+         * fields or it would silently compose on the wrong path. */
+        if (!usesWeekPath) {
+            fill.weekOfYear = NSDateComponentUndefined;
+            fill.yearForWeekOfYear = NSDateComponentUndefined;
+            fill.weekday = NSDateComponentUndefined;
+        }
+
+        NSDate *candidate = [self dateFromComponents:fill];
+        if (!candidate) return nil;
+        if (requested.nanosecond != NSDateComponentUndefined) {
+            candidate = NSCalendarDateByAddingNanoseconds(candidate, requested.nanosecond);
+        }
+
+        /* The search is strictly forward: a candidate equal to or before the
+         * input date (even an exact one) is skipped. */
+        if ([candidate compare:date] == NSOrderedDescending) {
+            if ([self date:candidate matchesComponents:requested]) return candidate;
+            /* Closest match. Apple's non-strict search returns the next
+             * existing time once the window between the probe periods is
+             * exhausted rather than raising, so the composed (possibly rolled)
+             * candidate is the answer. Strict searches keep going for an exact
+             * match instead. */
+            if (!(opts & NSCalendarMatchStrictly)) return candidate;
+        }
+
+        /* Freeze detection. Candidate composition can legitimately repeat
+         * within one calendar year (say a leap-day request searched by month),
+         * so an equal candidate is only a dead end once the probe has crossed
+         * into a new calendar year and composed the same absolute time as the
+         * one that opened the previous year (for example a year in the past).
+         * Without this, such requests spin until the strict limit. */
+        NSDateComponents *probeYearComps = [self components:NSCalendarUnitYear fromDate:probe];
+        NSInteger probeYear = (probeYearComps != nil) ? probeYearComps.year : NSDateComponentUndefined;
+        if (probeYear != NSDateComponentUndefined) {
+            if (probeYear != lastProbeYear) {
+                if (firstCandidateOfYear != nil && [candidate isEqualToDate:firstCandidateOfYear]) return nil;
+                firstCandidateOfYear = candidate;
+                lastProbeYear = probeYear;
+            }
+        }
+
+        NSDate *next = [self dateByAddingUnit:stepUnit value:1 toDate:probe options:0];
+        if (!next || [next timeIntervalSinceReferenceDate] <= [probe timeIntervalSinceReferenceDate]) {
+            return nil;
+        }
+        probe = next;
+    }
+    return nil;
 }
 
 - (NSDate *)nextDateAfterDate:(NSDate *)date
