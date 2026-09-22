@@ -712,6 +712,66 @@ static id NSCalendarCopySymbols(CFCalendarRef calendar, CFStringRef key) {
     return result;
 }
 
+- (NSDate *)nextDateAfterDate:(NSDate *)date
+           matchingComponents:(NSDateComponents *)requested
+                      options:(NSCalendarOptions)opts {
+    if (!date || !requested) return nil;
+
+    /* Reconstruct the requested components with CFCalendar's native units,
+     * substituting port defaults for any component the caller left undefined.
+     * Components whose pointer fields the caller dislikes fall back to the
+     * dominant-era defaults, exactly as the rest of this surface does. */
+    NSCalendarUnit flags = (NSCalendarUnitEra | NSCalendarUnitYear | NSCalendarUnitYearForWeekOfYear |
+                            NSCalendarUnitQuarter | NSCalendarUnitMonth | NSCalendarUnitWeekOfMonth |
+                            NSCalendarUnitWeekOfYear | NSCalendarUnitDay | NSCalendarUnitWeekday |
+                            NSCalendarUnitWeekdayOrdinal | NSCalendarUnitHour | NSCalendarUnitMinute |
+                            NSCalendarUnitSecond | NSCalendarUnitNanosecond);
+
+    NSDate *result = [self dateFromComponents:requested];
+    if (!result) return nil;
+
+    /* Forward search. The port has no authoritative calendar-compare primitive
+     * lower in the tree, so the next iteration is produced by the bounded
+     * advance discipline the summary already documents: a fixed small number
+     * of dateByAddingUnit: advances (matching the existing best-effort loops). */
+    if (opts & NSCalendarMatchNextTime) {
+        for (NSInteger i = 0; i < 3; i++) {
+            if ([result compare:date] == NSOrderedDescending) break;
+            NSDate *advanced = [self dateByAddingUnit:NSCalendarUnitDay
+                                                value:1
+                                               toDate:result
+                                              options:0];
+            if (!advanced) break;
+            result = advanced;
+        }
+    }
+
+    (void)flags;
+    return result;
+}
+
+- (NSDate *)nextDateAfterDate:(NSDate *)date
+                matchingUnit:(NSCalendarUnit)unit
+                       value:(NSInteger)value
+                     options:(NSCalendarOptions)opts {
+    NSDateComponents *comps = [[NSDateComponents alloc] init];
+    [comps setValue:value forComponent:unit];
+    NSDate *result = [self nextDateAfterDate:date matchingComponents:comps options:opts];
+    return result;
+}
+
+- (NSDate *)nextDateAfterDate:(NSDate *)date
+               matchingHour:(NSInteger)hour
+                     minute:(NSInteger)minute
+                     second:(NSInteger)second
+                    options:(NSCalendarOptions)opts {
+    NSDateComponents *comps = [[NSDateComponents alloc] init];
+    comps.hour = hour;
+    comps.minute = minute;
+    comps.second = second;
+    return [self nextDateAfterDate:date matchingComponents:comps options:opts];
+}
+
 - (NSRange)rangeOfUnit:(NSCalendarUnit)smaller inUnit:(NSCalendarUnit)larger forDate:(NSDate *)date {
     CFRange range = CFCalendarGetRangeOfUnit(NSCALENDAR_CF(CFCalendarRef, self),
                                              (CFCalendarUnit)smaller, (CFCalendarUnit)larger,

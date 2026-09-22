@@ -158,6 +158,19 @@ yearForWeekOfYear:(NSInteger *)yearValuePointer
                         ofDate:(NSDate *)date
                        options:(NSCalendarOptions)opts;
 
+- (NSDate *)nextDateAfterDate:(NSDate *)date
+           matchingComponents:(NSDateComponents *)comps
+                      options:(NSCalendarOptions)opts;
+- (NSDate *)nextDateAfterDate:(NSDate *)date
+                matchingUnit:(NSCalendarUnit)unit
+                       value:(NSInteger)value
+                     options:(NSCalendarOptions)opts;
+- (NSDate *)nextDateAfterDate:(NSDate *)date
+               matchingHour:(NSInteger)hour
+                     minute:(NSInteger)minute
+                     second:(NSInteger)second
+                    options:(NSCalendarOptions)opts;
+
 - (NSDate *)startOfDayForDate:(NSDate *)date;
 
 - (NSComparisonResult)compareDate:(NSDate *)date1
