@@ -100,9 +100,9 @@ LDFLAGS = -dynamiclib -fobjc-arc -isysroot ${RN} \
           -F${RN}/System/Library/Frameworks -framework CoreFoundation \
           -install_name @rpath/Foundation.framework/Versions/A/Foundation
 
-.PHONY: all release pairing-instrument umbrella clean gitignore
+.PHONY: all release pairing-instrument pairing-sweep behavior-gate verify umbrella clean gitignore
 
-all: release
+all: release verify
 
 # =====================================================================
 #  Pairing check: every method declared in NSString.h must also be
@@ -121,12 +121,79 @@ pairing-instrument:
 	      String.subproj/NSString.h String.subproj/NSString.m
 
 # =====================================================================
+#  Full-Foundation pairing sweep: every method declared in any subproject
+#  header must be implemented somewhere in the .m sources. This is the
+#  project-wide extension of pairing-instrument above; it uses
+#  Tests/pairing_sweep.py, which carries an allowlist for the handful of
+#  declarations the mechanical parser cannot match (macro-generated
+#  -initWith*, multiline-attribute, and variadic methods), each verified
+#  by hand to exist in the sources.
+# =====================================================================
+pairing-sweep:
+	@cd ${.CURDIR} && python3 Tests/pairing_sweep.py .
+
+# =====================================================================
+#  Behavioral gate: compile the port's own .m sources that the harness
+#  touches directly INTO the gate executable (NOT against the built
+#  dylib), run it, and diff byte-for-byte against the Apple-ground-truth
+#  harness output captured in Tests/port_behavior.golden.
+#
+#  Why compile sources into the binary instead of linking the dylib: the
+#  built Foundation dylib LC_LOADs Apple's CoreFoundation, whose toll-free
+#  classes (NSArray, NS*String, ...) collide with the port's - the port
+#  classes lose dispatch and the run aborts ('-[__NSArrayI addObject:]
+#  unrecognized selector').  When the port .m files are compiled into the
+#  executable's main image instead, those classes register FIRST, win
+#  dispatch over CoreFoundation's duplicates (harmless 'implemented in
+#  both' warnings), and the real port code runs.  This is the same reason
+#  the gate must not link -framework Foundation (Apple's): its classes
+#  would shadow the port's.  Only -framework CoreFoundation is linked, to
+#  satisfy the CF_* C symbols the port sources call.
+#
+#  The harness only exercises timezone-agnostic, deterministic behavior
+#  (values are printed, never system descriptions), so the golden file is
+#  portable.  If new probes are added, any additional .m sources the new
+#  probe touches must be added to GATE_SRCS.
+# =====================================================================
+GATE_SRCS = String.subproj/NSString.m \
+            String.subproj/NSCharacterSet.m \
+            Collections.subproj/NSArray.m \
+            Collections.subproj/NSEnumerator_array.m \
+            Collections.subproj/NSSet.m \
+            Collections.subproj/NSDictionary.m \
+            Collections.subproj/NSData.m \
+            Numeric.subproj/NSNumber.m \
+            Date.subproj/NSDate.m \
+            URL.subproj/NSURL.m
+
+# The gate executable links against Apple's CoreFoundation for its CF_* C
+# symbols only.  It must link with the Apple SDK sysroot, not ${RN}: the
+# Internal SDK has no linkable libSystem ('ld: library System not found').
+BEHAVIOR_LINK_SDK = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
+
+behavior-gate: build/gen/Foundation/Foundation.h
+	@rm -rf build/release/gate && mkdir -p build/release/gate
+	@for src in ${GATE_SRCS}; do FLAGS=; \
+	    if test "$${src}" = "Collections.subproj/NSData.m"; then FLAGS=-fno-objc-arc; fi; \
+	    ${CC} ${CFLAGS} $${FLAGS} -c $${src} -o build/release/gate/$${src##*/}.o || exit 1; \
+	 done
+	@${CC} ${CFLAGS} -c Tests/port_behavior.m \
+	    -o build/release/gate/port_behavior.o
+	@${CC} -isysroot ${BEHAVIOR_LINK_SDK} -o build/release/port_behavior \
+	    build/release/gate/*.o -framework CoreFoundation
+	@build/release/port_behavior > build/release/port_behavior.out
+	@diff Tests/port_behavior.golden build/release/port_behavior.out \
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 107 probes)"
+
+verify: pairing-sweep behavior-gate
+
+# =====================================================================
 #  Umbrella header: copied from the subprojects' own headers and
 #  gathered into build/gen/Foundation/Foundation.h.
 # =====================================================================
 umbrella: build/gen/Foundation/Foundation.h
 
-build/gen/Foundation/Foundation.h: pairing-instrument
+build/gen/Foundation/Foundation.h: pairing-instrument pairing-sweep
 	@mkdir -p build/gen/Foundation
 	@rm -f $@
 	@for h in ${HDRS}; do hb="$${h##*/}"; cp "$$h" build/gen/Foundation/; done

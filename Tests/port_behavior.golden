@@ -1,0 +1,107 @@
+PORT_BEHAVIOR_BEGIN
+date ref0 -1970                            | 978307200.000000000
+date ref0 -ref                             | 0.000000000
+date 0.0 desc                              | 2001-01-01 00:00:00 +0000
+d1 -1970                                   | 1234567890.000000000
+d1 -ref                                    | 256260690.000000000
+d2 add 3600 to d1                          | 1234571490.000000000
+d2 earlierDate d1                          | ==d1
+d1 laterDate d2                            | ==d2
+compare d1 vs d2                           | -1
+compare d2 vs d1                           | 1
+isEqualToDate same                         | 1
+timeIntervalSinceDate                      | 3600.000000000
+distantFuture ref                          | 63113904000.000000000
+distantPast ref                            | -63114076800.000000000
+now ~ today                                | 1
+nInt intValue                              | 42
+nInt objCType                              | i
+nBool boolValue                            | 1
+nBool trueValue                            | 0
+nFloat doubleValue                         | 3.14159
+nFloat floatValue                          | 3.14159
+nLng longLongValue                         | 9007199254740993
+nChar charValue                            | A
+compare 1 vs 2                             | -1
+compare 2 vs 1                             | 1
+equalNumber 42                             | 1
+equalNumber 43                             | 0
+intvalue from numWithInt                   | -7
+str len                                    | 17
+str charAt0                                | H
+str charAt7                                | F
+str substr(0,5)                            | Hello
+str substringFromIndex 7                   | Foundation
+str substringToIndex 5                     | Hello
+str hasPrefix Hello                        | 1
+str hasPrefix hey                          | 0
+str hasSuffix Foundation                   | 1
+str containsString Found                   | 1
+str isEqualToString                        | 1
+str != other                               | 0
+str lowercase                              | hello, foundation
+str uppercase                              | HELLO, FOUNDATION
+str stringByAppending                      | Hello, Foundation!
+str format ints                            | 2 + 3 = 5
+str format mixed                           | 3.14 pi nice
+str rangeOfString Found                    | {7,5}
+str rangeOfString xyz                      | {9223372036854775807,0}
+str compare case                           | -1
+str compareIC ab                           | 0
+str trim ws                                | padded
+csv count                                  | 5
+csv joined                                 | a|b|c||e
+mutable append                             | foo
+mutable appendFormat                       | foo-42
+mutable setString                          | reset
+mutable replaceRange                       | XYset
+mutable deleteRange                        | Xset
+mutable insert                             | ZXset
+str replaceOccurrences                     | 1 two 1
+str UTF8 roundtrip                         | café
+url absoluteString                         | https://example.com/path?q=1#frag
+url isFileURL                              | 0
+url file isFileURL                         | 1
+url file path                              | /tmp/my file.txt
+url bad -> nil                             | 0
+array count                                | 3
+array idx0                                 | z
+array idx2                                 | m
+array contains a                           | 1
+array contains q                           | 0
+enumerator next1                           | z
+enumerator next2                           | a
+enumerator next3                           | m
+enumerator next4                           | (null)
+rev enumerate                              | m,a,z
+mutable addObject                          | z,a,m,b
+mutable removeObjIdx0                      | a,m,b
+mutable count after removeAll              | 0
+set count                                  | 2
+set contains x                             | 1
+set contains z                             | 0
+set member x                               | x
+set sortedObjects                          | x,y
+set isSubsetOf                             | 1
+set isSubsetOf reverse                     | 0
+set add w count/sorted                     | 3=w,x,y
+dict count                                 | 3
+dict a                                     | 1
+dict c                                     | 3
+dict missing                               | 1
+dict sortedKeys                            | a,b,c
+dict allKeys via set                       | a,b,c
+mutable dict count                         | 2
+mutable dict k1                            | v1
+mutable dict count after remove            | 1
+mutable dict k2                            | v2
+data length                                | 8
+data byte0                                 | 00
+data byte3                                 | 80
+data byte7                                 | 30
+subdata len                                | 3
+subdata b0                                 | 02
+subdata b2                                 | ff
+isEqualToData same                         | 1
+isEqualToData diff                         | 0
+PORT_BEHAVIOR_END

@@ -132,6 +132,10 @@ static CFArrayRef NSNSArrayCreate(const id *objects, NSUInteger count) {
     return [self arrayWithCapacity:0];
 }
 
++ (instancetype)arrayWithArray:(NSArray *)array {
+    return NSARRAY_ID(CFArrayCreateMutableCopy(kCFAllocatorDefault, 0, NSARRAY_CF(CFArrayRef, array)));
+}
+
 - (void)addObject:(id)object {
     CFArrayAppendValue(NSARRAY_CF(CFMutableArrayRef, self), NSARRAY_CF(const void *, object));
 }
