@@ -225,6 +225,20 @@ sc upToChars mid                           | alpha ok=1 loc=5
 sc CI match lower                          | ABC ok=1 loc=3
 sc copy location                           | 5
 sc copy scans                              | 123 ok=1
+sc loc de comma                            | ok=1 val=3.14 loc=4
+sc loc de dot stop                         | ok=1 val=3.00 loc=1
+sc loc de grouped                          | ok=1 val=1.00 loc=1
+sc loc de exp                              | ok=1 val=314.00 loc=6
+sc loc de neg                              | ok=1 val=-5.25 loc=5
+sc loc fr comma                            | ok=1 val=3.14 loc=4
+sc loc en comma                            | ok=1 val=3.00 loc=1
+sc loc en grouped                          | ok=1 val=1.00 loc=1
+sc loc none comma                          | ok=1 val=3.00 loc=1
+sc loc de float                            | ok=1 val=3.14
+sc loc hex de ok                           | ok=1 val=3.00 loc=7
+sc loc hex dec bad                         | ok=0 val=-1.00 loc=0
+sc loc de int                              | ok=1 val=3 loc=1
+sc localized def                           | ok=1 val=3.14 loc=4
 pr basic domain                            | TestDomain
 pr basic code                              | 42
 pr negative code                           | -1004

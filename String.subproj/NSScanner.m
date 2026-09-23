@@ -13,6 +13,8 @@
 
 #import <Foundation/NSScanner.h>
 #import <Foundation/NSException.h>
+#import <Foundation/NSDictionary.h>
+#import <Foundation/NSLocale.h>
 #include <CoreFoundation/CFString.h>
 #include <ctype.h>
 #include <errno.h>
@@ -84,7 +86,9 @@ static NSString *_NSScannerString(NSString *source, NSUInteger start, NSUInteger
 }
 
 + (instancetype)localizedScannerWithString:(NSString *)string {
-    return [self scannerWithString:string];
+    NSScanner *scanner = [self scannerWithString:string];
+    scanner.locale = [NSLocale currentLocale];
+    return scanner;
 }
 
 - (instancetype)initWithString:(NSString *)string {
@@ -238,15 +242,30 @@ static NSString *_NSScannerString(NSString *source, NSUInteger start, NSUInteger
     NSUInteger start = _NSScannerSkip(self, _scanLocation);
     NSUInteger location = start;
     NSUInteger length = [_string length];
+    /* Honor the scanner's locale decimal separator: ',' in de_DE/fr_FR, '.'
+     * everywhere else.  When the separator is not '.', a literal '.' is NOT a
+     * valid token (grouping separators are never consumed); Apple stops there. */
+    unichar decSep = '.';
+    if (_locale != nil) {
+        id ds = [(NSDictionary *)_locale objectForKey:NSLocaleDecimalSeparator];
+        /* CF returns the toll-free string through the process's own bridged
+         * class, which may not match the port's NSString class identity; check
+         * the CF type instead of isKindOfClass: before reading the separator. */
+        if (ds != nil && CFGetTypeID((CFTypeRef)ds) == CFStringGetTypeID() &&
+            [ds length] >= 1) {
+            decSep = [ds characterAtIndex:0];
+        }
+    }
     char *buffer = (char *)malloc((length - start + 1) * sizeof(*buffer));
     if (buffer == NULL) return NO;
     NSUInteger count = 0;
     while (location < length) {
         unichar c = [_string characterAtIndex:location];
-        if ((c >= '0' && c <= '9') || c == '+' || c == '-' || c == '.' ||
-            c == 'e' || c == 'E' || c == 'x' || c == 'X' ||
-            (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == 'p' || c == 'P') {
-            buffer[count++] = (char)c;
+        BOOL isDecSep = (c == decSep);
+        if ((c >= '0' && c <= '9') || c == '+' || c == '-' || c == 'e' || c == 'E' ||
+            c == 'x' || c == 'X' || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') ||
+            c == 'p' || c == 'P' || isDecSep) {
+            buffer[count++] = (isDecSep && decSep != '.') ? '.' : (char)c;
             location++;
         } else break;
     }
@@ -304,11 +323,45 @@ static NSString *_NSScannerString(NSString *source, NSUInteger start, NSUInteger
 }
 
 - (BOOL)scanHexDouble:(double *)result {
-    return [self scanDouble:result];
+    /* Hex floats ignore the scanner locale; require a 0x/0X prefix like Apple. */
+    NSUInteger start = _NSScannerSkip(self, _scanLocation);
+    NSUInteger location = start;
+    NSUInteger length = [_string length];
+    if (location + 2 > length) return NO;
+    unichar c0 = [_string characterAtIndex:location];
+    unichar c1 = [_string characterAtIndex:location + 1];
+    if (!(c0 == '0' && (c1 == 'x' || c1 == 'X'))) return NO;
+    char *buffer = (char *)malloc((length - start + 1) * sizeof(*buffer));
+    if (buffer == NULL) return NO;
+    NSUInteger count = 0;
+    buffer[count++] = '0';
+    buffer[count++] = (char)c1; /* keep x/X as authored */
+    location += 2;
+    while (location < length) {
+        unichar c = [_string characterAtIndex:location];
+        if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') ||
+            (c >= 'A' && c <= 'F') || c == '.' || c == 'p' || c == 'P' ||
+            c == '+' || c == '-') {
+            buffer[count++] = (char)c;
+            location++;
+        } else break;
+    }
+    buffer[count] = '\0';
+    char *end = NULL;
+    errno = 0;
+    double value = strtod(buffer, &end);
+    if (end == buffer) { free(buffer); return NO; }
+    _scanLocation = start + (NSUInteger)(end - buffer);
+    free(buffer);
+    if (result != NULL) *result = value;
+    return YES;
 }
 
 - (BOOL)scanHexFloat:(float *)result {
-    return [self scanFloat:result];
+    double value;
+    if (![self scanHexDouble:&value]) return NO;
+    if (result != NULL) *result = (float)value;
+    return YES;
 }
 
 - (BOOL)scanString:(NSString *)string intoString:(NSString **)result {
