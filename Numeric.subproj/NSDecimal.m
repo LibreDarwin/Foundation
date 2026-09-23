@@ -13,7 +13,7 @@
 #include <stdlib.h>
 
 #define DECIMAL_DIGITS 256
-#define DECIMAL_RESULT_DIGITS 38
+#define DECIMAL_RESULT_DIGITS 39
 
 typedef struct {
     unsigned char digits[DECIMAL_DIGITS];
@@ -91,6 +91,16 @@ static void decimal_from_ascii(DecimalDigits *out, const char *text) {
     decimal_trim(out);
 }
 
+static BOOL decimal_digits_exceed_max(const DecimalDigits *digits) {
+    if (digits->count != DECIMAL_RESULT_DIGITS) return NO;
+    static const char maxMantissa[] = "340282366920938463463374607431768211455";
+    for (unsigned int i = 0; i < digits->count; i++) {
+        unsigned char digit = (unsigned char)(maxMantissa[i] - '0');
+        if (digits->digits[i] != digit) return digits->digits[i] > digit;
+    }
+    return NO;
+}
+
 static NSCalculationError decimal_to_ns(NSDecimal *out, DecimalDigits *source, NSRoundingMode mode) {
     decimal_trim(source);
     memset(out, 0, sizeof(*out));
@@ -127,6 +137,11 @@ static NSCalculationError decimal_to_ns(NSDecimal *out, DecimalDigits *source, N
                 source->count++;
             } else source->digits[index]++;
         }
+    }
+    if (decimal_digits_exceed_max(source)) {
+        if (source->count != 0 && source->digits[source->count - 1] != 0) lost = YES;
+        source->count--;
+        source->exponent++;
     }
     decimal_trim(source);
     if (source->count != 0 && source->exponent > SCHAR_MAX) {

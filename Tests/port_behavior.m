@@ -744,6 +744,89 @@ int main(void) {
     NSDecimal dmNeg12345 = dmv(12345, 0, 1);
     p("dm loc -12345 comma", NSDecimalString(&dmNeg12345, dmLcomma));
 
+    NSDecimalNumber *dnZero = [NSDecimalNumber zero];
+    NSDecimalNumber *dnOne = [NSDecimalNumber one];
+    NSDecimalNumber *dnNan = [NSDecimalNumber notANumber];
+    NSDecimalNumber *dnMin = [NSDecimalNumber minimumDecimalNumber];
+    NSDecimalNumber *dnMax = [NSDecimalNumber maximumDecimalNumber];
+    p("dn zero", [dnZero stringValue]);
+    p("dn one", [dnOne stringValue]);
+    p("dn nan", [dnNan stringValue]);
+    p("dn minimum", [dnMin stringValue]);
+    p("dn maximum", [dnMax stringValue]);
+    p("dn str 123.45", [[NSDecimalNumber decimalNumberWithString:@"123.45"] stringValue]);
+    p("dn str -0.001", [[NSDecimalNumber decimalNumberWithString:@"-0.001"] stringValue]);
+    p("dn str 1.5e3", [[NSDecimalNumber decimalNumberWithString:@"1.5e3"] stringValue]);
+    p("dn str 0007", [[NSDecimalNumber decimalNumberWithString:@"0007"] stringValue]);
+    p("dn str 0", [[NSDecimalNumber decimalNumberWithString:@"0"] stringValue]);
+    p("dn str 1e100", [[NSDecimalNumber decimalNumberWithString:@"1e100"] stringValue]);
+    p("dn m 12345e-2", [[NSDecimalNumber decimalNumberWithMantissa:12345 exponent:-2 isNegative:NO] stringValue]);
+    p("dn m 0e5 neg", [[NSDecimalNumber decimalNumberWithMantissa:0 exponent:5 isNegative:YES] stringValue]);
+    p("dn m -7", [[NSDecimalNumber decimalNumberWithMantissa:7 exponent:0 isNegative:YES] stringValue]);
+    NSDecimal dnRaw; memset(&dnRaw, 0, sizeof(dnRaw));
+    dnRaw._mantissa[0] = 625; dnRaw._length = 1; dnRaw._exponent = -3; dnRaw._isCompact = 1;
+    p("dn decimal 625e-3", [[NSDecimalNumber decimalNumberWithDecimal:dnRaw] stringValue]);
+
+    NSDecimalNumber *dnHalf = [NSDecimalNumber decimalNumberWithString:@"0.5"];
+    NSDecimalNumber *dnThird = [NSDecimalNumber decimalNumberWithString:@"1"];
+    p("dn add 0.5+1", [[dnHalf decimalNumberByAdding:dnThird] stringValue]);
+    p("dn sub 0.5-1", [[dnHalf decimalNumberBySubtracting:dnThird] stringValue]);
+    p("dn mul 0.5*1", [[dnHalf decimalNumberByMultiplyingBy:dnThird] stringValue]);
+    p("dn div 0.5/1", [[dnHalf decimalNumberByDividingBy:dnThird] stringValue]);
+    p("dn div 2/3", [[[NSDecimalNumber decimalNumberWithString:@"2"] decimalNumberByDividingBy:[NSDecimalNumber decimalNumberWithString:@"3"]] stringValue]);
+    p("dn pow 2^10", [[[NSDecimalNumber decimalNumberWithString:@"2"] decimalNumberByRaisingToPower:10] stringValue]);
+    p("dn mul10 0.5*1e3", [[[NSDecimalNumber decimalNumberWithString:@"0.5"] decimalNumberByMultiplyingByPowerOf10:3] stringValue]);
+
+    NSDecimalNumberHandler *dnBankers2 = [[NSDecimalNumberHandler alloc] initWithRoundingMode:NSRoundBankers scale:2 raiseOnExactness:YES raiseOnOverflow:YES raiseOnUnderflow:YES raiseOnDivideByZero:YES];
+    p("dn round 1.005 bnk2", [[[NSDecimalNumber decimalNumberWithString:@"1.005"] decimalNumberByRoundingAccordingToBehavior:dnBankers2] stringValue]);
+    p("dn round 2.005 bnk2", [[[NSDecimalNumber decimalNumberWithString:@"2.005"] decimalNumberByRoundingAccordingToBehavior:dnBankers2] stringValue]);
+    NSDecimalNumberHandler *dnPlain0 = [[NSDecimalNumberHandler alloc] initWithRoundingMode:NSRoundPlain scale:0 raiseOnExactness:YES raiseOnOverflow:YES raiseOnUnderflow:YES raiseOnDivideByZero:YES];
+    p("dn round 2.5 plain0", [[[NSDecimalNumber decimalNumberWithString:@"2.5"] decimalNumberByRoundingAccordingToBehavior:dnPlain0] stringValue]);
+    p("dn round 3.5 plain0", [[[NSDecimalNumber decimalNumberWithString:@"3.5"] decimalNumberByRoundingAccordingToBehavior:dnPlain0] stringValue]);
+    NSDecimalNumberHandler *dnDown1 = [[NSDecimalNumberHandler alloc] initWithRoundingMode:NSRoundDown scale:1 raiseOnExactness:YES raiseOnOverflow:YES raiseOnUnderflow:YES raiseOnDivideByZero:YES];
+    p("dn round 1.29 down1", [[[NSDecimalNumber decimalNumberWithString:@"1.29"] decimalNumberByRoundingAccordingToBehavior:dnDown1] stringValue]);
+    p("dn round -1.29 down1", [[[NSDecimalNumber decimalNumberWithString:@"-1.29"] decimalNumberByRoundingAccordingToBehavior:dnDown1] stringValue]);
+    NSDecimalNumberHandler *dnUp1 = [[NSDecimalNumberHandler alloc] initWithRoundingMode:NSRoundUp scale:1 raiseOnExactness:YES raiseOnOverflow:YES raiseOnUnderflow:YES raiseOnDivideByZero:YES];
+    p("dn round 1.29 up1", [[[NSDecimalNumber decimalNumberWithString:@"1.29"] decimalNumberByRoundingAccordingToBehavior:dnUp1] stringValue]);
+    p("dn round -1.29 up1", [[[NSDecimalNumber decimalNumberWithString:@"-1.29"] decimalNumberByRoundingAccordingToBehavior:dnUp1] stringValue]);
+
+    NSDecimalNumber *dnX = nil;
+    @try { dnX = [[NSDecimalNumber decimalNumberWithString:@"1"] decimalNumberByMultiplyingByPowerOf10:-32768]; p("dn mul10 deep under", [dnX stringValue]); }
+    @catch (NSException *e) { p("dn mul10 deep under", [@"EX " stringByAppendingString:[e name]]); }
+    @try { dnX = [[NSDecimalNumber decimalNumberWithString:@"1"] decimalNumberByMultiplyingByPowerOf10:32767]; p("dn mul10 deep over", [dnX stringValue]); }
+    @catch (NSException *e) { p("dn mul10 deep over", [@"EX " stringByAppendingString:[e name]]); }
+    @try { dnX = [[NSDecimalNumber decimalNumberWithString:@"1"] decimalNumberByDividingBy:[NSDecimalNumber zero]]; p("dn div 1/0", [dnX stringValue]); }
+    @catch (NSException *e) { p("dn div 1/0", [@"EX " stringByAppendingString:[e name]]); }
+    @try { dnX = [[NSDecimalNumber decimalNumberWithString:@"1"] decimalNumberByMultiplyingBy:[NSDecimalNumber notANumber]]; p("dn mul 1*nan", [dnX stringValue]); }
+    @catch (NSException *e) { p("dn mul 1*nan", [@"EX " stringByAppendingString:[e name]]); }
+
+    NSDecimalNumber *dnA = [NSDecimalNumber decimalNumberWithString:@"3"];
+    NSDecimalNumber *dnB = [NSDecimalNumber decimalNumberWithString:@"4"];
+    NSDecimalNumber *dnC = [NSDecimalNumber decimalNumberWithString:@"3.0"];
+    p("dn cmp 3 vs 4", [NSString stringWithFormat:@"%ld", (long)[dnA compare:dnB]]);
+    p("dn cmp 4 vs 3", [NSString stringWithFormat:@"%ld", (long)[dnB compare:dnA]]);
+    p("dn cmp 3 vs 3.0", [NSString stringWithFormat:@"%ld", (long)[dnA compare:dnC]]);
+    p("dn cmp 3 vs nsnum 3", [NSString stringWithFormat:@"%ld", (long)[dnA compare:@3]]);
+    p("dn double 3.25", [NSString stringWithFormat:@"%g", [[NSDecimalNumber decimalNumberWithString:@"3.25"] doubleValue]]);
+    p("dn objCType", [NSString stringWithUTF8String:[dnA objCType]]);
+    p("dn desc 123.45", [[NSDecimalNumber decimalNumberWithString:@"123.45"] description]);
+    p("dn desc-loc comma", [[NSDecimalNumber decimalNumberWithString:@"123.45"] descriptionWithLocale:@{@"NSDecimalSeparator" : @","}]);
+    p("dn default round", [NSString stringWithFormat:@"%ld", (long)[(NSDecimalNumberHandler *)[NSDecimalNumber defaultBehavior] roundingMode]]);
+    p("dn default scale", [NSString stringWithFormat:@"%d", (int)[(NSDecimalNumberHandler *)[NSDecimalNumber defaultBehavior] scale]]);
+    p("dn class default round", [NSString stringWithFormat:@"%ld", (long)[[NSDecimalNumberHandler defaultDecimalNumberHandler] roundingMode]]);
+    p("dn class default scale", [NSString stringWithFormat:@"%d", (int)[[NSDecimalNumberHandler defaultDecimalNumberHandler] scale]]);
+    NSDecimalNumberHandler *dnH = [[NSDecimalNumberHandler alloc] initWithRoundingMode:NSRoundUp scale:3 raiseOnExactness:YES raiseOnOverflow:YES raiseOnUnderflow:YES raiseOnDivideByZero:YES];
+    p("dn handler round", [NSString stringWithFormat:@"%ld", (long)[dnH roundingMode]]);
+    p("dn handler scale", [NSString stringWithFormat:@"%d", (int)[dnH scale]]);
+    NSDecimalNumberHandler *dnQuiet = [[NSDecimalNumberHandler alloc] initWithRoundingMode:NSRoundPlain scale:NSDecimalNoScale raiseOnExactness:NO raiseOnOverflow:NO raiseOnUnderflow:NO raiseOnDivideByZero:NO];
+    p("dn div 1/0 quiet", [[[NSDecimalNumber decimalNumberWithString:@"1"] decimalNumberByDividingBy:[NSDecimalNumber zero] withBehavior:dnQuiet] stringValue]);
+    p("dn mul 1*nan quiet", [[[NSDecimalNumber decimalNumberWithString:@"1"] decimalNumberByMultiplyingBy:[NSDecimalNumber notANumber] withBehavior:dnQuiet] stringValue]);
+    p("dn mul10 over quiet", [[[NSDecimalNumber decimalNumberWithString:@"1"] decimalNumberByMultiplyingByPowerOf10:40000 withBehavior:dnQuiet] stringValue]);
+    p("dn mul10 under quiet", [[[NSDecimalNumber decimalNumberWithString:@"1"] decimalNumberByMultiplyingByPowerOf10:-40000 withBehavior:dnQuiet] stringValue]);
+    NSDecimalNumberHandler *dnScale4 = [NSDecimalNumberHandler decimalNumberHandlerWithRoundingMode:NSRoundPlain scale:4 raiseOnExactness:NO raiseOnOverflow:NO raiseOnUnderflow:NO raiseOnDivideByZero:NO];
+    p("dn div 1/3 scale4", [[[NSDecimalNumber decimalNumberWithString:@"1"] decimalNumberByDividingBy:[NSDecimalNumber decimalNumberWithString:@"3"] withBehavior:dnScale4] stringValue]);
+    p("dn pow 2^200 quiet", [[[NSDecimalNumber decimalNumberWithString:@"2"] decimalNumberByRaisingToPower:200 withBehavior:dnQuiet] stringValue]);
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }

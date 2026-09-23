@@ -307,4 +307,58 @@ dm loc 123.45 comma                        | 123,45
 dm loc 0.5 comma                           | 0,5
 dm loc 1234000 comma                       | 1234000
 dm loc -12345 comma                        | -12345
+dn zero                                    | 0
+dn one                                     | 1
+dn nan                                     | NaN
+dn minimum                                 | -3402823669209384634633746074317682114550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+dn maximum                                 | 3402823669209384634633746074317682114550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+dn str 123.45                              | 123.45
+dn str -0.001                              | -0.001
+dn str 1.5e3                               | 1500
+dn str 0007                                | 7
+dn str 0                                   | 0
+dn str 1e100                               | 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+dn m 12345e-2                              | 123.45
+dn m 0e5 neg                               | NaN
+dn m -7                                    | -7
+dn decimal 625e-3                          | 0.625
+dn add 0.5+1                               | 1.5
+dn sub 0.5-1                               | -0.5
+dn mul 0.5*1                               | 0.5
+dn div 0.5/1                               | 0.5
+dn div 2/3                                 | 0.66666666666666666666666666666666666666
+dn pow 2^10                                | 1024
+dn mul10 0.5*1e3                           | 500
+dn round 1.005 bnk2                        | 1
+dn round 2.005 bnk2                        | 2
+dn round 2.5 plain0                        | 3
+dn round 3.5 plain0                        | 4
+dn round 1.29 down1                        | 1.2
+dn round -1.29 down1                       | -1.3
+dn round 1.29 up1                          | 1.3
+dn round -1.29 up1                         | -1.2
+dn mul10 deep under                        | EX NSDecimalNumberUnderflowException
+dn mul10 deep over                         | EX NSDecimalNumberOverflowException
+dn div 1/0                                 | EX NSDecimalNumberDivideByZeroException
+dn mul 1*nan                               | EX NSDecimalNumberOverflowException
+dn cmp 3 vs 4                              | -1
+dn cmp 4 vs 3                              | 1
+dn cmp 3 vs 3.0                            | 0
+dn cmp 3 vs nsnum 3                        | 0
+dn double 3.25                             | 3.25
+dn objCType                                | d
+dn desc 123.45                             | 123.45
+dn desc-loc comma                          | 123,45
+dn default round                           | 0
+dn default scale                           | 32767
+dn class default round                     | 0
+dn class default scale                     | 32767
+dn handler round                           | 2
+dn handler scale                           | 3
+dn div 1/0 quiet                           | NaN
+dn mul 1*nan quiet                         | NaN
+dn mul10 over quiet                        | NaN
+dn mul10 under quiet                       | NaN
+dn div 1/3 scale4                          | 0.3333
+dn pow 2^200 quiet                         | 1606938044258990275541962092341162602490000000000000000000000
 PORT_BEHAVIOR_END

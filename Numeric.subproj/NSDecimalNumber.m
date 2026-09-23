@@ -10,6 +10,7 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSObject.h>
 #import <Foundation/NSException.h>
+#import <objc/runtime.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -21,6 +22,17 @@ NSString * const NSDecimalNumberUnderflowException = @"NSDecimalNumberUnderflowE
 NSString * const NSDecimalNumberDivideByZeroException = @"NSDecimalNumberDivideByZeroException";
 
 static id <NSDecimalNumberBehaviors> __NSDecimalDefaultBehavior;
+
+/* NSNumber -init mints a fresh CF number in place of the +alloc receiver, so
+ * [super init] would hand back a CFNumber and drop the plain NSDecimalNumber
+ * storage this class owns (mirrors how Apple's NSDecimalNumber stays a plain
+ * object while NSNumber remains a cluster). Initialize via NSObject init,
+ * which returns self untouched. */
+static id __NSDecimalNumberSuperInit(id self) {
+    SEL selector = @selector(init);
+    IMP implementation = class_getMethodImplementation([NSObject class], selector);
+    return ((id (*)(id, SEL))implementation)(self, selector);
+}
 
 #if __has_feature(objc_arc)
 #define __NSDECIMAL_AUTORELEASE(object) (object)
@@ -81,17 +93,23 @@ static NSDecimalNumber *__NSDecimalResult(NSDecimal decimal) {
     return __NSDECIMAL_AUTORELEASE([[NSDecimalNumber alloc] initWithDecimal:decimal]);
 }
 
-static NSDecimalNumber *__NSDecimalApplyBehavior(NSCalculationError error, id <NSDecimalNumberBehaviors> behavior, SEL operation, NSDecimalNumber *left, NSDecimalNumber *right, NSDecimal decimal) {
-    NSDecimalNumber *result = __NSDecimalResult(decimal);
-    if (error == NSCalculationNoError || behavior == nil || ![(id)behavior respondsToSelector:@selector(exceptionDuringOperation:error:leftOperand:rightOperand:)]) return result;
+static NSDecimalNumber *__NSDecimalResultWithBehavior(NSCalculationError error, id <NSDecimalNumberBehaviors> behavior, SEL operation, NSDecimalNumber *left, NSDecimalNumber *right, NSDecimal decimal) {
+    NSDecimal result = decimal;
+    if (error == NSCalculationNoError && behavior != nil && [behavior scale] != NSDecimalNoScale) {
+        NSDecimal rounded;
+        NSDecimalRound(&rounded, &result, [behavior scale], [behavior roundingMode]);
+        result = rounded;
+    }
+    NSDecimalNumber *object = __NSDecimalResult(result);
+    if (error == NSCalculationNoError || behavior == nil || ![(id)behavior respondsToSelector:@selector(exceptionDuringOperation:error:leftOperand:rightOperand:)]) return object;
     NSDecimalNumber *handled = [behavior exceptionDuringOperation:operation error:error leftOperand:left rightOperand:right];
-    return handled == nil ? result : handled;
+    return handled == nil ? object : handled;
 }
 
 @implementation NSDecimalNumber
 
-- (instancetype)initWithDecimal:(NSDecimal)decimal { self = [super init]; if (self != nil) _decimal = decimal; return self; }
-- (instancetype)initWithMantissa:(unsigned long long)mantissa exponent:(short)exponent isNegative:(BOOL)negative { self = [super init]; if (self != nil) { _decimal = (NSDecimal){0}; for (unsigned int i = 0; i < NSDecimalMaxSize && mantissa != 0; i++) { _decimal._mantissa[i] = (unsigned short)(mantissa & 0xffffU); mantissa >>= 16; _decimal._length++; } _decimal._exponent = exponent; _decimal._isNegative = negative && _decimal._length != 0; _decimal._isCompact = 1; NSDecimalCompact(&_decimal); } return self; }
+- (instancetype)initWithDecimal:(NSDecimal)decimal { self = __NSDecimalNumberSuperInit(self); if (self != nil) _decimal = decimal; return self; }
+- (instancetype)initWithMantissa:(unsigned long long)mantissa exponent:(short)exponent isNegative:(BOOL)negative { self = __NSDecimalNumberSuperInit(self); if (self != nil) { _decimal = (NSDecimal){0}; for (unsigned int i = 0; i < NSDecimalMaxSize && mantissa != 0; i++) { _decimal._mantissa[i] = (unsigned short)(mantissa & 0xffffU); mantissa >>= 16; _decimal._length++; } _decimal._exponent = exponent; _decimal._isNegative = negative; if (_decimal._length == 0 && !negative) _decimal._isNegative = NO; _decimal._isCompact = 1; if (_decimal._length != 0) NSDecimalCompact(&_decimal); } return self; }
 - (instancetype)initWithString:(NSString *)string { return [self initWithDecimal:__NSDecimalFromString(string)]; }
 - (instancetype)initWithString:(NSString *)string locale:(id)locale { (void)locale; return [self initWithString:string]; }
 
@@ -103,18 +121,24 @@ static NSDecimalNumber *__NSDecimalApplyBehavior(NSCalculationError error, id <N
 + (instancetype)one { return [self decimalNumberWithMantissa:1 exponent:0 isNegative:NO]; }
 + (instancetype)minimumDecimalNumber {
     NSDecimal decimal = {0};
-    decimal._mantissa[0] = 1;
-    decimal._length = 1;
-    decimal._exponent = SCHAR_MIN;
+    for (unsigned int i = 0; i < NSDecimalMaxSize; i++) decimal._mantissa[i] = 0xffff;
+    decimal._length = NSDecimalMaxSize;
+    decimal._exponent = 127;
+    decimal._isNegative = 1;
     decimal._isCompact = 1;
     return [self decimalNumberWithDecimal:decimal];
 }
 + (instancetype)maximumDecimalNumber {
-    return [self decimalNumberWithString:@"99999999999999999999999999999999999999e90"];
+    NSDecimal decimal = {0};
+    for (unsigned int i = 0; i < NSDecimalMaxSize; i++) decimal._mantissa[i] = 0xffff;
+    decimal._length = NSDecimalMaxSize;
+    decimal._exponent = 127;
+    decimal._isCompact = 1;
+    return [self decimalNumberWithDecimal:decimal];
 }
 + (instancetype)notANumber { NSDecimal decimal = {0}; decimal._isNegative = 1; return [self decimalNumberWithDecimal:decimal]; }
 
-+ (id <NSDecimalNumberBehaviors>)defaultBehavior { if (__NSDecimalDefaultBehavior == nil) __NSDecimalDefaultBehavior = [[NSDecimalNumberHandler alloc] initWithRoundingMode:NSRoundPlain scale:NSDecimalNoScale]; return __NSDecimalDefaultBehavior; }
++ (id <NSDecimalNumberBehaviors>)defaultBehavior { if (__NSDecimalDefaultBehavior == nil) __NSDecimalDefaultBehavior = [NSDecimalNumberHandler defaultDecimalNumberHandler]; return __NSDecimalDefaultBehavior; }
 + (void)setDefaultBehavior:(id <NSDecimalNumberBehaviors>)behavior {
     if (__NSDecimalDefaultBehavior == behavior) return;
     id <NSDecimalNumberBehaviors> retained = __NSDECIMAL_RETAIN((id)behavior);
@@ -132,35 +156,58 @@ static NSDecimalNumber *__NSDecimalApplyBehavior(NSCalculationError error, id <N
 
 - (instancetype)decimalNumberByRoundingAccordingToBehavior:(id <NSDecimalNumberBehaviors>)behavior { if (behavior == nil) behavior = [[self class] defaultBehavior]; NSDecimal result; NSDecimalRound(&result, &_decimal, [behavior scale], [behavior roundingMode]); return __NSDecimalResult(result); }
 - (instancetype)decimalNumberByAdding:(NSDecimalNumber *)number { return [self decimalNumberByAdding:number withBehavior:nil]; }
-- (instancetype)decimalNumberByAdding:(NSDecimalNumber *)number withBehavior:(id <NSDecimalNumberBehaviors>)behavior { if (behavior == nil) behavior = [[self class] defaultBehavior]; NSDecimal result; NSCalculationError error = NSDecimalAdd(&result, &_decimal, &number->_decimal, [behavior roundingMode]); return __NSDecimalApplyBehavior(error, behavior, @selector(decimalNumberByAdding:), self, number, result); }
+- (instancetype)decimalNumberByAdding:(NSDecimalNumber *)number withBehavior:(id <NSDecimalNumberBehaviors>)behavior { if (behavior == nil) behavior = [[self class] defaultBehavior]; NSDecimal result; NSCalculationError error = NSDecimalAdd(&result, &_decimal, &number->_decimal, [behavior roundingMode]); return __NSDecimalResultWithBehavior(error, behavior, @selector(decimalNumberByAdding:), self, number, result); }
 - (instancetype)decimalNumberBySubtracting:(NSDecimalNumber *)number { return [self decimalNumberBySubtracting:number withBehavior:nil]; }
-- (instancetype)decimalNumberBySubtracting:(NSDecimalNumber *)number withBehavior:(id <NSDecimalNumberBehaviors>)behavior { if (behavior == nil) behavior = [[self class] defaultBehavior]; NSDecimal result; NSCalculationError error = NSDecimalSubtract(&result, &_decimal, &number->_decimal, [behavior roundingMode]); return __NSDecimalApplyBehavior(error, behavior, @selector(decimalNumberBySubtracting:), self, number, result); }
+- (instancetype)decimalNumberBySubtracting:(NSDecimalNumber *)number withBehavior:(id <NSDecimalNumberBehaviors>)behavior { if (behavior == nil) behavior = [[self class] defaultBehavior]; NSDecimal result; NSCalculationError error = NSDecimalSubtract(&result, &_decimal, &number->_decimal, [behavior roundingMode]); return __NSDecimalResultWithBehavior(error, behavior, @selector(decimalNumberBySubtracting:), self, number, result); }
 - (instancetype)decimalNumberByMultiplyingBy:(NSDecimalNumber *)number { return [self decimalNumberByMultiplyingBy:number withBehavior:nil]; }
-- (instancetype)decimalNumberByMultiplyingBy:(NSDecimalNumber *)number withBehavior:(id <NSDecimalNumberBehaviors>)behavior { if (behavior == nil) behavior = [[self class] defaultBehavior]; NSDecimal result; NSCalculationError error = NSDecimalMultiply(&result, &_decimal, &number->_decimal, [behavior roundingMode]); return __NSDecimalApplyBehavior(error, behavior, @selector(decimalNumberByMultiplyingBy:), self, number, result); }
+- (instancetype)decimalNumberByMultiplyingBy:(NSDecimalNumber *)number withBehavior:(id <NSDecimalNumberBehaviors>)behavior { if (behavior == nil) behavior = [[self class] defaultBehavior]; NSDecimal result; NSCalculationError error = NSDecimalMultiply(&result, &_decimal, &number->_decimal, [behavior roundingMode]); return __NSDecimalResultWithBehavior(error, behavior, @selector(decimalNumberByMultiplyingBy:), self, number, result); }
 - (instancetype)decimalNumberByDividingBy:(NSDecimalNumber *)number { return [self decimalNumberByDividingBy:number withBehavior:nil]; }
-- (instancetype)decimalNumberByDividingBy:(NSDecimalNumber *)number withBehavior:(id <NSDecimalNumberBehaviors>)behavior { if (behavior == nil) behavior = [[self class] defaultBehavior]; NSDecimal result = {0}; NSCalculationError error = NSDecimalDivide(&result, &_decimal, &number->_decimal, [behavior roundingMode]); return __NSDecimalApplyBehavior(error, behavior, @selector(decimalNumberByDividingBy:), self, number, result); }
+- (instancetype)decimalNumberByDividingBy:(NSDecimalNumber *)number withBehavior:(id <NSDecimalNumberBehaviors>)behavior { if (behavior == nil) behavior = [[self class] defaultBehavior]; NSDecimal result = {0}; NSCalculationError error = NSDecimalDivide(&result, &_decimal, &number->_decimal, [behavior roundingMode]); return __NSDecimalResultWithBehavior(error, behavior, @selector(decimalNumberByDividingBy:), self, number, result); }
 - (instancetype)decimalNumberByRaisingToPower:(NSUInteger)power { return [self decimalNumberByRaisingToPower:power withBehavior:nil]; }
-- (instancetype)decimalNumberByRaisingToPower:(NSUInteger)power withBehavior:(id <NSDecimalNumberBehaviors>)behavior { if (behavior == nil) behavior = [[self class] defaultBehavior]; NSDecimal result; NSCalculationError error = NSDecimalPower(&result, &_decimal, power, [behavior roundingMode]); return __NSDecimalApplyBehavior(error, behavior, @selector(decimalNumberByRaisingToPower:), self, nil, result); }
+- (instancetype)decimalNumberByRaisingToPower:(NSUInteger)power withBehavior:(id <NSDecimalNumberBehaviors>)behavior { if (behavior == nil) behavior = [[self class] defaultBehavior]; NSDecimal result; NSCalculationError error = NSDecimalPower(&result, &_decimal, power, [behavior roundingMode]); return __NSDecimalResultWithBehavior(error, behavior, @selector(decimalNumberByRaisingToPower:), self, nil, result); }
 - (instancetype)decimalNumberByMultiplyingByPowerOf10:(short)power { return [self decimalNumberByMultiplyingByPowerOf10:power withBehavior:nil]; }
-- (instancetype)decimalNumberByMultiplyingByPowerOf10:(short)power withBehavior:(id <NSDecimalNumberBehaviors>)behavior { if (behavior == nil) behavior = [[self class] defaultBehavior]; NSDecimal result = {0}; NSCalculationError error = NSDecimalMultiplyByPowerOf10(&result, &_decimal, power, [behavior roundingMode]); return __NSDecimalApplyBehavior(error, behavior, @selector(decimalNumberByMultiplyingByPowerOf10:), self, nil, result); }
+- (instancetype)decimalNumberByMultiplyingByPowerOf10:(short)power withBehavior:(id <NSDecimalNumberBehaviors>)behavior { if (behavior == nil) behavior = [[self class] defaultBehavior]; NSDecimal result = {0}; NSCalculationError error = NSDecimalMultiplyByPowerOf10(&result, &_decimal, power, [behavior roundingMode]); return __NSDecimalResultWithBehavior(error, behavior, @selector(decimalNumberByMultiplyingByPowerOf10:), self, nil, result); }
 
 @end
 
 @implementation NSDecimalNumberHandler
-- (instancetype)initWithRoundingMode:(NSRoundingMode)roundingMode scale:(short)scale { self = [super init]; if (self != nil) { _roundingMode = roundingMode; _scale = scale; } return self; }
+- (instancetype)initWithRoundingMode:(NSRoundingMode)roundingMode scale:(short)scale raiseOnExactness:(BOOL)exact raiseOnOverflow:(BOOL)overflow raiseOnUnderflow:(BOOL)underflow raiseOnDivideByZero:(BOOL)divideByZero {
+    self = [super init];
+    if (self != nil) {
+        _scale = scale;
+        _roundingMode = roundingMode;
+        _raiseOnExactness = exact ? 1 : 0;
+        _raiseOnOverflow = overflow ? 1 : 0;
+        _raiseOnUnderflow = underflow ? 1 : 0;
+        _raiseOnDivideByZero = divideByZero ? 1 : 0;
+    }
+    return self;
+}
++ (instancetype)decimalNumberHandlerWithRoundingMode:(NSRoundingMode)roundingMode scale:(short)scale raiseOnExactness:(BOOL)exact raiseOnOverflow:(BOOL)overflow raiseOnUnderflow:(BOOL)underflow raiseOnDivideByZero:(BOOL)divideByZero {
+    return __NSDECIMAL_AUTORELEASE([[self alloc] initWithRoundingMode:roundingMode scale:scale raiseOnExactness:exact raiseOnOverflow:overflow raiseOnUnderflow:underflow raiseOnDivideByZero:divideByZero]);
+}
 - (NSRoundingMode)roundingMode { return _roundingMode; }
 - (short)scale { return _scale; }
-+ (instancetype)defaultDecimalNumberHandler { return __NSDECIMAL_AUTORELEASE([[self alloc] initWithRoundingMode:NSRoundPlain scale:NSDecimalNoScale]); }
+- (BOOL)raiseOnExactness { return _raiseOnExactness ? YES : NO; }
+- (BOOL)raiseOnOverflow { return _raiseOnOverflow ? YES : NO; }
+- (BOOL)raiseOnUnderflow { return _raiseOnUnderflow ? YES : NO; }
+- (BOOL)raiseOnDivideByZero { return _raiseOnDivideByZero ? YES : NO; }
++ (instancetype)defaultDecimalNumberHandler {
+    static id defaultHandler = nil;
+    if (defaultHandler == nil) defaultHandler = [[self alloc] initWithRoundingMode:NSRoundPlain scale:NSDecimalNoScale raiseOnExactness:NO raiseOnOverflow:YES raiseOnUnderflow:YES raiseOnDivideByZero:YES];
+    return defaultHandler;
+}
 - (NSDecimalNumber *)exceptionDuringOperation:(SEL)operation error:(NSCalculationError)error leftOperand:(NSDecimalNumber *)leftOperand rightOperand:(NSDecimalNumber *)rightOperand {
+    (void)operation;
     (void)leftOperand;
     (void)rightOperand;
     NSExceptionName name = NSDecimalNumberExactnessException;
     switch (error) {
-        case NSCalculationUnderflow: name = NSDecimalNumberUnderflowException; break;
-        case NSCalculationOverflow: name = NSDecimalNumberOverflowException; break;
-        case NSCalculationDivideByZero: name = NSDecimalNumberDivideByZeroException; break;
-        case NSCalculationLossOfPrecision: name = NSDecimalNumberExactnessException; break;
+        case NSCalculationUnderflow: if (!_raiseOnUnderflow) return nil; name = NSDecimalNumberUnderflowException; break;
+        case NSCalculationOverflow: if (!_raiseOnOverflow) return nil; name = NSDecimalNumberOverflowException; break;
+        case NSCalculationDivideByZero: if (!_raiseOnDivideByZero) return nil; name = NSDecimalNumberDivideByZeroException; break;
         case NSCalculationNoError: return nil;
+        default: if (!_raiseOnExactness) return nil; break;
     }
     [NSException raise:name format:@"decimal operation %s failed", sel_getName(operation)];
     return nil;
