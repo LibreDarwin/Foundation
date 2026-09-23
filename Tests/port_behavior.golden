@@ -239,6 +239,30 @@ sc loc hex de ok                           | ok=1 val=3.00 loc=7
 sc loc hex dec bad                         | ok=0 val=-1.00 loc=0
 sc loc de int                              | ok=1 val=3 loc=1
 sc localized def                           | ok=1 val=3.14 loc=4
+nnf default style                          | 0
+nnf en dec 1234.5                          | 1,234.5
+nnf de dec 1234.5                          | 1.234,5
+nnf de dec neg                             | -1.234,5
+nnf de pct 0.25                            | 25 %
+nnf en pct 0.25                            | 25%
+nnf en sci 1234.5                          | 1.2345E3
+nnf en spell 42                            | forty-two
+nnf de cur 1234.5                          | 1.234,50 €
+nnf en cur 1234.5                          | $1,234.50
+nnf de parse 1.234,5                       | 1.234,5
+nnf en parse 1,234.5                       | 1,234.5
+nnf en parse bad                           | nil
+nnf en pct parse 25%                       | 0.25
+nnf de pct parse 25 nb                     | non-nil
+nnf custom fmt 12345.6                     | 12,345.6
+nnf style chg output                       | 12,345.6
+nnf minfrac2 7.1                           | 7.10
+nnf maxfrac3 7.1234                        | 7.123
+nnf group2 12345.6                         | 1,23,45.60
+nnf getObject good                         | ok=1 val=123.45 err=nil
+nnf getObject bad                          | ok=0 obj=nil dom=NSCocoaErrorDomain code=2048
+nnf getObject bad desc                     | The value “zzz” is invalid.
+nnf alloc dec 3.5                          | 3.5
 pr basic domain                            | TestDomain
 pr basic code                              | 42
 pr negative code                           | -1004

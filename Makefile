@@ -171,6 +171,7 @@ GATE_SRCS = String.subproj/NSString.m \
 Numeric.subproj/NSDecimal.m \
              Numeric.subproj/NSDecimalNumber.m \
              Numeric.subproj/NSNumber.m \
+             Numeric.subproj/NSNumberFormatter.m \
             Date.subproj/NSDate.m \
             Date.subproj/NSCalendar.m \
             Date.subproj/NSDateComponents.m \
@@ -203,7 +204,7 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	    build/release/gate/*.o -framework CoreFoundation
 	@build/release/port_behavior > build/release/port_behavior.out
 	@diff Tests/port_behavior.golden build/release/port_behavior.out \
-	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 887 probes)"
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 911 probes)"
 
 verify: pairing-sweep behavior-gate
 

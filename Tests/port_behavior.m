@@ -684,6 +684,76 @@ int main(void) {
     scOK = [scLized scanDouble:&scLV];
     p("sc localized def", [NSString stringWithFormat:@"ok=%d val=%.2f loc=%ld", scOK, scLV, (long)scLized.scanLocation]);
 
+    /* ---------- NSNumberFormatter ---------- */
+    NSNumberFormatter *nnfF = [[NSNumberFormatter alloc] init];
+    p("nnf default style", [NSString stringWithFormat:@"%ld", (long)nnfF.numberStyle]);
+    nnfF.numberStyle = NSNumberFormatterDecimalStyle;
+    nnfF.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+    p("nnf en dec 1234.5", [nnfF stringFromNumber:@1234.5]);
+    nnfF.locale = [NSLocale localeWithLocaleIdentifier:@"de_DE"];
+    p("nnf de dec 1234.5", [nnfF stringFromNumber:@1234.5]);
+    p("nnf de dec neg", [nnfF stringFromNumber:@(-1234.5)]);
+    nnfF.numberStyle = NSNumberFormatterPercentStyle;
+    p("nnf de pct 0.25", [nnfF stringFromNumber:@0.25]);
+    nnfF.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+    p("nnf en pct 0.25", [nnfF stringFromNumber:@0.25]);
+    nnfF.numberStyle = NSNumberFormatterScientificStyle;
+    p("nnf en sci 1234.5", [nnfF stringFromNumber:@1234.5]);
+    nnfF.numberStyle = NSNumberFormatterSpellOutStyle;
+    p("nnf en spell 42", [nnfF stringFromNumber:@42]);
+    nnfF.numberStyle = NSNumberFormatterCurrencyStyle;
+    nnfF.locale = [NSLocale localeWithLocaleIdentifier:@"de_DE"];
+    p("nnf de cur 1234.5", [nnfF stringFromNumber:@1234.5]);
+    nnfF.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+    p("nnf en cur 1234.5", [nnfF stringFromNumber:@1234.5]);
+
+    NSNumberFormatter *nnfP = [[NSNumberFormatter alloc] init];
+    nnfP.numberStyle = NSNumberFormatterDecimalStyle;
+    nnfP.locale = [NSLocale localeWithLocaleIdentifier:@"de_DE"];
+    p("nnf de parse 1.234,5", [nnfP stringFromNumber:[nnfP numberFromString:@"1.234,5"]]);
+    nnfP.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+    p("nnf en parse 1,234.5", [nnfP stringFromNumber:[nnfP numberFromString:@"1,234.5"]]);
+    p("nnf en parse bad", [nnfP numberFromString:@"abc"] ? @"non-nil" : @"nil");
+    nnfP.numberStyle = NSNumberFormatterPercentStyle;
+    p("nnf en pct parse 25%", [[nnfP numberFromString:@"25%"] stringValue]);
+    nnfP.locale = [NSLocale localeWithLocaleIdentifier:@"de_DE"];
+    p("nnf de pct parse 25 nb", [nnfP numberFromString:@"25\u00A0%"] ? @"non-nil" : @"nil");
+
+    NSNumberFormatter *nnfS = [[NSNumberFormatter alloc] init];
+    nnfS.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+    nnfS.format = @"###,###.##";
+    p("nnf custom fmt 12345.6", [nnfS stringFromNumber:@12345.6]);
+    nnfS.numberStyle = NSNumberFormatterScientificStyle;
+    p("nnf style chg output", [nnfS stringFromNumber:@12345.6]);
+
+    NSNumberFormatter *nnfD = [[NSNumberFormatter alloc] init];
+    nnfD.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+    nnfD.numberStyle = NSNumberFormatterDecimalStyle;
+    nnfD.minimumFractionDigits = 2;
+    p("nnf minfrac2 7.1", [nnfD stringFromNumber:@7.1]);
+    nnfD.maximumFractionDigits = 3;
+    p("nnf maxfrac3 7.1234", [nnfD stringFromNumber:@7.1234]);
+    nnfD.usesGroupingSeparator = YES;
+    nnfD.groupingSize = 2;
+    p("nnf group2 12345.6", [nnfD stringFromNumber:@12345.6]);
+
+    NSNumberFormatter *nnfG = [[NSNumberFormatter alloc] init];
+    nnfG.numberStyle = NSNumberFormatterDecimalStyle;
+    nnfG.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+    id nnfObj = nil;
+    NSError *nnfErr = nil;
+    BOOL nnfOK = [nnfG getObjectValue:&nnfObj forString:@"123.45" range:NULL error:&nnfErr];
+    p("nnf getObject good", [NSString stringWithFormat:@"ok=%d val=%@ err=%@", nnfOK, nnfObj, nnfErr ? nnfErr.domain : @"nil"]);
+    nnfObj = nil; nnfErr = nil;
+    nnfOK = [nnfG getObjectValue:&nnfObj forString:@"zzz" range:NULL error:&nnfErr];
+    p("nnf getObject bad", [NSString stringWithFormat:@"ok=%d obj=%@ dom=%@ code=%ld", nnfOK, nnfObj ? @"x" : @"nil", nnfErr.domain, (long)nnfErr.code]);
+    p("nnf getObject bad desc", nnfErr.localizedDescription);
+
+    NSNumberFormatter *nnn = [[NSNumberFormatter alloc] init];
+    nnn.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+    nnn.numberStyle = NSNumberFormatterDecimalStyle;
+    p("nnf alloc dec 3.5", [nnn stringFromNumber:@3.5]);
+
     /* ---------- NSError ---------- */
     NSError *errA = [NSError errorWithDomain:@"TestDomain" code:42 userInfo:nil];
     p("pr basic domain", errA.domain);
