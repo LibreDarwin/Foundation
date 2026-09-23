@@ -415,4 +415,37 @@ nn alloc init                              | (null) (null)
 nn alloc initInt 7                         | i 7
 nn alloc initDbl 2.5                       | d 2.5
 nn desc-loc                                | 42
+ne cocoa domain                            | NSCocoaErrorDomain
+ne posix domain                            | NSPOSIXErrorDomain
+ne osstatus domain                         | NSOSStatusErrorDomain
+ne mach domain                             | NSMachErrorDomain
+ne key options                             | NSLocalizedRecoveryOptions
+ne key attempter                           | NSRecoveryAttempter
+ne key anchor                              | NSHelpAnchor
+ne key underlying                          | NSUnderlyingError
+ne raw class                               | NSError
+ne raw failure                             | nil
+ne dict options                            | (
+    OK,
+    Cancel
+)
+ne dict attempter                          | attempter
+ne dict anchor                             | help
+ne underlying                              | Error Domain=under.example Code=1 "(null)"
+ne numdesc                                 | 42
+ne posix desc                              | The operation couldn’t be completed. No such file or directory
+ne onedesc                                 | Error Domain=single.example Code=6 "One" UserInfo={NSLocalizedDescription=One}
+ne eq diffUser                             | 0
+ne eq nsnum                                | 0
+ne eq nil                                  | 0
+ne eq underlying-vs-raw                    | 0
+ne hash diff                               | 1
+ne copy diffobj                            | 1
+ne copy equal                              | 1
+ne copy desc                               | 1
+ne user copy                               | A
+ne user class                              | __NSFrozenDictionaryM
+ne emptyuser desc                          | Error Domain=empty.example Code=3 "(null)"
+ne nilseq userInfo                         | non-nil
+ne nilseq desc                             | The operation couldn’t be completed. (nilseq.example error 4.)
 PORT_BEHAVIOR_END

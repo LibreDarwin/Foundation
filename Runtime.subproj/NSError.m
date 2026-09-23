@@ -10,7 +10,14 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSDictionary.h>
 #import <Foundation/NSCoder.h>
+#include <CoreFoundation/CFArray.h>
 #include <CoreFoundation/CFString.h>
+#include <string.h>
+
+static CFComparisonResult NSErrorUserInfoKeyCompare(const void *a, const void *b, void *ctx) {
+    (void)ctx;
+    return CFStringCompare((CFStringRef)a, (CFStringRef)b, 0);
+}
 
 #if __has_feature(objc_arc)
 #define NSERROR_TRANSFER(value) (__bridge_transfer NSString *)(value)
@@ -58,7 +65,12 @@ NSErrorUserInfoKey const NSUnderlyingErrorKey = @"NSUnderlyingError";
     if (self != nil) {
         _domain = [domain copy];
         _code = code;
-        _userInfo = [userInfo copy];
+        /* Apple never exposes a nil userInfo: an omitted dictionary becomes an
+         * (equal) empty dictionary so -userInfo is non-nil and -description
+         * drops the clause uniformly when nothing is present. (Not [NSDictionary
+         * new]: +new through the runtime-resolved class object is unsafe in the
+         * dual-class gate environment, unlike the @{} literal.) */
+        _userInfo = (userInfo != nil) ? [userInfo copy] : @{};
     }
     return self;
 }
@@ -84,11 +96,16 @@ NSErrorUserInfoKey const NSUnderlyingErrorKey = @"NSUnderlyingError";
 }
 
 - (NSString *)localizedDescription {
+    id described = nil;
     if (_userInfo != nil) {
-        NSString *described = [_userInfo objectForKey:NSLocalizedDescriptionKey];
-        if (described != nil) {
-            return described;
-        }
+        described = [_userInfo objectForKey:NSLocalizedDescriptionKey];
+    }
+    if (described != nil) {
+        return described;
+    }
+    if ([_domain isEqualToString:NSPOSIXErrorDomain]) {
+        return [NSString stringWithFormat:@"The operation couldn\u2019t be completed. %s",
+                                          strerror((int)_code)];
     }
     return [NSString stringWithFormat:@"The operation couldn\u2019t be completed. (%@ error %ld.)",
                                       _domain, (long)_code];
@@ -180,15 +197,50 @@ NSErrorUserInfoKey const NSUnderlyingErrorKey = @"NSUnderlyingError";
 
 - (NSString *)description {
     NSString *described = nil;
-    if (_userInfo != nil) {
+    BOOL hasUserInfo = (_userInfo != nil && [_userInfo count] > 0);
+    if (hasUserInfo) {
         described = [_userInfo objectForKey:NSLocalizedDescriptionKey];
     }
-    if (_userInfo == nil) {
-        return [NSString stringWithFormat:@"Error Domain=%@ Code=%ld \"%@\"",
-                                          _domain, (long)_code, described];
+
+    NSString *quoted;
+    if (described != nil) {
+        quoted = described;
+    } else if ([_domain isEqualToString:NSPOSIXErrorDomain]) {
+        quoted = [NSString stringWithUTF8String:strerror((int)_code)];
+    } else {
+        quoted = @"(null)";
     }
-    return [NSString stringWithFormat:@"Error Domain=%@ Code=%ld \"%@\" UserInfo=%@",
-                                      _domain, (long)_code, described, _userInfo];
+
+    NSString *userInfoPart = @"";
+    if (hasUserInfo) {
+        NSArray *keys = [_userInfo allKeys];
+        CFMutableArrayRef sorted = CFArrayCreateMutable(kCFAllocatorDefault,
+                                                        (CFIndex)[keys count],
+                                                        &kCFTypeArrayCallBacks);
+        for (NSUInteger i = 0; i < [keys count]; i++) {
+            CFArrayAppendValue(sorted, (__bridge CFTypeRef)[keys objectAtIndex:i]);
+        }
+        CFArraySortValues(sorted, CFRangeMake(0, CFArrayGetCount(sorted)),
+                          NSErrorUserInfoKeyCompare, NULL);
+
+        NSString *clause = @"";
+        BOOL first = YES;
+        CFIndex n = CFArrayGetCount(sorted);
+        for (CFIndex i = 0; i < n; i++) {
+            NSString *key = (__bridge NSString *)CFArrayGetValueAtIndex(sorted, i);
+            id value = [_userInfo objectForKey:key];
+            NSString *rendered = [value isKindOfClass:[NSString class]] ? value : [value description];
+            NSString *pair = [NSString stringWithFormat:@"%@=%@", key, rendered];
+            clause = first ? pair : [clause stringByAppendingFormat:@", %@", pair];
+            first = NO;
+        }
+        CFRelease(sorted);
+
+        userInfoPart = [NSString stringWithFormat:@" UserInfo={%@}", clause];
+    }
+
+    return [NSString stringWithFormat:@"Error Domain=%@ Code=%ld \"%@\"%@",
+                                      _domain, (long)_code, quoted, userInfoPart];
 }
 
 @end

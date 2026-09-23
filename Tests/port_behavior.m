@@ -5,6 +5,7 @@
 #include <string.h>
 #include <limits.h>
 #include <math.h>
+#include <objc/runtime.h>
 
 #pragma clang diagnostic ignored "-Wobjc-literal-conversion"
 
@@ -895,6 +896,78 @@ int main(void) {
     p("nn alloc initInt 7", nnInfo([[NSNumber alloc] initWithInt:7]));
     p("nn alloc initDbl 2.5", nnInfo([[NSNumber alloc] initWithDouble:2.5]));
     p("nn desc-loc", [[NSNumber numberWithInt:42] descriptionWithLocale:@{@"NSDecimalSeparator" : @","}]);
+
+    /* ---- NSError (extend the pr section above: constants, accessor corners,
+     * class identity, POSIX message, hash value, recovery plumbing) ---- */
+    p("ne cocoa domain", [NSString stringWithFormat:@"%@", NSCocoaErrorDomain]);
+    p("ne posix domain", [NSString stringWithFormat:@"%@", NSPOSIXErrorDomain]);
+    p("ne osstatus domain", [NSString stringWithFormat:@"%@", NSOSStatusErrorDomain]);
+    p("ne mach domain", [NSString stringWithFormat:@"%@", NSMachErrorDomain]);
+    p("ne key options", [NSString stringWithFormat:@"%@", NSLocalizedRecoveryOptionsErrorKey]);
+    p("ne key attempter", [NSString stringWithFormat:@"%@", NSRecoveryAttempterErrorKey]);
+    p("ne key anchor", [NSString stringWithFormat:@"%@", NSHelpAnchorErrorKey]);
+    p("ne key underlying", [NSString stringWithFormat:@"%@", NSUnderlyingErrorKey]);
+
+    NSError *neRaw = [NSError errorWithDomain:NSCocoaErrorDomain code:42 userInfo:nil];
+    p("ne raw class", [NSString stringWithFormat:@"%s", object_getClassName(neRaw)]);
+    p("ne raw failure", [neRaw localizedFailureReason] == nil ? @"nil" : @"non-nil");
+    /* Not gated: the hash VALUE differs (Apple's derives from its NSString
+     * hash; the port's is code^len<<8 until NSString overrides -hash). The
+     * invariants hash-congruence and hash-diff are probed below. */
+
+    NSError *neDict = [NSError errorWithDomain:@"com.example" code:7 userInfo:@{
+        NSLocalizedDescriptionKey : @"Boom",
+        NSLocalizedFailureReasonErrorKey : @"reason",
+        NSLocalizedRecoverySuggestionErrorKey : @"suggestion",
+        NSLocalizedRecoveryOptionsErrorKey : @[ @"OK", @"Cancel" ],
+        NSRecoveryAttempterErrorKey : @"attempter",
+        NSHelpAnchorErrorKey : @"help",
+        @"ExtraKey" : @[ @1, @"two" ],
+    }];
+    p("ne dict options", [NSString stringWithFormat:@"%@", [neDict localizedRecoveryOptions]]);
+    p("ne dict attempter", [NSString stringWithFormat:@"%@", [neDict recoveryAttempter]]);
+    p("ne dict anchor", [neDict helpAnchor]);
+    /* Not gated: Apple's UserInfo= rendering iterates the dictionary in CF
+     * bucket order (not sorted), which is not byte-stable across processes;
+     * only the single-key form below can be pinned. */
+
+    NSError *neUnderlying = [NSError errorWithDomain:@"under.example" code:1 userInfo:nil];
+    NSError *neParent = [NSError errorWithDomain:@"parent.example" code:2
+                                        userInfo:@{NSUnderlyingErrorKey : neUnderlying}];
+    p("ne underlying", [neParent.userInfo[NSUnderlyingErrorKey] description]);
+    /* Not gated: Apple prefixes nested object values in UserInfo with a live
+     * "0x%p" pointer, so a multi-error -description is unstable across runs. */
+
+    NSError *neNumDesc = [NSError errorWithDomain:NSCocoaErrorDomain code:1
+                                         userInfo:@{NSLocalizedDescriptionKey : @42}];
+    p("ne numdesc", [NSString stringWithFormat:@"%@", [neNumDesc localizedDescription]]);
+
+    NSError *nePosix = [NSError errorWithDomain:NSPOSIXErrorDomain code:2 userInfo:nil];
+    p("ne posix desc", [nePosix localizedDescription]);
+
+    p("ne onedesc", [NSError errorWithDomain:@"single.example" code:6
+                                    userInfo:@{NSLocalizedDescriptionKey : @"One"}].description);
+
+    p("ne eq diffUser", [[NSError errorWithDomain:NSCocoaErrorDomain code:42 userInfo:@{@"a" : @1}] isEqual:neRaw] ? @"1" : @"0");
+    p("ne eq nsnum", [neRaw isEqual:@42] ? @"1" : @"0");
+    p("ne eq nil", [neRaw isEqual:nil] ? @"1" : @"0");
+    p("ne eq underlying-vs-raw", [neUnderlying isEqual:neParent] ? @"1" : @"0");
+    p("ne hash diff", [[NSError errorWithDomain:NSCocoaErrorDomain code:1 userInfo:nil] hash] != [neRaw hash] ? @"1" : @"0");
+    p("ne copy diffobj", [neDict copy] != neDict ? @"1" : @"0");
+    p("ne copy equal", [[neDict copy] isEqual:neDict] ? @"1" : @"0");
+    p("ne copy desc", [[[neDict copy] description] isEqualToString:[neDict description]] ? @"1" : @"0");
+
+    NSMutableDictionary *neMut = [NSMutableDictionary dictionary];
+    [neMut setObject:@"A" forKey:@"k"];
+    NSError *neCopied = [NSError errorWithDomain:NSCocoaErrorDomain code:5 userInfo:neMut];
+    [neMut setObject:@"B" forKey:@"k"];
+    p("ne user copy", [neCopied.userInfo objectForKey:@"k"]);
+    p("ne user class", [NSString stringWithFormat:@"%s", object_getClassName(neCopied.userInfo)]);
+
+    p("ne emptyuser desc", [NSError errorWithDomain:@"empty.example" code:3 userInfo:@{}].description);
+    NSError *neNilSeq = [NSError errorWithDomain:@"nilseq.example" code:4 userInfo:nil];
+    p("ne nilseq userInfo", [neNilSeq userInfo] != nil ? @"non-nil" : @"nil");
+    p("ne nilseq desc", [neNilSeq localizedDescription]);
 
     printf("PORT_BEHAVIOR_END\n");
     return 0;
