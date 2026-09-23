@@ -8,6 +8,7 @@
 
 #import <Foundation/NSDateComponents.h>
 #import <Foundation/NSCoder.h>
+#import <Foundation/NSException.h>
 #import "NSCalendarSupport.h"
 
 @implementation NSDateComponents {
@@ -123,6 +124,11 @@
 }
 
 - (BOOL)isValidDateInCalendar:(NSCalendar *)calendar {
+    if (calendar == nil) {
+        @throw [NSException exceptionWithName:NSInvalidArgumentException
+                                       reason:@"calendar cannot be nil"
+                                     userInfo:nil];
+    }
     return NSCalendarDateComponentsAreValid(calendar, self);
 }
 

@@ -727,4 +727,43 @@ da m setData                               | 2|00|01
 da m appendData nil                        | 2
 da m appendData                            | 4|02|80
 da m mutableBytes                          | 11|ee|00
+dc init year undef                         | undef
+dc init week undef                         | undef
+dc init cal nil                            | nil
+dc init leapMonth                          | 0
+dc init repeatedDay                        | 0
+dc set era                                 | 1
+dc set year                                | 2024
+dc set month                               | 3
+dc set day                                 | 15
+dc set hour                                | 10
+dc set minute                              | 30
+dc set second                              | 45
+dc set nanosecond                          | 500
+dc set weekday                             | 6
+dc set weekdayOrdinal                      | 3
+dc set quarter                             | 2
+dc set weekOfMonth                         | 2
+dc set weekOfYear                          | 10
+dc set yearForWeekOfYear                   | 2024
+dc set dayOfYear                           | 75
+dc set week                                | 9223372036854775807
+dc set leapMonth                           | 0
+dc valueFor year                           | 2024
+dc valueFor nanosecond                     | 500
+dc setValue year                           | 2030
+dc valueFor setValue                       | 15
+dc copy identity                           | 1
+dc copy year                               | 2030
+dc copy day                                | 15
+dc copy week                               | 9223372036854775807
+dc isValid full no cal                     | 0
+dc valid feb29 gr                          | 1
+dc valid feb30 gr                          | 0
+dc valid month13 gr                        | 0
+dc valid apr31 gr                          | 0
+dc valid nil cal                           | raise NSInvalidArgumentException
+dc date nil cal                            | nil
+dc isValid set cal                         | 1
+dc date with cal                           | 2024-02-29 00:00:00 +0000
 PORT_BEHAVIOR_END

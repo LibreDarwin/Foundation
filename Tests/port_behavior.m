@@ -1585,6 +1585,63 @@ int main(void) {
     p("da m mutableBytes", [NSString stringWithFormat:@"%lu|%02x|%02x",
                             (unsigned long)[mm length], mmp[1], mmp[3]]);
 
+    /* ---------- NSDateComponents (port-implemented, not bridged) ---------- */
+    NSDateComponents *dci = [[NSDateComponents alloc] init];
+    p("dc init year undef", dci.year == NSDateComponentUndefined ? @"undef" : @"?");
+    p("dc init week undef", [dci week] == NSDateComponentUndefined ? @"undef" : @"?");
+    p("dc init cal nil", dci.calendar == nil ? @"nil" : @"?");
+    p("dc init leapMonth", dci.isLeapMonth ? @"1" : @"0");
+    p("dc init repeatedDay", dci.isRepeatedDay ? @"1" : @"0");
+    dci.era = 1; dci.year = 2024; dci.month = 3; dci.day = 15;
+    dci.hour = 10; dci.minute = 30; dci.second = 45; dci.nanosecond = 500;
+    dci.weekday = 6; dci.weekdayOrdinal = 3; dci.quarter = 2;
+    dci.weekOfMonth = 2; dci.weekOfYear = 10; dci.yearForWeekOfYear = 2024;
+    dci.dayOfYear = 75;
+    p("dc set era", [NSString stringWithFormat:@"%ld", (long)dci.era]);
+    p("dc set year", [NSString stringWithFormat:@"%ld", (long)dci.year]);
+    p("dc set month", [NSString stringWithFormat:@"%ld", (long)dci.month]);
+    p("dc set day", [NSString stringWithFormat:@"%ld", (long)dci.day]);
+    p("dc set hour", [NSString stringWithFormat:@"%ld", (long)dci.hour]);
+    p("dc set minute", [NSString stringWithFormat:@"%ld", (long)dci.minute]);
+    p("dc set second", [NSString stringWithFormat:@"%ld", (long)dci.second]);
+    p("dc set nanosecond", [NSString stringWithFormat:@"%ld", (long)dci.nanosecond]);
+    p("dc set weekday", [NSString stringWithFormat:@"%ld", (long)dci.weekday]);
+    p("dc set weekdayOrdinal", [NSString stringWithFormat:@"%ld", (long)dci.weekdayOrdinal]);
+    p("dc set quarter", [NSString stringWithFormat:@"%ld", (long)dci.quarter]);
+    p("dc set weekOfMonth", [NSString stringWithFormat:@"%ld", (long)dci.weekOfMonth]);
+    p("dc set weekOfYear", [NSString stringWithFormat:@"%ld", (long)dci.weekOfYear]);
+    p("dc set yearForWeekOfYear", [NSString stringWithFormat:@"%ld", (long)dci.yearForWeekOfYear]);
+    p("dc set dayOfYear", [NSString stringWithFormat:@"%ld", (long)dci.dayOfYear]);
+    p("dc set week", [NSString stringWithFormat:@"%ld", (long)[dci week]]);
+    p("dc set leapMonth", [NSString stringWithFormat:@"%ld", (long)dci.isLeapMonth]);
+    p("dc valueFor year", [NSString stringWithFormat:@"%ld", (long)[dci valueForComponent:NSCalendarUnitYear]]);
+    p("dc valueFor nanosecond", [NSString stringWithFormat:@"%ld", (long)[dci valueForComponent:NSCalendarUnitNanosecond]]);
+    [dci setValue:2030 forComponent:NSCalendarUnitYear];
+    p("dc setValue year", [NSString stringWithFormat:@"%ld", (long)dci.year]);
+    p("dc valueFor setValue", [NSString stringWithFormat:@"%ld", (long)[dci valueForComponent:NSCalendarUnitDay]]);
+    NSDateComponents *dcp1 = [dci copy];
+    p("dc copy identity", dcp1 != dci ? @"1" : @"0");
+    p("dc copy year", [NSString stringWithFormat:@"%ld", (long)dcp1.year]);
+    p("dc copy day", [NSString stringWithFormat:@"%ld", (long)dcp1.day]);
+    p("dc copy week", [NSString stringWithFormat:@"%ld", (long)[dcp1 week]]);
+    p("dc isValid full no cal", dci.isValidDate ? @"1" : @"0");
+    NSCalendar *cgr = [NSCalendar calendarWithIdentifier:NSCalendarIdentifierGregorian];
+    NSDateComponents *dcv = [[NSDateComponents alloc] init];
+    dcv.year = 2024; dcv.month = 2; dcv.day = 29;
+    p("dc valid feb29 gr", [dcv isValidDateInCalendar:cgr] ? @"1" : @"0");
+    dcv.month = 2; dcv.day = 30;
+    p("dc valid feb30 gr", [dcv isValidDateInCalendar:cgr] ? @"1" : @"0");
+    dcv.month = 13; dcv.day = 1;
+    p("dc valid month13 gr", [dcv isValidDateInCalendar:cgr] ? @"1" : @"0");
+    dcv.year = 2024; dcv.month = 4; dcv.day = 31;
+    p("dc valid apr31 gr", [dcv isValidDateInCalendar:cgr] ? @"1" : @"0");
+    catchProbe("dc valid nil cal", ^{ return [dcv isValidDateInCalendar:nil] ? @"1" : @"0"; });
+    p("dc date nil cal", [[[[NSDateComponents alloc] init] date] description] == nil ? @"nil" : @"?");
+    NSDateComponents *dcw = [[NSDateComponents alloc] init];
+    dcw.calendar = cgr; dcw.year = 2024; dcw.month = 2; dcw.day = 29;
+    p("dc isValid set cal", dcw.isValidDate ? @"1" : @"0");
+    p("dc date with cal", [[dcw date] description] == nil ? @"nil" : [[dcw date] description]);
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }
