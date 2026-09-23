@@ -527,6 +527,85 @@ int main(void) {
     p("cv isEqualToValue same", [NSString stringWithFormat:@"%d", [cvI isEqualToValue:cvI2]]);
     p("cv copy identity", [NSString stringWithFormat:@"%d", [cvI copy] == cvI]);
 
+    /* ---------- NSMapTable (legacy C API) ---------- */
+    NSMapTable *nsT = NSCreateMapTable(NSObjectMapKeyCallBacks,
+                                       NSObjectMapValueCallBacks, 0);
+    p("ns create count", [NSString stringWithFormat:@"%lu", (unsigned long)NSCountMapTable(nsT)]);
+    NSMapInsert(nsT, (__bridge const void *)@"a", (__bridge const void *)@"A");
+    NSMapInsert(nsT, (__bridge const void *)@"b", (__bridge const void *)@"B");
+    NSMapInsert(nsT, (__bridge const void *)@"c", (__bridge const void *)@"C");
+    p("ns count after 3 inserts", [NSString stringWithFormat:@"%lu", (unsigned long)NSCountMapTable(nsT)]);
+    p("ns get existing", [NSString stringWithFormat:@"%d", (__bridge id)NSMapGet(nsT, (__bridge const void *)@"b") == @"B"]);
+    p("ns get absent", [NSString stringWithFormat:@"%d", NSMapGet(nsT, (__bridge const void *)@"zz") == NULL]);
+    void *nsMKey = NULL;
+    void *nsMValue = NULL;
+    BOOL nsMember = NSMapMember(nsT, (__bridge const void *)@"a", &nsMKey, &nsMValue);
+    p("ns member hit", [NSString stringWithFormat:@"%d", nsMember]);
+    p("ns member value", [NSString stringWithFormat:@"%d", (__bridge id)nsMValue == @"A"]);
+    p("ns member origkey", [NSString stringWithFormat:@"%d", nsMKey == (__bridge const void *)@"a"]);
+    p("ns member absent", [NSString stringWithFormat:@"%d", NSMapMember(nsT, (__bridge const void *)@"zz", NULL, NULL)]);
+    p("ns insertIfAbsent new", [NSString stringWithFormat:@"%d", NSMapInsertIfAbsent(nsT, (__bridge const void *)@"d", (__bridge const void *)@"D") == NULL]);
+    p("ns insertIfAbsent exists", [NSString stringWithFormat:@"%d", NSMapInsertIfAbsent(nsT, (__bridge const void *)@"d", (__bridge const void *)@"X") != NULL]);
+    p("ns insertIfAbsent kept value", [NSString stringWithFormat:@"%d", (__bridge id)NSMapGet(nsT, (__bridge const void *)@"d") == @"D"]);
+    NSString *nsEqualsB = [NSString stringWithFormat:@"%@", @"b"];
+    p("ns get by content-equal key", [NSString stringWithFormat:@"%d", (__bridge id)NSMapGet(nsT, (__bridge const void *)nsEqualsB) == @"B"]);
+    NSMapRemove(nsT, (__bridge const void *)@"b");
+    p("ns count after remove", [NSString stringWithFormat:@"%lu", (unsigned long)NSCountMapTable(nsT)]);
+    p("ns get removed", [NSString stringWithFormat:@"%d", NSMapGet(nsT, (__bridge const void *)@"b") == NULL]);
+    NSMapInsert(nsT, (__bridge const void *)@"b", (__bridge const void *)@"B2");
+    p("ns reinsert get", [NSString stringWithFormat:@"%d", (__bridge id)NSMapGet(nsT, (__bridge const void *)@"b") == @"B2"]);
+    NSMapTable *nsT2 = NSCopyMapTableWithZone(nsT, NULL);
+    p("ns copy compare", [NSString stringWithFormat:@"%d", NSCompareMapTables(nsT, nsT2)]);
+    NSMapRemove(nsT2, (__bridge const void *)@"c");
+    p("ns compare after diverge", [NSString stringWithFormat:@"%d", NSCompareMapTables(nsT, nsT2)]);
+    NSArray *nsKeys = NSAllMapTableKeys(nsT);
+    p("ns allKeys count", [NSString stringWithFormat:@"%lu", (unsigned long)[nsKeys count]]);
+    p("ns allKeys contents", [NSString stringWithFormat:@"%d", [nsKeys containsObject:@"a"] && [nsKeys containsObject:@"b"] && [nsKeys containsObject:@"c"] && [nsKeys containsObject:@"d"] && ![nsKeys containsObject:@"zz"]]);
+    NSArray *nsVals = NSAllMapTableValues(nsT);
+    p("ns allValues contents", [NSString stringWithFormat:@"%d", [nsVals containsObject:@"A"] && [nsVals containsObject:@"B2"] && [nsVals containsObject:@"C"] && [nsVals containsObject:@"D"]]);
+    NSMapEnumerator nsEnum = NSEnumerateMapTable(nsT);
+    void *nsK = NULL;
+    void *nsV = NULL;
+    NSUInteger nsPairs = 0;
+    unsigned char nsAllNonNull = 1;
+    while (NSNextMapEnumeratorPair(&nsEnum, &nsK, &nsV)) {
+        nsPairs++;
+        if (nsK == NULL || nsV == NULL) {
+            nsAllNonNull = 0;
+        }
+    }
+    p("ns enumerate pairs", [NSString stringWithFormat:@"%lu", (unsigned long)nsPairs]);
+    p("ns enumerate nonnull", [NSString stringWithFormat:@"%d", nsAllNonNull]);
+    NSResetMapTable(nsT);
+    p("ns count after reset", [NSString stringWithFormat:@"%lu", (unsigned long)NSCountMapTable(nsT)]);
+    NSMapInsert(nsT, (__bridge const void *)@"x", (__bridge const void *)@"X");
+    p("ns insert after reset", [NSString stringWithFormat:@"%d", NSCountMapTable(nsT) == 1 && (__bridge id)NSMapGet(nsT, (__bridge const void *)@"x") == @"X"]);
+    NSFreeMapTable(nsT);
+    NSMapTable *nsNullT = NSCreateMapTable(NSNonRetainedObjectMapKeyCallBacks,
+                                           NSNonRetainedObjectMapValueCallBacks, 0);
+    NSMapInsert(nsNullT, (__bridge const void *)@"a", (__bridge const void *)@"A");
+    p("ns null get absent", [NSString stringWithFormat:@"%d", NSMapGet(nsNullT, NULL) == NULL]);
+    unsigned char nsNullInsertRejected = 0;
+    @try {
+        NSMapInsert(nsNullT, NULL, (__bridge const void *)@"bad");
+    } @catch (NSException *e) {
+        nsNullInsertRejected = 1;
+    }
+    p("ns null insert rejects", [NSString stringWithFormat:@"%d", nsNullInsertRejected]);
+    unsigned char nsNullRemoveRejected = 0;
+    @try {
+        NSMapRemove(nsNullT, NULL);
+    } @catch (NSException *e) {
+        nsNullRemoveRejected = 1;
+    }
+    p("ns null remove rejects", [NSString stringWithFormat:@"%d", nsNullRemoveRejected]);
+    NSFreeMapTable(nsNullT);
+    NSMapTable *nsIntT = NSCreateMapTable(NSIntegerMapKeyCallBacks,
+                                          NSIntegerMapValueCallBacks, 0);
+    NSMapInsert(nsIntT, (const void *)7, (const void *)8);
+    p("ns integer key get", [NSString stringWithFormat:@"%d", NSMapGet(nsIntT, (const void *)7) == (const void *)8]);
+    NSFreeMapTable(nsIntT);
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }

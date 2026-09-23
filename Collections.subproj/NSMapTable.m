@@ -8,6 +8,7 @@
 
 #import <Foundation/NSMapTable.h>
 #import <Foundation/NSArray.h>
+#import <Foundation/NSException.h>
 #import <Foundation/NSString.h>
 #import <Foundation/NSZone.h>
 #include <CoreFoundation/CFString.h>
@@ -240,6 +241,11 @@ void *NSMapGet(NSMapTable *table, const void *key) {
 }
 
 void NSMapInsert(NSMapTable *table, const void *key, const void *value) {
+    if (key == NULL) {
+        [NSException raise:NSInvalidArgumentException
+                    format:@"*** NSMapInsert(): attempt to insert notAKeyMarker"];
+    }
+
     NSMapBucket *bucket = _findBucket(table, key);
 
     if (bucket != NULL && bucket->state == kBucketOccupied) {
@@ -276,6 +282,11 @@ void NSMapInsertKnownAbsent(NSMapTable *table, const void *key, const void *valu
 }
 
 void NSMapRemove(NSMapTable *table, const void *key) {
+    if (key == NULL) {
+        [NSException raise:NSInvalidArgumentException
+                    format:@"*** NSMapRemove(): attempt to remove notAKeyMarker"];
+    }
+
     NSMapBucket *bucket = _findBucket(table, key);
 
     if (bucket == NULL || bucket->state != kBucketOccupied) {

@@ -214,4 +214,32 @@ cv hash congruent                          | 1
 cv hash differs-bytes                      | 1
 cv isEqualToValue same                     | 1
 cv copy identity                           | 1
+ns create count                            | 0
+ns count after 3 inserts                   | 3
+ns get existing                            | 1
+ns get absent                              | 1
+ns member hit                              | 1
+ns member value                            | 1
+ns member origkey                          | 1
+ns member absent                           | 0
+ns insertIfAbsent new                      | 1
+ns insertIfAbsent exists                   | 1
+ns insertIfAbsent kept value               | 1
+ns get by content-equal key                | 1
+ns count after remove                      | 3
+ns get removed                             | 1
+ns reinsert get                            | 1
+ns copy compare                            | 1
+ns compare after diverge                   | 0
+ns allKeys count                           | 4
+ns allKeys contents                        | 1
+ns allValues contents                      | 1
+ns enumerate pairs                         | 4
+ns enumerate nonnull                       | 1
+ns count after reset                       | 0
+ns insert after reset                      | 1
+ns null get absent                         | 1
+ns null insert rejects                     | 1
+ns null remove rejects                     | 1
+ns integer key get                         | 1
 PORT_BEHAVIOR_END
