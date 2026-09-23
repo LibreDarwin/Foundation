@@ -121,11 +121,10 @@ __NSNUMBER_INIT(Bool, BOOL)
 __NSNUMBER_INIT(Integer, NSInteger)
 __NSNUMBER_INIT(UnsignedInteger, NSUInteger)
 
-/* -init must not leave a bare, non-CF NSNumber behind: every other method here
- * assumes the receiver is a real CFNumber (or a CFBoolean). Apple returns zero
- * here, so mirror that rather than an empty object. */
+/* -init on Apple hands back nil, not a zeroed number, so return nil rather
+ * than minting an empty number that every other method would trip over. */
 - (instancetype)init {
-    return [[self class] numberWithInteger:0];
+    return nil;
 }
 
 /* CFNumberGetValue converts, and reports false when the value did not fit.

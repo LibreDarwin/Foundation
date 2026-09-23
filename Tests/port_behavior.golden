@@ -361,4 +361,58 @@ dn mul10 over quiet                        | NaN
 dn mul10 under quiet                       | NaN
 dn div 1/3 scale4                          | 0.3333
 dn pow 2^200 quiet                         | 1606938044258990275541962092341162602490000000000000000000000
+nn char 'a'                                | c 97
+nn uchar 200                               | s 200
+nn short -5                                | s -5
+nn ushort 70000                            | i 4464
+nn int 42                                  | i 42
+nn int -42                                 | i -42
+nn uint 4294967295                         | q 4294967295
+nn long 7                                  | q 7
+nn ulong 7                                 | q 7
+nn llong min                               | q -9223372036854775808
+nn llong max                               | q 9223372036854775807
+nn float 3.25                              | f 3.25
+nn float 0.5                               | f 0.5
+nn float 16777216                          | f 1.677722e+07
+nn double 3.25                             | d 3.25
+nn double 0.1                              | d 0.1
+nn double 1/3                              | d 0.3333333333333333
+nn double 2^53                             | d 9007199254740992
+nn double 1e-7                             | d 1e-07
+nn double 1e100                            | d 1e+100
+nn double 1e18+1                           | d 1e+18
+nn bool YES                                | c 1
+nn bool NO                                 | c 0
+nn integer 5                               | q 5
+nn uinteger 5                              | q 5
+nn nan                                     | d nan
+nn inf                                     | d inf
+nn -inf                                    | d -inf
+nn int42 double                            | 42
+nn int42 float                             | 42
+nn dbl3.25 int                             | 3
+nn dbl3.25 llong                           | 3
+nn dbl3.25 bool                            | 1
+nn dbl0 bool                               | 0
+nn int0 bool                               | 0
+nn YES int                                 | 1
+nn YES dbl                                 | 1
+nn ullong llong                            | -1
+nn cmp 3 vs 4                              | -1
+nn cmp 4 vs 3                              | 1
+nn cmp 3 vs 3.0                            | 0
+nn cmp 0.5 vs 0.5f                         | 0
+nn eq int3 dbl3.0                          | 1
+nn eq YES @1                               | 1
+nn eq YES NO                               | 0
+nn eq nsnum str                            | 0
+nn iseq 4 vs 4.0                           | 1
+nn iseq 4 vs 5                             | 0
+nn cmp ullmax vs ullmax                    | 0
+nn copy identity                           | 1
+nn alloc init                              | (null) (null)
+nn alloc initInt 7                         | i 7
+nn alloc initDbl 2.5                       | d 2.5
+nn desc-loc                                | 42
 PORT_BEHAVIOR_END

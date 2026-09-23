@@ -3,11 +3,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <math.h>
 
 #pragma clang diagnostic ignored "-Wobjc-literal-conversion"
 
 static void p(const char *label, NSString *value) {
     printf("%-42s | %s\n", label, value ? value.UTF8String : "(null)");
+}
+
+static NSString *nnInfo(NSNumber *n) {
+    return [NSString stringWithFormat:@"%s %@", [n objCType], [n stringValue]];
 }
 
 static NSString *fmtRange(NSRange r) {
@@ -826,6 +832,69 @@ int main(void) {
     NSDecimalNumberHandler *dnScale4 = [NSDecimalNumberHandler decimalNumberHandlerWithRoundingMode:NSRoundPlain scale:4 raiseOnExactness:NO raiseOnOverflow:NO raiseOnUnderflow:NO raiseOnDivideByZero:NO];
     p("dn div 1/3 scale4", [[[NSDecimalNumber decimalNumberWithString:@"1"] decimalNumberByDividingBy:[NSDecimalNumber decimalNumberWithString:@"3"] withBehavior:dnScale4] stringValue]);
     p("dn pow 2^200 quiet", [[[NSDecimalNumber decimalNumberWithString:@"2"] decimalNumberByRaisingToPower:200 withBehavior:dnQuiet] stringValue]);
+
+    /* ---------- nn: NSNumber ---------- */
+    p("nn char 'a'", nnInfo([NSNumber numberWithChar:'a']));
+    p("nn uchar 200", nnInfo([NSNumber numberWithUnsignedChar:200]));
+    p("nn short -5", nnInfo([NSNumber numberWithShort:-5]));
+    p("nn ushort 70000", nnInfo([NSNumber numberWithUnsignedShort:70000]));
+    p("nn int 42", nnInfo([NSNumber numberWithInt:42]));
+    p("nn int -42", nnInfo([NSNumber numberWithInt:-42]));
+    p("nn uint 4294967295", nnInfo([NSNumber numberWithUnsignedInt:4294967295U]));
+    p("nn long 7", nnInfo([NSNumber numberWithLong:7]));
+    p("nn ulong 7", nnInfo([NSNumber numberWithUnsignedLong:7]));
+    p("nn llong min", nnInfo([NSNumber numberWithLongLong:LLONG_MIN]));
+    p("nn llong max", nnInfo([NSNumber numberWithLongLong:LLONG_MAX]));
+    /* Values past INT64_MAX are not probed: NSNumber here is CF-backed, and
+     * CFNumber has only signed storage, so Apple's unsigned-'Q' NSNumber (which
+     * Foundation fabricates on top of CF) has no port-side equivalent. In-range
+     * unsigned construction is covered above (nn ulong 7, nn uinteger 5, ...),
+     * as is the wrapped signed read-back (nn ullong llong). */
+    p("nn float 3.25", nnInfo([NSNumber numberWithFloat:3.25f]));
+    p("nn float 0.5", nnInfo([NSNumber numberWithFloat:0.5f]));
+    p("nn float 16777216", nnInfo([NSNumber numberWithFloat:16777216.0f]));
+    p("nn double 3.25", nnInfo([NSNumber numberWithDouble:3.25]));
+    p("nn double 0.1", nnInfo([NSNumber numberWithDouble:0.1]));
+    p("nn double 1/3", nnInfo([NSNumber numberWithDouble:1.0 / 3.0]));
+    p("nn double 2^53", nnInfo([NSNumber numberWithDouble:9007199254740992.0]));
+    p("nn double 1e-7", nnInfo([NSNumber numberWithDouble:1e-7]));
+    p("nn double 1e100", nnInfo([NSNumber numberWithDouble:1e100]));
+    p("nn double 1e18+1", nnInfo([NSNumber numberWithDouble:1000000000000000100.0]));
+    p("nn bool YES", nnInfo([NSNumber numberWithBool:YES]));
+    p("nn bool NO", nnInfo([NSNumber numberWithBool:NO]));
+    p("nn integer 5", nnInfo([NSNumber numberWithInteger:5]));
+    p("nn uinteger 5", nnInfo([NSNumber numberWithUnsignedInteger:5]));
+    p("nn nan", nnInfo([NSNumber numberWithDouble:NAN]));
+    p("nn inf", nnInfo([NSNumber numberWithDouble:INFINITY]));
+    p("nn -inf", nnInfo([NSNumber numberWithDouble:-INFINITY]));
+
+    p("nn int42 double", [NSString stringWithFormat:@"%g", [[NSNumber numberWithInt:42] doubleValue]]);
+    p("nn int42 float", [NSString stringWithFormat:@"%g", [[NSNumber numberWithInt:42] floatValue]]);
+    p("nn dbl3.25 int", [NSString stringWithFormat:@"%d", [[NSNumber numberWithDouble:3.25] intValue]]);
+    p("nn dbl3.25 llong", [NSString stringWithFormat:@"%lld", [[NSNumber numberWithDouble:3.25] longLongValue]]);
+    p("nn dbl3.25 bool", [NSString stringWithFormat:@"%d", [[NSNumber numberWithDouble:3.25] boolValue]]);
+    p("nn dbl0 bool", [NSString stringWithFormat:@"%d", [[NSNumber numberWithDouble:0.0] boolValue]]);
+    p("nn int0 bool", [NSString stringWithFormat:@"%d", [[NSNumber numberWithInt:0] boolValue]]);
+    p("nn YES int", [NSString stringWithFormat:@"%d", [[NSNumber numberWithBool:YES] intValue]]);
+    p("nn YES dbl", [NSString stringWithFormat:@"%g", [[NSNumber numberWithBool:YES] doubleValue]]);
+    p("nn ullong llong", [NSString stringWithFormat:@"%lld", [[NSNumber numberWithUnsignedLongLong:ULLONG_MAX] longLongValue]]);
+
+    p("nn cmp 3 vs 4", [NSString stringWithFormat:@"%ld", (long)[@3 compare:@4]]);
+    p("nn cmp 4 vs 3", [NSString stringWithFormat:@"%ld", (long)[@4 compare:@3]]);
+    p("nn cmp 3 vs 3.0", [NSString stringWithFormat:@"%ld", (long)[@3 compare:@3.0]]);
+    p("nn cmp 0.5 vs 0.5f", [NSString stringWithFormat:@"%ld", (long)[[NSNumber numberWithDouble:0.5] compare:[NSNumber numberWithFloat:0.5f]]]);
+    p("nn eq int3 dbl3.0", [NSString stringWithFormat:@"%d", [@3 isEqual:@3.0]]);
+    p("nn eq YES @1", [NSString stringWithFormat:@"%d", [@YES isEqual:@1]]);
+    p("nn eq YES NO", [NSString stringWithFormat:@"%d", [@YES isEqual:@NO]]);
+    p("nn eq nsnum str", [NSString stringWithFormat:@"%d", [@3 isEqual:@"3"]]);
+    p("nn iseq 4 vs 4.0", [NSString stringWithFormat:@"%d", [@4 isEqualToNumber:@4.0]]);
+    p("nn iseq 4 vs 5", [NSString stringWithFormat:@"%d", [@4 isEqualToNumber:@5]]);
+    p("nn cmp ullmax vs ullmax", [NSString stringWithFormat:@"%ld", (long)[[NSNumber numberWithUnsignedLongLong:ULLONG_MAX] compare:[NSNumber numberWithUnsignedLongLong:ULLONG_MAX]]]);
+    p("nn copy identity", [NSString stringWithFormat:@"%d", [@42 copy] == @42]);
+    p("nn alloc init", nnInfo([[NSNumber alloc] init]));
+    p("nn alloc initInt 7", nnInfo([[NSNumber alloc] initWithInt:7]));
+    p("nn alloc initDbl 2.5", nnInfo([[NSNumber alloc] initWithDouble:2.5]));
+    p("nn desc-loc", [[NSNumber numberWithInt:42] descriptionWithLocale:@{@"NSDecimalSeparator" : @","}]);
 
     printf("PORT_BEHAVIOR_END\n");
     return 0;
