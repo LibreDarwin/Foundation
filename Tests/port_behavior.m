@@ -1299,6 +1299,105 @@ int main(void) {
         p("ar m add nil", [NSString stringWithFormat:@"%@", [e name]]);
     }
 
+    /* ---------- NSSet / NSMutableSet / NSCountedSet contract bundle ---------- */
+    NSSet *sbase = [NSSet setWithObjects:@"x", @"y", @"m", nil];
+    p("set alloc init", [[[NSSet alloc] init] count] == 0 ? @"0" : @"?");
+    p("set object dedup", [[NSSet setWithObject:@"x"] containsObject:@"x"] ? @"1" : @"0");
+    p("set withSet eq", [[NSSet setWithSet:sbase] isEqualToSet:sbase] ? @"1" : @"0");
+    NSArray *setArr = [NSArray arrayWithObjects:(id[]){@"a", @"a", @"b"} count:3];
+    NSSet *setFromArr = [[NSSet alloc] initWithArray:setArr];
+    p("set fromArray", [NSString stringWithFormat:@"%lu|%@", (unsigned long)[setFromArr count], sortedObjects(setFromArr)]);
+    p("set anyObject present", [sbase anyObject] != nil ? @"1" : @"0");
+    p("set allObjects count", [NSString stringWithFormat:@"%lu", (unsigned long)[[sbase allObjects] count]]);
+    p("set allObjects sorted", [sbase allObjects] == nil ? @"?" : sortedJoin([sbase allObjects]));
+    NSSet *setY = [NSSet setWithObjects:@"y", @"z", nil];
+    p("set intersects y", [sbase intersectsSet:setY] ? @"1" : @"0");
+    p("set intersects no", [sbase intersectsSet:[NSSet setWithObject:@"q"]] ? @"1" : @"0");
+    p("set intersects empty", [sbase intersectsSet:[NSSet set]] ? @"1" : @"0");
+    p("set isEqual content", [[[NSSet alloc] initWithSet:sbase] isEqualToSet:sbase] ? @"1" : @"0");
+    p("set isEqual nil", [sbase isEqualToSet:nil] ? @"1" : @"0");
+    p("set isEqual diffCount", [sbase isEqualToSet:setY] ? @"1" : @"0");
+    p("set hash equal", [sbase hash] == [[[NSSet alloc] initWithSet:sbase] hash] ? @"1" : @"0");
+    p("set copy identity", [sbase copy] == sbase ? @"1" : @"0");
+    p("set mutableCopy identity", [sbase mutableCopy] == sbase ? @"0" : @"1");
+    p("set mutableCopy eq", [[sbase mutableCopy] isEqualToSet:sbase] ? @"1" : @"0");
+    p("set copyItems eq", [[[NSSet alloc] initWithSet:sbase copyItems:YES] isEqualToSet:sbase] ? @"1" : @"0");
+    p("set addFromSet", sortedObjects([sbase setByAddingObjectsFromSet:[NSSet setWithObject:@"a"]]));
+    p("set addFromArray", sortedObjects([sbase setByAddingObjectsFromArray:[NSArray arrayWithObjects:(id[]){@"a", @"z"} count:2]]));
+    p("set member nil", [sbase member:nil] == nil ? @"nil" : @"?");
+    p("set contains nil", [sbase containsObject:nil] ? @"1" : @"0");
+
+    NSMutableSet *ms_n = [[NSMutableSet alloc] initWithCapacity:4];
+    p("ms cap count", [ms_n count] == 0 ? @"0" : @"?");
+    [ms_n addObject:@"k"];
+    [ms_n addObject:@"k"];
+    p("ms add dup unique", [ms_n count] == 1 ? @"1" : @"0");
+    [ms_n addObjectsFromArray:[NSArray arrayWithObjects:(id[]){@"b", @"a", @"b"} count:3]];
+    p("ms addFromArray", [NSString stringWithFormat:@"%lu|%@", (unsigned long)[ms_n count], sortedObjects(ms_n)]);
+    [ms_n removeObject:@"k"];
+    p("ms remove", sortedObjects(ms_n));
+    [ms_n removeObject:@"zz"];
+    p("ms remove missing", sortedObjects(ms_n));
+    NSMutableSet *ms_i = [[NSMutableSet alloc] initWithSet:ms_n];
+    [ms_i addObject:@"c"];
+    [ms_i intersectSet:[NSSet setWithObjects:@"b", @"c", @"d", nil]];
+    p("ms intersect", sortedObjects(ms_i));
+    NSMutableSet *ms_m = [[NSMutableSet alloc] initWithSet:[NSSet setWithObjects:@"b", @"c", nil]];
+    [ms_m minusSet:[NSSet setWithObject:@"b"]];
+    p("ms minus", sortedObjects(ms_m));
+    NSMutableSet *ms_u = [[NSMutableSet alloc] initWithSet:[NSSet setWithObject:@"r"]];
+    [ms_u unionSet:[NSSet setWithObject:@"s"]];
+    p("ms union", sortedObjects(ms_u));
+    [ms_u setSet:[NSSet setWithObject:@"t"]];
+    p("ms setSet", sortedObjects(ms_u));
+    [ms_u removeAllObjects];
+    p("ms removeAll", [ms_u count] == 0 ? @"0" : @"?");
+    @try {
+        NSMutableSet *ms_nil = [[NSMutableSet alloc] initWithCapacity:1];
+        [ms_nil addObject:nil];
+    } @catch (id e) {
+        p("ms add nil", [NSString stringWithFormat:@"%@", [e name]]);
+    }
+
+    NSCountedSet *cn = [[NSCountedSet alloc] initWithCapacity:2];
+    p("cn cap", [cn count] == 0 ? @"0" : @"?");
+    [cn addObject:@"a"];
+    [cn addObject:@"a"];
+    [cn addObject:@"b"];
+    p("cn counts", [NSString stringWithFormat:@"%lu|ca%lu|cb%lu",
+                    (unsigned long)[cn count],
+                    (unsigned long)[cn countForObject:@"a"],
+                    (unsigned long)[cn countForObject:@"b"]]);
+    p("cn missing", [cn countForObject:@"z"] == 0 ? @"0" : @"?");
+    p("cn member a", [cn member:@"a"]);
+    p("cn contains", [cn containsObject:@"b"] ? @"1" : @"0");
+    p("cn contains missing", [cn containsObject:@"z"] ? @"1" : @"0");
+    [cn removeObject:@"a"];
+    [cn removeObject:@"a"];
+    p("cn rem dec", [NSString stringWithFormat:@"%lu|ca%lu|cb%lu",
+                     (unsigned long)[cn count],
+                     (unsigned long)[cn countForObject:@"a"],
+                     (unsigned long)[cn countForObject:@"b"]]);
+    [cn removeObject:@"zz"];
+    p("cn rem missing", [NSString stringWithFormat:@"%lu|cb%lu",
+                         (unsigned long)[cn count],
+                         (unsigned long)[cn countForObject:@"b"]]);
+    [cn removeAllObjects];
+    p("cn removeAll", [cn count] == 0 ? @"0" : @"?");
+    NSCountedSet *cnArr = [[NSCountedSet alloc] initWithArray:[NSArray arrayWithObjects:(id[]){@"x", @"x", @"y"} count:3]];
+    p("cn fromArr", [NSString stringWithFormat:@"%lu|cx%lu|cy%lu",
+                     (unsigned long)[cnArr count],
+                     (unsigned long)[cnArr countForObject:@"x"],
+                     (unsigned long)[cnArr countForObject:@"y"]]);
+    p("cn fromArr sorted", sortedObjects(cnArr));
+    NSEnumerator *cnEn = [cnArr objectEnumerator];
+    NSUInteger cnWalk = 0;
+    while ([cnEn nextObject] != nil) cnWalk++;
+    p("cn enumerator", [NSString stringWithFormat:@"%lu", (unsigned long)cnWalk]);
+    NSCountedSet *cnSet = [[NSCountedSet alloc] initWithSet:sbase];
+    p("cn fromSet sorted", sortedObjects(cnSet));
+    p("cn fromSet count", [cnSet count] == 3 ? @"3" : @"?");
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }

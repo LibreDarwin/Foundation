@@ -401,9 +401,7 @@ static const void *NSSET_FastEnumerationObjectsKey = &NSSET_FastEnumerationObjec
 }
 
 - (id)member:(id)object {
-    const void *key = CFDictionaryGetValue((CFDictionaryRef)_counts,
-                                           NSSET_CF(const void *, object));
-    return NSSET_CF(id, key);
+    return [self countForObject:object] ? object : nil;
 }
 
 - (BOOL)containsObject:(id)object { return [self countForObject:object] != 0; }

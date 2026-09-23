@@ -612,4 +612,51 @@ ar m cap count                             | 0
 ar m alloc init                            | 0
 ar m addFromArray                          | z,a,m
 ar m add nil                               | NSInvalidArgumentException
+set alloc init                             | 0
+set object dedup                           | 1
+set withSet eq                             | 1
+set fromArray                              | 2|a,b
+set anyObject present                      | 1
+set allObjects count                       | 3
+set allObjects sorted                      | m,x,y
+set intersects y                           | 1
+set intersects no                          | 0
+set intersects empty                       | 0
+set isEqual content                        | 1
+set isEqual nil                            | 0
+set isEqual diffCount                      | 0
+set hash equal                             | 1
+set copy identity                          | 1
+set mutableCopy identity                   | 1
+set mutableCopy eq                         | 1
+set copyItems eq                           | 1
+set addFromSet                             | a,m,x,y
+set addFromArray                           | a,m,x,y,z
+set member nil                             | nil
+set contains nil                           | 0
+ms cap count                               | 0
+ms add dup unique                          | 1
+ms addFromArray                            | 3|a,b,k
+ms remove                                  | a,b
+ms remove missing                          | a,b
+ms intersect                               | b,c
+ms minus                                   | c
+ms union                                   | r,s
+ms setSet                                  | t
+ms removeAll                               | 0
+ms add nil                                 | NSInvalidArgumentException
+cn cap                                     | 0
+cn counts                                  | 2|ca2|cb1
+cn missing                                 | 0
+cn member a                                | a
+cn contains                                | 1
+cn contains missing                        | 0
+cn rem dec                                 | 1|ca0|cb1
+cn rem missing                             | 1|cb1
+cn removeAll                               | 0
+cn fromArr                                 | 2|cx2|cy1
+cn fromArr sorted                          | x,y
+cn enumerator                              | 2
+cn fromSet sorted                          | m,x,y
+cn fromSet count                           | 3
 PORT_BEHAVIOR_END
