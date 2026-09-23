@@ -104,4 +104,21 @@ subdata b0                                 | 02
 subdata b2                                 | ff
 isEqualToData same                         | 1
 isEqualToData diff                         | 0
+cal self-match opts=0                      | 2024-03-16 10:00:00
+cal self-match strict                      | 2024-03-16 10:00:00
+cal day=3 from Jan 5                       | 2024-02-03 00:00:00
+cal day=15 from Jan 20                     | 2024-02-15 00:00:00
+cal feb29 opts=0                           | 2025-03-01 00:00:00
+cal feb29 +NextTime                        | 2025-03-01 00:00:00
+cal feb29 strict                           | 2028-02-29 00:00:00
+cal feb29 from Mar1 2022                   | 2023-03-01 00:00:00
+cal feb29 from Mar1 2027                   | 2028-02-29 00:00:00
+cal weekday=6 Fri                          | 2024-03-15 00:00:00
+cal hour=6 from 10:00                      | 2024-03-16 06:00:00
+cal unit year=2030                         | 2030-01-01 00:00:00
+cal unit year=2030 strict                  | 2030-01-01 00:00:00
+cal unit year=2020 past                    | (nil)
+cal feb30 strict                           | (nil)
+cal quarter=1 from May5                    | 2025-01-01 00:00:00
+cal empty comps                            | (nil)
 PORT_BEHAVIOR_END

@@ -24,6 +24,22 @@
 #define NSCALENDAR_CF(type, value) ((type)(value))
 #endif
 
+@interface NSCalendar () {
+    CFCalendarRef _calendar;
+}
+- (CFCalendarRef)_backingCalendar;
+- (instancetype)_initWithBackingCalendar:(CFCalendarRef)backing;
+@end
+
+/* NSCalendar is an owning wrapper, not toll-free with CFCalendar: it was
+ * created through the CoreFoundation constructor and answers through the
+ * CFCalendar it holds.  Every entry point unwraps that backing calendar
+ * instead of casting self. */
+static CFCalendarRef NSCalendarBacking(NSCalendar *calendar) {
+    if (calendar == nil || ![calendar isKindOfClass:[NSCalendar class]]) return NULL;
+    return [calendar _backingCalendar];
+}
+
 NSCalendarIdentifier const NSCalendarIdentifierGregorian = @"gregorian";
 NSCalendarIdentifier const NSCalendarIdentifierBuddhist = @"buddhist";
 NSCalendarIdentifier const NSCalendarIdentifierChinese = @"chinese";
@@ -312,10 +328,10 @@ static NSDate *NSCalendarDateByAddingNanoseconds(NSDate *date, NSInteger nanosec
                 [date timeIntervalSinceReferenceDate] + (NSTimeInterval)nanoseconds / 1000000000.0];
 }
 
-/* Builds a date from components at the C level. This duplicates the two
- * dateWithEra: constructors, but it must not re-dispatch to `self`: an
- * NSCalendar instance's isa is the CoreFoundation-bridged class, so messaging
- * it can land in CoreFoundation's implementation instead of ours. */
+/* Builds a date from components at the C level on a backing CFCalendar. This
+ * duplicates the two dateWithEra: constructors, but it does not message an
+ * NSCalendar: the callers have already unwrapped the backing calendar, and
+ * going back through `self` would only re-enter the object surface. */
 static NSDate *NSCalendarMakeDate(CFCalendarRef calendar, NSDateComponents *components) {
     if (components.yearForWeekOfYear != NSDateComponentUndefined ||
         components.weekOfYear != NSDateComponentUndefined ||
@@ -424,12 +440,12 @@ static NSDateComponents *NSCalendarComponentsBetween(CFCalendarRef calendar,
 
 NSDate *NSCalendarDateFromComponents(NSCalendar *calendar, NSDateComponents *components) {
     if (calendar == nil) return nil;
-    return NSCalendarMakeDate(NSCALENDAR_CF(CFCalendarRef, calendar), components);
+    return NSCalendarMakeDate(NSCalendarBacking(calendar), components);
 }
 
 BOOL NSCalendarDateComponentsAreValid(NSCalendar *calendar, NSDateComponents *components) {
     if (calendar == nil || components == nil) return NO;
-    CFCalendarRef cfCalendar = NSCALENDAR_CF(CFCalendarRef, calendar);
+    CFCalendarRef cfCalendar = NSCalendarBacking(calendar);
     NSDate *date = NSCalendarMakeDate(cfCalendar, components);
     if (date == nil) return NO;
 
@@ -483,33 +499,52 @@ static id NSCalendarCopySymbols(CFCalendarRef calendar, CFStringRef key) {
 
 @implementation NSCalendar
 
+- (CFCalendarRef)_backingCalendar {
+    return _calendar;
+}
+
+- (instancetype)_initWithBackingCalendar:(CFCalendarRef)backing {
+    if (backing == NULL) return nil;
+    self = [super init];
+    if (self != nil) {
+        _calendar = backing;
+    }
+    return self;
+}
+
 + (instancetype)currentCalendar {
-    return NSCALENDAR_TRANSFER(CFCalendarCopyCurrent());
+    return [[NSCalendar alloc] _initWithBackingCalendar:CFCalendarCopyCurrent()];
 }
 
 + (instancetype)autoupdatingCurrentCalendar {
     /* Without a KVO/notification pipeline for user-preference changes there is
      * nothing to which this object could subscribe, so it is a snapshot of the
      * current calendar rather than a live-updating view. */
-    return NSCALENDAR_TRANSFER(CFCalendarCopyCurrent());
+    return [[NSCalendar alloc] _initWithBackingCalendar:CFCalendarCopyCurrent()];
 }
 
 + (instancetype)calendarWithIdentifier:(NSCalendarIdentifier)identifier {
-    return NSCALENDAR_TRANSFER(CFCalendarCreateWithIdentifier(
-        kCFAllocatorDefault, NSCALENDAR_CF(CFStringRef, identifier)));
+    return [[NSCalendar alloc] initWithCalendarIdentifier:identifier];
 }
 
 - (instancetype)initWithCalendarIdentifier:(NSCalendarIdentifier)identifier {
-    return NSCALENDAR_TRANSFER(CFCalendarCreateWithIdentifier(
-        kCFAllocatorDefault, NSCALENDAR_CF(CFStringRef, identifier)));
+    CFCalendarRef backing = CFCalendarCreateWithIdentifier(
+        kCFAllocatorDefault, NSCALENDAR_CF(CFStringRef, identifier));
+    if (backing == NULL) return nil;
+    _calendar = backing;
+    return self;
+}
+
+- (void)dealloc {
+    if (_calendar != NULL) CFRelease(_calendar);
 }
 
 - (NSCalendarIdentifier)calendarIdentifier {
-    return NSCALENDAR_BORROWED(CFCalendarGetIdentifier(NSCALENDAR_CF(CFCalendarRef, self)));
+    return NSCALENDAR_BORROWED(CFCalendarGetIdentifier(NSCalendarBacking(self)));
 }
 
 - (NSLocale *)locale {
-    CFLocaleRef locale = CFCalendarCopyLocale(NSCALENDAR_CF(CFCalendarRef, self));
+    CFLocaleRef locale = CFCalendarCopyLocale(NSCalendarBacking(self));
     if (locale == NULL) return nil;
     return NSCALENDAR_TRANSFER(locale);
 }
@@ -518,118 +553,118 @@ static id NSCalendarCopySymbols(CFCalendarRef calendar, CFStringRef key) {
     /* CFCalendarSetLocale cannot unset the locale with NULL, and nil is not a
      * meaningful value here, so a nil assignment is a no-op. */
     if (locale == nil) return;
-    CFCalendarSetLocale(NSCALENDAR_CF(CFCalendarRef, self), NSCALENDAR_CF(CFLocaleRef, locale));
+    CFCalendarSetLocale(NSCalendarBacking(self), NSCALENDAR_CF(CFLocaleRef, locale));
 }
 
 - (NSUInteger)firstWeekday {
-    return (NSUInteger)CFCalendarGetFirstWeekday(NSCALENDAR_CF(CFCalendarRef, self));
+    return (NSUInteger)CFCalendarGetFirstWeekday(NSCalendarBacking(self));
 }
 
 - (void)setFirstWeekday:(NSUInteger)firstWeekday {
-    CFCalendarSetFirstWeekday(NSCALENDAR_CF(CFCalendarRef, self), (CFIndex)firstWeekday);
+    CFCalendarSetFirstWeekday(NSCalendarBacking(self), (CFIndex)firstWeekday);
 }
 
 - (NSUInteger)minimumDaysInFirstWeek {
-    return (NSUInteger)CFCalendarGetMinimumDaysInFirstWeek(NSCALENDAR_CF(CFCalendarRef, self));
+    return (NSUInteger)CFCalendarGetMinimumDaysInFirstWeek(NSCalendarBacking(self));
 }
 
 - (void)setMinimumDaysInFirstWeek:(NSUInteger)minimumDaysInFirstWeek {
-    CFCalendarSetMinimumDaysInFirstWeek(NSCALENDAR_CF(CFCalendarRef, self),
+    CFCalendarSetMinimumDaysInFirstWeek(NSCalendarBacking(self),
                                         (CFIndex)minimumDaysInFirstWeek);
 }
 
 - (NSArray<NSString *> *)eraSymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterEraSymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterEraSymbols);
 }
 
 - (NSArray<NSString *> *)longEraSymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterLongEraSymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterLongEraSymbols);
 }
 
 - (NSArray<NSString *> *)monthSymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterMonthSymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterMonthSymbols);
 }
 
 - (NSArray<NSString *> *)shortMonthSymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterShortMonthSymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterShortMonthSymbols);
 }
 
 - (NSArray<NSString *> *)veryShortMonthSymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterVeryShortMonthSymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterVeryShortMonthSymbols);
 }
 
 - (NSArray<NSString *> *)standaloneMonthSymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterStandaloneMonthSymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterStandaloneMonthSymbols);
 }
 
 - (NSArray<NSString *> *)shortStandaloneMonthSymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterShortStandaloneMonthSymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterShortStandaloneMonthSymbols);
 }
 
 - (NSArray<NSString *> *)veryShortStandaloneMonthSymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterVeryShortStandaloneMonthSymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterVeryShortStandaloneMonthSymbols);
 }
 
 - (NSArray<NSString *> *)weekdaySymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterWeekdaySymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterWeekdaySymbols);
 }
 
 - (NSArray<NSString *> *)shortWeekdaySymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterShortWeekdaySymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterShortWeekdaySymbols);
 }
 
 - (NSArray<NSString *> *)veryShortWeekdaySymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterVeryShortWeekdaySymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterVeryShortWeekdaySymbols);
 }
 
 - (NSArray<NSString *> *)standaloneWeekdaySymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterStandaloneWeekdaySymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterStandaloneWeekdaySymbols);
 }
 
 - (NSArray<NSString *> *)shortStandaloneWeekdaySymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterShortStandaloneWeekdaySymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterShortStandaloneWeekdaySymbols);
 }
 
 - (NSArray<NSString *> *)veryShortStandaloneWeekdaySymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterVeryShortStandaloneWeekdaySymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterVeryShortStandaloneWeekdaySymbols);
 }
 
 - (NSArray<NSString *> *)quarterSymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterQuarterSymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterQuarterSymbols);
 }
 
 - (NSArray<NSString *> *)shortQuarterSymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterShortQuarterSymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterShortQuarterSymbols);
 }
 
 - (NSArray<NSString *> *)standaloneQuarterSymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterStandaloneQuarterSymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterStandaloneQuarterSymbols);
 }
 
 - (NSArray<NSString *> *)shortStandaloneQuarterSymbols {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterShortStandaloneQuarterSymbols);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterShortStandaloneQuarterSymbols);
 }
 
 - (NSString *)AMSymbol {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterAMSymbol);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterAMSymbol);
 }
 
 - (NSString *)PMSymbol {
-    return NSCalendarCopySymbols(NSCALENDAR_CF(CFCalendarRef, self), kCFDateFormatterPMSymbol);
+    return NSCalendarCopySymbols(NSCalendarBacking(self), kCFDateFormatterPMSymbol);
 }
 
 - (NSRange)minimumRangeOfUnit:(NSCalendarUnit)unit {
     if (unit == NSCalendarUnitNanosecond) return NSMakeRange(0, 1000000000);
     if (!NSCalendarUnitIsCoreFoundation(unit)) return NSMakeRange(NSNotFound, NSNotFound);
     return NSCalendarRangeFromCFRange(CFCalendarGetMinimumRangeOfUnit(
-        NSCALENDAR_CF(CFCalendarRef, self), (CFCalendarUnit)unit));
+        NSCalendarBacking(self), (CFCalendarUnit)unit));
 }
 
 - (NSRange)maximumRangeOfUnit:(NSCalendarUnit)unit {
     if (unit == NSCalendarUnitNanosecond) return NSMakeRange(0, 1000000000);
     if (!NSCalendarUnitIsCoreFoundation(unit)) return NSMakeRange(NSNotFound, NSNotFound);
     return NSCalendarRangeFromCFRange(CFCalendarGetMaximumRangeOfUnit(
-        NSCALENDAR_CF(CFCalendarRef, self), (CFCalendarUnit)unit));
+        NSCalendarBacking(self), (CFCalendarUnit)unit));
 }
 
 - (NSDateComponents *)components:(NSCalendarUnit)unitFlags fromDate:(NSDate *)date {
@@ -637,7 +672,7 @@ static id NSCalendarCopySymbols(CFCalendarRef calendar, CFStringRef key) {
     CFAbsoluteTime absoluteTime = [date timeIntervalSinceReferenceDate];
     int era = 0, year = 0, quarter = 0, month = 0, weekOfMonth = 0, weekOfYear = 0, yearForWeekOfYear = 0;
     int day = 0, weekday = 0, weekdayOrdinal = 0, hour = 0, minute = 0, second = 0;
-    if (!CFCalendarDecomposeAbsoluteTime(NSCALENDAR_CF(CFCalendarRef, self), absoluteTime,
+    if (!CFCalendarDecomposeAbsoluteTime(NSCalendarBacking(self), absoluteTime,
                                          NSCalendarAllComponentsDescriptor,
                                          &era, &year, &quarter, &month, &weekOfMonth, &weekOfYear,
                                          &yearForWeekOfYear, &day, &weekday, &weekdayOrdinal,
@@ -662,14 +697,14 @@ static id NSCalendarCopySymbols(CFCalendarRef calendar, CFStringRef key) {
                         fromDate:(NSDate *)startingDate
                           toDate:(NSDate *)resultDate
                          options:(NSCalendarOptions)options {
-    return NSCalendarComponentsBetween(NSCALENDAR_CF(CFCalendarRef, self), unitFlags,
+    return NSCalendarComponentsBetween(NSCalendarBacking(self), unitFlags,
                                        [startingDate timeIntervalSinceReferenceDate],
                                        [resultDate timeIntervalSinceReferenceDate],
                                        options);
 }
 
 - (NSDate *)dateFromComponents:(NSDateComponents *)components {
-    return NSCalendarMakeDate(NSCALENDAR_CF(CFCalendarRef, self), components);
+    return NSCalendarMakeDate(NSCalendarBacking(self), components);
 }
 
 - (NSDate *)dateByAddingComponents:(NSDateComponents *)components
@@ -689,7 +724,7 @@ static id NSCalendarCopySymbols(CFCalendarRef calendar, CFStringRef key) {
     int hour = NSCalendarComponentOrDefault(components.hour, 0);
     int minute = NSCalendarComponentOrDefault(components.minute, 0);
     int second = NSCalendarComponentOrDefault(components.second, 0);
-    if (!CFCalendarAddComponents(NSCALENDAR_CF(CFCalendarRef, self), &absoluteTime,
+    if (!CFCalendarAddComponents(NSCalendarBacking(self), &absoluteTime,
                                  (CFOptionFlags)options, NSCalendarAllComponentsDescriptor,
                                  era, year, quarter, month, weekOfMonth, weekOfYear,
                                  yearForWeekOfYear, day, weekday, weekdayOrdinal,
@@ -719,7 +754,7 @@ static id NSCalendarCopySymbols(CFCalendarRef calendar, CFStringRef key) {
         default: return nil;
     }
     CFAbsoluteTime absoluteTime = [date timeIntervalSinceReferenceDate];
-    if (!CFCalendarAddComponents(NSCALENDAR_CF(CFCalendarRef, self), &absoluteTime,
+    if (!CFCalendarAddComponents(NSCalendarBacking(self), &absoluteTime,
                                  (CFOptionFlags)options, descriptor, (int)value)) return nil;
     return [NSDate dateWithTimeIntervalSinceReferenceDate:absoluteTime];
 }
@@ -957,7 +992,7 @@ static id NSCalendarCopySymbols(CFCalendarRef calendar, CFStringRef key) {
 }
 
 - (NSRange)rangeOfUnit:(NSCalendarUnit)smaller inUnit:(NSCalendarUnit)larger forDate:(NSDate *)date {
-    CFRange range = CFCalendarGetRangeOfUnit(NSCALENDAR_CF(CFCalendarRef, self),
+    CFRange range = CFCalendarGetRangeOfUnit(NSCalendarBacking(self),
                                              (CFCalendarUnit)smaller, (CFCalendarUnit)larger,
                                              [date timeIntervalSinceReferenceDate]);
     /* CoreFoundation reports an unsupported pairing as kCFNotFound; NSRange
@@ -966,7 +1001,7 @@ static id NSCalendarCopySymbols(CFCalendarRef calendar, CFStringRef key) {
 }
 
 - (NSUInteger)ordinalityOfUnit:(NSCalendarUnit)smaller inUnit:(NSCalendarUnit)larger forDate:(NSDate *)date {
-    CFIndex ordinality = CFCalendarGetOrdinalityOfUnit(NSCALENDAR_CF(CFCalendarRef, self),
+    CFIndex ordinality = CFCalendarGetOrdinalityOfUnit(NSCalendarBacking(self),
                                                         (CFCalendarUnit)smaller,
                                                         (CFCalendarUnit)larger,
                                                         [date timeIntervalSinceReferenceDate]);
@@ -980,7 +1015,7 @@ static id NSCalendarCopySymbols(CFCalendarRef calendar, CFStringRef key) {
             forDate:(NSDate *)date {
     CFAbsoluteTime start = 0;
     CFTimeInterval interval = 0;
-    if (!CFCalendarGetTimeRangeOfUnit(NSCALENDAR_CF(CFCalendarRef, self), (CFCalendarUnit)unit,
+    if (!CFCalendarGetTimeRangeOfUnit(NSCalendarBacking(self), (CFCalendarUnit)unit,
                                       [date timeIntervalSinceReferenceDate],
                                       &start, &interval)) return NO;
     if (datep != NULL) *datep = [NSDate dateWithTimeIntervalSinceReferenceDate:start];
@@ -1040,7 +1075,7 @@ yearForWeekOfYear:(NSInteger *)yearValuePointer
     if (unit == NSCalendarUnitCalendar || unit == NSCalendarUnitTimeZone) return 0;
     if (unit == NSCalendarUnitDayOfYear) {
         int year = 0, dayOfYear = 0;
-        if (!CFCalendarDecomposeAbsoluteTime(NSCALENDAR_CF(CFCalendarRef, self), absoluteTime,
+        if (!CFCalendarDecomposeAbsoluteTime(NSCalendarBacking(self), absoluteTime,
                                              "yD", &year, &dayOfYear)) {
             return NSDateComponentUndefined;
         }
@@ -1081,7 +1116,7 @@ yearForWeekOfYear:(NSInteger *)yearValuePointer
     int minute = NSCalendarComponentOrDefault(minuteValue, 0);
     int second = NSCalendarComponentOrDefault(secondValue, 0);
     CFAbsoluteTime absoluteTime = 0;
-    if (!CFCalendarComposeAbsoluteTime(NSCALENDAR_CF(CFCalendarRef, self), &absoluteTime,
+    if (!CFCalendarComposeAbsoluteTime(NSCalendarBacking(self), &absoluteTime,
                                         "GyMdHms", era, year, month, day,
                                         hour, minute, second)) return nil;
     return NSCalendarDateByAddingNanoseconds([NSDate dateWithTimeIntervalSinceReferenceDate:absoluteTime],
@@ -1104,7 +1139,7 @@ yearForWeekOfYear:(NSInteger *)yearValuePointer
     int minute = NSCalendarComponentOrDefault(minuteValue, 0);
     int second = NSCalendarComponentOrDefault(secondValue, 0);
     CFAbsoluteTime absoluteTime = 0;
-    if (!CFCalendarComposeAbsoluteTime(NSCALENDAR_CF(CFCalendarRef, self), &absoluteTime,
+    if (!CFCalendarComposeAbsoluteTime(NSCalendarBacking(self), &absoluteTime,
                                         "GwYEHms", era, week, year, weekday,
                                         hour, minute, second)) return nil;
     return NSCalendarDateByAddingNanoseconds([NSDate dateWithTimeIntervalSinceReferenceDate:absoluteTime],
@@ -1123,8 +1158,8 @@ yearForWeekOfYear:(NSInteger *)yearValuePointer
     CFAbsoluteTime time1 = [date1 timeIntervalSinceReferenceDate];
     CFAbsoluteTime time2 = [date2 timeIntervalSinceReferenceDate];
     NSCalendarDecomposed decomposed1, decomposed2;
-    if (!NSCalendarDecompose(NSCALENDAR_CF(CFCalendarRef, self), time1, &decomposed1) ||
-        !NSCalendarDecompose(NSCALENDAR_CF(CFCalendarRef, self), time2, &decomposed2)) {
+    if (!NSCalendarDecompose(NSCalendarBacking(self), time1, &decomposed1) ||
+        !NSCalendarDecompose(NSCalendarBacking(self), time2, &decomposed2)) {
         return NSCalendarCompareValues((NSInteger)time1, (NSInteger)time2);
     }
     return NSCalendarCompareDecomposed(&decomposed1, &decomposed2, unit, time1, time2);
@@ -1155,7 +1190,7 @@ yearForWeekOfYear:(NSInteger *)yearValuePointer
 - (BOOL)date:(NSDate *)date matchesComponents:(NSDateComponents *)components {
     CFAbsoluteTime absoluteTime = [date timeIntervalSinceReferenceDate];
     NSCalendarDecomposed decomposed;
-    if (!NSCalendarDecompose(NSCALENDAR_CF(CFCalendarRef, self), absoluteTime, &decomposed)) return NO;
+    if (!NSCalendarDecompose(NSCalendarBacking(self), absoluteTime, &decomposed)) return NO;
 #define NSCALENDAR_MATCH(property, field)                                     \
     if (components.property != NSDateComponentUndefined &&                    \
         components.property != (NSInteger)decomposed.field) return NO;
@@ -1180,7 +1215,7 @@ yearForWeekOfYear:(NSInteger *)yearValuePointer
                fromDateComponents:(NSDateComponents *)startingDateComp
                  toDateComponents:(NSDateComponents *)resultDateComp
                           options:(NSCalendarOptions)options {
-    CFCalendarRef calendar = NSCALENDAR_CF(CFCalendarRef, self);
+    CFCalendarRef calendar = NSCalendarBacking(self);
     NSDate *startingDate = NSCalendarMakeDate(calendar, startingDateComp);
     NSDate *resultDate = NSCalendarMakeDate(calendar, resultDateComp);
     if (startingDate == nil || resultDate == nil) return [[NSDateComponents alloc] init];
@@ -1215,33 +1250,25 @@ yearForWeekOfYear:(NSInteger *)yearValuePointer
 }
 
 - (instancetype)initWithCoder:(NSCoder *)coder {
-    /* NSCalendar is a CF-backed cluster: an instance is always produced by the
-     * CoreFoundation constructor, so -initWithCoder: answers a fresh object
-     * rather than configuring the receiver. */
     if (![coder allowsKeyedCoding]) {
-        return [NSCalendar calendarWithIdentifier:NSCalendarIdentifierGregorian];
+        return [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
     }
     NSString *identifier = [coder decodeObjectForKey:@"NSIdentifier"];
     if (identifier == nil) identifier = NSCalendarIdentifierGregorian;
-    NSCalendar *calendar = [NSCalendar calendarWithIdentifier:identifier];
-    if (calendar == nil) return nil;
+    CFCalendarRef backing = CFCalendarCreateWithIdentifier(
+        kCFAllocatorDefault, NSCALENDAR_CF(CFStringRef, identifier));
+    if (backing == NULL) return nil;
+    _calendar = backing;
     if ([coder containsValueForKey:@"NSFirstWeekday"]) {
-        calendar.firstWeekday = (NSUInteger)[coder decodeIntegerForKey:@"NSFirstWeekday"];
+        self.firstWeekday = (NSUInteger)[coder decodeIntegerForKey:@"NSFirstWeekday"];
     }
     if ([coder containsValueForKey:@"NSMinimumDaysInFirstWeek"]) {
-        calendar.minimumDaysInFirstWeek = (NSUInteger)[coder decodeIntegerForKey:@"NSMinimumDaysInFirstWeek"];
+        self.minimumDaysInFirstWeek = (NSUInteger)[coder decodeIntegerForKey:@"NSMinimumDaysInFirstWeek"];
     }
     if ([coder containsValueForKey:@"NSLocale"]) {
-        calendar.locale = [coder decodeObjectForKey:@"NSLocale"];
+        self.locale = [coder decodeObjectForKey:@"NSLocale"];
     }
-    return calendar;
+    return self;
 }
 
 @end
-
-#if DEPLOYMENT_RUNTIME_OBJC
-__attribute__((constructor))
-static void __NSCFCalendarBridgeInit(void) {
-    _CFRuntimeBridgeClasses(CFCalendarGetTypeID(), "NSCalendar");
-}
-#endif

@@ -14,11 +14,11 @@
 #import <Foundation/NSDateComponents.h>
 
 /* Interpret a date components object against a calendar without going through
- * the object system. An NSDateComponents belongs to a plain Objective-C class,
- * but the calendar it points at is a CFCalendar-backed cluster instance whose
- * isa may be the CoreFoundation-bridged class, so a message send to it is not
- * guaranteed to reach our implementation. NSDateComponents and NSCalendar use
- * these entry points instead. */
+ * the object system.  An NSDateComponents belongs to a plain Objective-C
+ * class, and NSCalendar owns the CFCalendar it was created from rather than
+ * being toll-free with it, so these entry points unwrap the backing
+ * CFCalendar directly.  NSDateComponents and NSCalendar use these entry
+ * points instead of messaging the calendar. */
 NSDate *NSCalendarDateFromComponents(NSCalendar *calendar, NSDateComponents *components);
 BOOL NSCalendarDateComponentsAreValid(NSCalendar *calendar, NSDateComponents *components);
 

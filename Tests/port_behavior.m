@@ -45,7 +45,40 @@ static NSString *plainJoin(NSArray *arr, NSString *sep) {
     return out;
 }
 
+static NSString *calFmt(NSCalendar *cal, NSDate *d) {
+    if (!d) return @"(nil)";
+    NSDateComponents *c = [cal components:(NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay |
+                                           NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond)
+                                fromDate:d];
+    return [NSString stringWithFormat:@"%04ld-%02ld-%02ld %02ld:%02ld:%02ld",
+            (long)c.year, (long)c.month, (long)c.day,
+            (long)c.hour, (long)c.minute, (long)c.second];
+}
+
+static void p_cal(const char *label, NSCalendar *cal, NSDate *got, NSString *expected) {
+    NSString *gots = calFmt(cal, got);
+    BOOL ok = [gots isEqualToString:expected];
+    p(label, [NSString stringWithFormat:@"%s%s", gots.UTF8String, ok ? "" : "  <<< DIFF"]);
+}
+
+static void calCheck(NSCalendar *cal, const char *label, NSDate *base,
+                     NSDateComponents *comps, NSCalendarOptions opts, NSString *expected) {
+    NSDate *got = [cal nextDateAfterDate:base matchingComponents:comps options:opts];
+    p_cal(label, cal, got, expected);
+}
+
+static void calCheckUnit(NSCalendar *cal, const char *label, NSDate *base,
+                         NSCalendarUnit unit, NSInteger value, NSCalendarOptions opts, NSString *expected) {
+    NSDate *got = [cal nextDateAfterDate:base matchingUnit:unit value:value options:opts];
+    p_cal(label, cal, got, expected);
+}
+
 int main(void) {
+    /* Pin the process timezone so calendar probes are deterministic and the
+     * golden file is portable across machines.  The port has no NSTimeZone
+     * class; both the port and Apple honor the TZ environment variable. */
+    setenv("TZ", "UTC", 1);
+    tzset();
     printf("PORT_BEHAVIOR_BEGIN\n");
 
     /* ---------- NSDate ---------- */
@@ -223,6 +256,53 @@ int main(void) {
     p("subdata b2", [NSString stringWithFormat:@"%02x", sb[2]]);
     p("isEqualToData same", [NSString stringWithFormat:@"%d", [data isEqualToData:[data copy]]]);
     p("isEqualToData diff", [NSString stringWithFormat:@"%d", [data isEqualToData:subd]]);
+
+    /* ---------- NSCalendar ---------- */
+    NSCalendar *cal = [NSCalendar calendarWithIdentifier:NSCalendarIdentifierGregorian];
+    NSDateComponents *hms = [NSDateComponents new];
+    hms.hour = 10; hms.minute = 0; hms.second = 0;
+    NSDate *t1 = [cal dateWithEra:1 year:2024 month:3 day:15 hour:10 minute:0 second:0 nanosecond:0];
+    calCheck(cal, "cal self-match opts=0", t1, hms, 0, @"2024-03-16 10:00:00");
+    calCheck(cal, "cal self-match strict", t1, hms, NSCalendarMatchStrictly, @"2024-03-16 10:00:00");
+
+    NSDateComponents *d3 = [NSDateComponents new]; d3.day = 3;
+    NSDate *j5 = [cal dateWithEra:1 year:2024 month:1 day:5 hour:0 minute:0 second:0 nanosecond:0];
+    calCheck(cal, "cal day=3 from Jan 5", j5, d3, 0, @"2024-02-03 00:00:00");
+    NSDateComponents *d15 = [NSDateComponents new]; d15.day = 15;
+    NSDate *j20 = [cal dateWithEra:1 year:2024 month:1 day:20 hour:0 minute:0 second:0 nanosecond:0];
+    calCheck(cal, "cal day=15 from Jan 20", j20, d15, 0, @"2024-02-15 00:00:00");
+
+    NSDateComponents *f29 = [NSDateComponents new]; f29.month = 2; f29.day = 29;
+    NSDate *mar21 = [cal dateWithEra:1 year:2024 month:3 day:1 hour:0 minute:0 second:0 nanosecond:0];
+    calCheck(cal, "cal feb29 opts=0", mar21, f29, 0, @"2025-03-01 00:00:00");
+    calCheck(cal, "cal feb29 +NextTime", mar21, f29, NSCalendarMatchNextTime, @"2025-03-01 00:00:00");
+    calCheck(cal, "cal feb29 strict", mar21, f29, NSCalendarMatchStrictly, @"2028-02-29 00:00:00");
+    NSDate *mar22 = [cal dateWithEra:1 year:2022 month:3 day:1 hour:0 minute:0 second:0 nanosecond:0];
+    calCheck(cal, "cal feb29 from Mar1 2022", mar22, f29, 0, @"2023-03-01 00:00:00");
+    NSDate *mar27 = [cal dateWithEra:1 year:2027 month:3 day:1 hour:0 minute:0 second:0 nanosecond:0];
+    calCheck(cal, "cal feb29 from Mar1 2027", mar27, f29, 0, @"2028-02-29 00:00:00");
+
+    NSDateComponents *fri = [NSDateComponents new]; fri.weekday = 6;
+    NSDate *wed = [cal dateWithEra:1 year:2024 month:3 day:13 hour:0 minute:0 second:0 nanosecond:0];
+    calCheck(cal, "cal weekday=6 Fri", wed, fri, 0, @"2024-03-15 00:00:00");
+
+    NSDateComponents *h6 = [NSDateComponents new]; h6.hour = 6;
+    NSDate *t1000 = [cal dateWithEra:1 year:2024 month:3 day:15 hour:10 minute:0 second:0 nanosecond:0];
+    calCheck(cal, "cal hour=6 from 10:00", t1000, h6, 0, @"2024-03-16 06:00:00");
+
+    calCheckUnit(cal, "cal unit year=2030", t1000, NSCalendarUnitYear, 2030, 0, @"2030-01-01 00:00:00");
+    calCheckUnit(cal, "cal unit year=2030 strict", t1000, NSCalendarUnitYear, 2030, NSCalendarMatchStrictly, @"2030-01-01 00:00:00");
+    calCheckUnit(cal, "cal unit year=2020 past", t1000, NSCalendarUnitYear, 2020, 0, @"(nil)");
+
+    NSDateComponents *f30 = [NSDateComponents new]; f30.month = 2; f30.day = 30;
+    calCheck(cal, "cal feb30 strict", mar21, f30, NSCalendarMatchStrictly, @"(nil)");
+
+    NSDateComponents *q1 = [NSDateComponents new]; q1.quarter = 1;
+    NSDate *may5 = [cal dateWithEra:1 year:2024 month:5 day:5 hour:0 minute:0 second:0 nanosecond:0];
+    calCheck(cal, "cal quarter=1 from May5", may5, q1, 0, @"2025-01-01 00:00:00");
+
+    NSDateComponents *empty = [NSDateComponents new];
+    calCheck(cal, "cal empty comps", t1, empty, 0, @"(nil)");
 
     printf("PORT_BEHAVIOR_END\n");
     return 0;
