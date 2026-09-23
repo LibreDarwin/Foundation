@@ -11,6 +11,8 @@
 #import <Foundation/NSDictionary.h>
 #include <CoreFoundation/CFDateFormatter.h>
 #include <CoreFoundation/CFNumber.h>
+#include <CoreFoundation/CFTimeZone.h>
+#include <CoreFoundation/CFCalendar.h>
 
 #if __has_feature(objc_arc)
 #define NSFORMATTER_TRANSFER(value) ((__bridge_transfer id)(value))
@@ -24,6 +26,13 @@
  * backing locale for CFDateFormatterCreate instead of casting the wrapper. */
 @interface NSLocale ()
 - (CFLocaleRef)_backingLocale;
+@end
+
+/* NSCalendar likewise owns its CFCalendar; redeclare its private accessors so
+ * the formatter can hand the backing calendar to CFDateFormatterSetProperty. */
+@interface NSCalendar ()
+- (CFCalendarRef)_backingCalendar;
+- (instancetype)_initWithBackingCalendar:(CFCalendarRef)backing;
 @end
 
 @implementation NSDateFormatter
@@ -140,6 +149,47 @@
 - (void)setDefaultDate:(NSDate *)date {
     CFDateFormatterSetProperty(_formatter, kCFDateFormatterDefaultDate,
                                date ? NSFORMATTER_CF(CFDateRef, date) : NULL);
+}
+
+- (NSTimeZone *)timeZone {
+    CFTimeZoneRef tz = CFDateFormatterCopyProperty(_formatter, kCFDateFormatterTimeZone);
+    if (tz == NULL) return [NSTimeZone systemTimeZone];
+    NSTimeZone *result = [NSTimeZone timeZoneWithName:
+        NSFORMATTER_TRANSFER(CFStringCreateCopy(kCFAllocatorDefault,
+                                                CFTimeZoneGetName(tz)))];
+    CFRelease(tz);
+    return result;
+}
+
+- (void)setTimeZone:(NSTimeZone *)tz {
+    if (tz == nil) {
+        CFDateFormatterSetProperty(_formatter, kCFDateFormatterTimeZone, NULL);
+        return;
+    }
+    CFTimeZoneRef cfTz = CFTimeZoneCreateWithName(kCFAllocatorDefault,
+                                                   NSFORMATTER_CF(CFStringRef, [tz name]),
+                                                   false);
+    if (cfTz == NULL) return;
+    CFDateFormatterSetProperty(_formatter, kCFDateFormatterTimeZone, cfTz);
+    CFRelease(cfTz);
+}
+
+- (NSCalendar *)calendar {
+    CFCalendarRef cal = CFDateFormatterCopyProperty(_formatter, kCFDateFormatterCalendar);
+    if (cal == NULL) return [NSCalendar currentCalendar];
+    return [[NSCalendar alloc] _initWithBackingCalendar:cal];
+}
+
+- (void)setCalendar:(NSCalendar *)cal {
+    if (cal == nil) {
+        CFCalendarRef cur = CFCalendarCopyCurrent();
+        if (cur != NULL) {
+            CFDateFormatterSetProperty(_formatter, kCFDateFormatterCalendar, cur);
+            CFRelease(cur);
+        }
+        return;
+    }
+    CFDateFormatterSetProperty(_formatter, kCFDateFormatterCalendar, [cal _backingCalendar]);
 }
 
 - (NSString *)stringFromDate:(NSDate *)date {

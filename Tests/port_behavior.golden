@@ -181,6 +181,16 @@ df locale set roundtrip                    | fr_FR
 df locale formatted                        | 2009-02-13 23:31:30
 df getObjectValue ok                       | 1 val=1234567890 err=0 range=0/19
 df getObjectValue bad                      | 0 val=0 err=1
+df tz default name                         | GMT
+df tz tokyo name                           | Asia/Tokyo
+df tz tokyo spread                         | 2009-02-14 08:31:30
+df tz ny spread                            | 2009-02-13 18:31:30
+df tz nil spread                           | 2009-02-13 23:31:30
+df cal default id                          | gregorian
+df cal set id                              | gregorian
+df cal islamic id                          | islamic
+df cal islamic spread                      | 1430-02-18
+df cal reset id                            | gregorian
 sc int first                               | 123 ok=1 loc=5
 sc atEnd between                           | 0
 sc int second                              | 45 ok=1 loc=8

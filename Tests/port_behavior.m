@@ -133,8 +133,8 @@ int main(void) {
     /* Line-buffer stdout so a crash reveals the exact failing probe. */
     setvbuf(stdout, NULL, _IOLBF, 0);
     /* Pin the process timezone so calendar probes are deterministic and the
-     * golden file is portable across machines.  The port has no NSTimeZone
-     * class; both the port and Apple honor the TZ environment variable. */
+     * golden file is portable across machines.  Both the port and Apple honor
+     * the TZ environment variable. */
     setenv("TZ", "UTC", 1);
     tzset();
     printf("PORT_BEHAVIOR_BEGIN\n");
@@ -467,6 +467,26 @@ int main(void) {
     derr = nil;
     dgot = [dfObj getObjectValue:&dv forString:@"garbage" range:NULL error:&derr];
     p("df getObjectValue bad", [NSString stringWithFormat:@"%d val=%d err=%d", dgot, dv != nil, derr != nil]);
+    NSDateFormatter *dfTZ = [[NSDateFormatter alloc] init];
+    [dfTZ setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    p("df tz default name", [dfTZ timeZone].name);
+    [dfTZ setTimeZone:[NSTimeZone timeZoneWithName:@"Asia/Tokyo"]];
+    p("df tz tokyo name", [dfTZ timeZone].name);
+    p("df tz tokyo spread", [dfTZ stringFromDate:fmtBase]);
+    [dfTZ setTimeZone:[NSTimeZone timeZoneWithName:@"America/New_York"]];
+    p("df tz ny spread", [dfTZ stringFromDate:fmtBase]);
+    [dfTZ setTimeZone:nil];
+    p("df tz nil spread", [dfTZ stringFromDate:fmtBase]);
+    NSDateFormatter *dfCal = [[NSDateFormatter alloc] init];
+    [dfCal setDateFormat:@"yyyy-MM-dd"];
+    p("df cal default id", dfCal.calendar.calendarIdentifier);
+    [dfCal setCalendar:[NSCalendar calendarWithIdentifier:NSCalendarIdentifierGregorian]];
+    p("df cal set id", dfCal.calendar.calendarIdentifier);
+    [dfCal setCalendar:[NSCalendar calendarWithIdentifier:NSCalendarIdentifierIslamic]];
+    p("df cal islamic id", dfCal.calendar.calendarIdentifier);
+    p("df cal islamic spread", [dfCal stringFromDate:fmtBase]);
+    [dfCal setCalendar:nil];
+    p("df cal reset id", dfCal.calendar.calendarIdentifier);
 
     /* ---------- NSScanner ---------- */
     NSScanner *sc = [NSScanner scannerWithString:@"  123 45"];

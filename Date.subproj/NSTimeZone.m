@@ -295,25 +295,38 @@ static void NTZCollectNames(const char *base, const char *rel, NTZNameList *list
 + (NSTimeZone *)systemTimeZone {
     if (gSystemTimeZone == nil) {
         NSTimeZone *tz = nil;
-        char link[PATH_MAX];
-        ssize_t n = readlink("/etc/localtime", link, sizeof(link) - 1);
-        NSString *name = nil;
-        if (n > 0) {
-            link[n] = 0;
-            NSString *raw = [NSString stringWithUTF8String:link];
-            NSArray *prefixes = [NSArray arrayWithObjects:(id[]){
-                @"/var/db/timezone/zoneinfo/", @"/usr/share/zoneinfo/"
-            } count:2];
-            for (NSUInteger i = 0; i < [prefixes count]; i++) {
-                NSString *pre = [prefixes objectAtIndex:i];
-                if ([raw hasPrefix:pre]) {
-                    name = [raw substringFromIndex:[pre length]];
-                    break;
-                }
+        /* Like CFTimeZoneCopySystem, honor the TZ environment variable before
+         * falling back to /etc/localtime.  TZ="" means UTC. */
+        const char *tzenv = getenv("TZ");
+        if (tzenv != NULL) {
+            if (tzenv[0] == 0) {
+                tz = [self timeZoneWithName:@"UTC"];
+            } else {
+                if (tzenv[0] == ':') tzenv++;
+                if (tzenv[0] != 0) tz = [self timeZoneWithName:[NSString stringWithUTF8String:tzenv]];
             }
         }
-        if (name != nil && [name length] > 0) {
-            tz = [self timeZoneWithName:name];
+        if (tz == nil) {
+            char link[PATH_MAX];
+            ssize_t n = readlink("/etc/localtime", link, sizeof(link) - 1);
+            NSString *name = nil;
+            if (n > 0) {
+                link[n] = 0;
+                NSString *raw = [NSString stringWithUTF8String:link];
+                NSArray *prefixes = [NSArray arrayWithObjects:(const id _Nonnull []){
+                    @"/var/db/timezone/zoneinfo/", @"/usr/share/zoneinfo/"
+                } count:2];
+                for (NSUInteger i = 0; i < [prefixes count]; i++) {
+                    NSString *pre = [prefixes objectAtIndex:i];
+                    if ([raw hasPrefix:pre]) {
+                        name = [raw substringFromIndex:[pre length]];
+                        break;
+                    }
+                }
+                if (name != nil && [name length] > 0) {
+                    tz = [self timeZoneWithName:name];
+                }
+            }
         }
         if (tz == nil) {
             tzset();

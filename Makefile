@@ -203,7 +203,7 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	    build/release/gate/*.o -framework CoreFoundation
 	@build/release/port_behavior > build/release/port_behavior.out
 	@diff Tests/port_behavior.golden build/release/port_behavior.out \
-	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 825 probes)"
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 873 probes)"
 
 verify: pairing-sweep behavior-gate
 
