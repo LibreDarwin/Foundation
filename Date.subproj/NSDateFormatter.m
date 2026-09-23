@@ -9,6 +9,7 @@
 #import <Foundation/NSDateFormatter.h>
 #import <Foundation/FoundationErrors.h>
 #import <Foundation/NSDictionary.h>
+#import <Foundation/NSString.h>
 #include <CoreFoundation/CFDateFormatter.h>
 #include <CoreFoundation/CFNumber.h>
 #include <CoreFoundation/CFTimeZone.h>
@@ -41,6 +42,49 @@
     return [[self alloc] init];
 }
 
++ (NSString *)localizedStringFromDate:(NSDate *)date dateStyle:(NSDateFormatterStyle)dstyle timeStyle:(NSDateFormatterStyle)tstyle {
+    /* +localizedStringFromDate: dates the book to the behavior-10_0 era: it
+     * renders the hardcoded classic patterns (never the ICU style-derived
+     * ones), and joins with ", " for short dates but " at " otherwise. */
+    NSDateFormatter *f = [[NSDateFormatter alloc] init];
+    [f setLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]];
+    NSString *datePart = nil;
+    NSString *timePart = nil;
+    if (dstyle != NSDateFormatterNoStyle) {
+        [f setDateFormat:(dstyle == NSDateFormatterShortStyle ? @"d.M.yyyy"
+                          : dstyle == NSDateFormatterMediumStyle ? @"d MMM yyyy"
+                          : dstyle == NSDateFormatterLongStyle ? @"d MMMM yyyy"
+                          : @"EEEE, d MMMM yyyy")];
+        datePart = [f stringFromDate:date];
+    }
+    if (tstyle != NSDateFormatterNoStyle) {
+        [f setDateFormat:(tstyle == NSDateFormatterShortStyle ? @"HH:mm"
+                          : tstyle == NSDateFormatterMediumStyle ? @"HH:mm:ss"
+                          : tstyle == NSDateFormatterLongStyle ? @"HH:mm:ss z"
+                          : @"HH:mm:ss zzzz")];
+        timePart = [f stringFromDate:date];
+    }
+    if (datePart == nil) {
+        if (timePart != nil) return timePart;
+        return @"";
+    }
+    if (timePart == nil) return datePart;
+    return [NSString stringWithFormat:@"%@%@%@", datePart,
+            dstyle == NSDateFormatterShortStyle ? @", " : @" at ", timePart];
+}
+
++ (NSString *)dateFormatFromTemplate:(NSString *)tmplate options:(NSUInteger)opts locale:(NSLocale *)locale {
+    CFLocaleRef cfLocale = NULL;
+    if (locale != nil) {
+        if ([locale isKindOfClass:[NSLocale class]]) cfLocale = [locale _backingLocale];
+        else cfLocale = NSFORMATTER_CF(CFLocaleRef, locale);
+    }
+    CFStringRef format = CFDateFormatterCreateDateFormatFromTemplate(
+        kCFAllocatorDefault, NSFORMATTER_CF(CFStringRef, tmplate), (CFOptionFlags)opts, cfLocale);
+    if (format == NULL) return nil;
+    return NSFORMATTER_TRANSFER(format);
+}
+
 - (instancetype)init {
     return [self initWithDateFormat:nil locale:[NSLocale currentLocale]];
 }
@@ -64,8 +108,23 @@
 - (void)dealloc {
     if (_formatter != NULL) CFRelease(_formatter);
 #if !__has_feature(objc_arc)
+    [_symbolOverrides release];
     [super dealloc];
 #endif
+}
+
+- (NSArray<NSString *> *)_symbolArrayForKey:(CFStringRef)key shadow:(NSString *)shadow {
+    if (_symbolOverrides != nil) {
+        NSArray *override = [_symbolOverrides objectForKey:shadow];
+        if (override != nil) return override;
+    }
+    return NSFORMATTER_TRANSFER(CFDateFormatterCopyProperty(_formatter, key));
+}
+
+- (void)_setSymbolArray:(NSArray<NSString *> *)symbols forKey:(CFStringRef)key shadow:(NSString *)shadow {
+    if (_symbolOverrides == nil) _symbolOverrides = [NSMutableDictionary dictionary];
+    [_symbolOverrides setObject:[symbols copy] forKey:shadow];
+    CFDateFormatterSetProperty(_formatter, key, NSFORMATTER_CF(CFArrayRef, symbols));
 }
 
 - (NSDateFormatterStyle)dateStyle {
@@ -100,6 +159,15 @@
 
 - (void)setDateFormat:(NSString *)format {
     CFDateFormatterSetFormat(_formatter, NSFORMATTER_CF(CFStringRef, format));
+}
+
+- (void)setLocalizedDateFormatFromTemplate:(NSString *)dateFormatTemplate {
+    CFStringRef format = CFDateFormatterCreateDateFormatFromTemplate(
+        kCFAllocatorDefault, NSFORMATTER_CF(CFStringRef, dateFormatTemplate), 0,
+        CFDateFormatterGetLocale(_formatter));
+    if (format == NULL) return;
+    CFDateFormatterSetFormat(_formatter, format);
+    CFRelease(format);
 }
 
 - (NSLocale *)locale {
@@ -151,6 +219,31 @@
                                date ? NSFORMATTER_CF(CFDateRef, date) : NULL);
 }
 
+- (BOOL)doesRelativeDateFormatting {
+    CFTypeRef value = CFDateFormatterCopyProperty(_formatter, kCFDateFormatterDoesRelativeDateFormattingKey);
+    BOOL relative = value != NULL && CFBooleanGetValue((CFBooleanRef)value);
+    if (value != NULL) CFRelease(value);
+    return relative;
+}
+
+- (void)setDoesRelativeDateFormatting:(BOOL)flag {
+    CFDateFormatterSetProperty(_formatter, kCFDateFormatterDoesRelativeDateFormattingKey,
+                               flag ? kCFBooleanTrue : kCFBooleanFalse);
+}
+
+- (NSDate *)gregorianStartDate {
+    CFDateRef date = CFDateFormatterCopyProperty(_formatter, kCFDateFormatterGregorianStartDate);
+    if (date == NULL) return nil;
+    NSDate *result = [NSDate dateWithTimeIntervalSinceReferenceDate:CFDateGetAbsoluteTime(date)];
+    CFRelease(date);
+    return result;
+}
+
+- (void)setGregorianStartDate:(NSDate *)date {
+    CFDateFormatterSetProperty(_formatter, kCFDateFormatterGregorianStartDate,
+                               date ? NSFORMATTER_CF(CFDateRef, date) : NULL);
+}
+
 - (NSTimeZone *)timeZone {
     CFTimeZoneRef tz = CFDateFormatterCopyProperty(_formatter, kCFDateFormatterTimeZone);
     if (tz == NULL) return [NSTimeZone systemTimeZone];
@@ -190,6 +283,166 @@
         return;
     }
     CFDateFormatterSetProperty(_formatter, kCFDateFormatterCalendar, [cal _backingCalendar]);
+}
+
+- (NSArray<NSString *> *)eraSymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterEraSymbols shadow:@"eraSymbols"];
+}
+
+- (void)setEraSymbols:(NSArray<NSString *> *)eraSymbols {
+    [self _setSymbolArray:eraSymbols forKey:kCFDateFormatterEraSymbols shadow:@"eraSymbols"];
+}
+
+- (NSArray<NSString *> *)monthSymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterMonthSymbols shadow:@"monthSymbols"];
+}
+
+- (void)setMonthSymbols:(NSArray<NSString *> *)monthSymbols {
+    [self _setSymbolArray:monthSymbols forKey:kCFDateFormatterMonthSymbols shadow:@"monthSymbols"];
+}
+
+- (NSArray<NSString *> *)shortMonthSymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterShortMonthSymbols shadow:@"shortMonthSymbols"];
+}
+
+- (void)setShortMonthSymbols:(NSArray<NSString *> *)shortMonthSymbols {
+    [self _setSymbolArray:shortMonthSymbols forKey:kCFDateFormatterShortMonthSymbols shadow:@"shortMonthSymbols"];
+}
+
+- (NSArray<NSString *> *)veryShortMonthSymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterVeryShortMonthSymbols shadow:@"veryShortMonthSymbols"];
+}
+
+- (void)setVeryShortMonthSymbols:(NSArray<NSString *> *)veryShortMonthSymbols {
+    [self _setSymbolArray:veryShortMonthSymbols forKey:kCFDateFormatterVeryShortMonthSymbols shadow:@"veryShortMonthSymbols"];
+}
+
+- (NSArray<NSString *> *)weekdaySymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterWeekdaySymbols shadow:@"weekdaySymbols"];
+}
+
+- (void)setWeekdaySymbols:(NSArray<NSString *> *)weekdaySymbols {
+    [self _setSymbolArray:weekdaySymbols forKey:kCFDateFormatterWeekdaySymbols shadow:@"weekdaySymbols"];
+}
+
+- (NSArray<NSString *> *)shortWeekdaySymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterShortWeekdaySymbols shadow:@"shortWeekdaySymbols"];
+}
+
+- (void)setShortWeekdaySymbols:(NSArray<NSString *> *)shortWeekdaySymbols {
+    [self _setSymbolArray:shortWeekdaySymbols forKey:kCFDateFormatterShortWeekdaySymbols shadow:@"shortWeekdaySymbols"];
+}
+
+- (NSArray<NSString *> *)veryShortWeekdaySymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterVeryShortWeekdaySymbols shadow:@"veryShortWeekdaySymbols"];
+}
+
+- (void)setVeryShortWeekdaySymbols:(NSArray<NSString *> *)veryShortWeekdaySymbols {
+    [self _setSymbolArray:veryShortWeekdaySymbols forKey:kCFDateFormatterVeryShortWeekdaySymbols shadow:@"veryShortWeekdaySymbols"];
+}
+
+- (NSArray<NSString *> *)longEraSymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterLongEraSymbols shadow:@"longEraSymbols"];
+}
+
+- (void)setLongEraSymbols:(NSArray<NSString *> *)longEraSymbols {
+    [self _setSymbolArray:longEraSymbols forKey:kCFDateFormatterLongEraSymbols shadow:@"longEraSymbols"];
+}
+
+- (NSArray<NSString *> *)standaloneMonthSymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterStandaloneMonthSymbols shadow:@"standaloneMonthSymbols"];
+}
+
+- (void)setStandaloneMonthSymbols:(NSArray<NSString *> *)standaloneMonthSymbols {
+    [self _setSymbolArray:standaloneMonthSymbols forKey:kCFDateFormatterStandaloneMonthSymbols shadow:@"standaloneMonthSymbols"];
+}
+
+- (NSArray<NSString *> *)shortStandaloneMonthSymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterShortStandaloneMonthSymbols shadow:@"shortStandaloneMonthSymbols"];
+}
+
+- (void)setShortStandaloneMonthSymbols:(NSArray<NSString *> *)shortStandaloneMonthSymbols {
+    [self _setSymbolArray:shortStandaloneMonthSymbols forKey:kCFDateFormatterShortStandaloneMonthSymbols shadow:@"shortStandaloneMonthSymbols"];
+}
+
+- (NSArray<NSString *> *)veryShortStandaloneMonthSymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterVeryShortStandaloneMonthSymbols shadow:@"veryShortStandaloneMonthSymbols"];
+}
+
+- (void)setVeryShortStandaloneMonthSymbols:(NSArray<NSString *> *)veryShortStandaloneMonthSymbols {
+    [self _setSymbolArray:veryShortStandaloneMonthSymbols forKey:kCFDateFormatterVeryShortStandaloneMonthSymbols shadow:@"veryShortStandaloneMonthSymbols"];
+}
+
+- (NSArray<NSString *> *)standaloneWeekdaySymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterStandaloneWeekdaySymbols shadow:@"standaloneWeekdaySymbols"];
+}
+
+- (void)setStandaloneWeekdaySymbols:(NSArray<NSString *> *)standaloneWeekdaySymbols {
+    [self _setSymbolArray:standaloneWeekdaySymbols forKey:kCFDateFormatterStandaloneWeekdaySymbols shadow:@"standaloneWeekdaySymbols"];
+}
+
+- (NSArray<NSString *> *)shortStandaloneWeekdaySymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterShortStandaloneWeekdaySymbols shadow:@"shortStandaloneWeekdaySymbols"];
+}
+
+- (void)setShortStandaloneWeekdaySymbols:(NSArray<NSString *> *)shortStandaloneWeekdaySymbols {
+    [self _setSymbolArray:shortStandaloneWeekdaySymbols forKey:kCFDateFormatterShortStandaloneWeekdaySymbols shadow:@"shortStandaloneWeekdaySymbols"];
+}
+
+- (NSArray<NSString *> *)veryShortStandaloneWeekdaySymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterVeryShortStandaloneWeekdaySymbols shadow:@"veryShortStandaloneWeekdaySymbols"];
+}
+
+- (void)setVeryShortStandaloneWeekdaySymbols:(NSArray<NSString *> *)veryShortStandaloneWeekdaySymbols {
+    [self _setSymbolArray:veryShortStandaloneWeekdaySymbols forKey:kCFDateFormatterVeryShortStandaloneWeekdaySymbols shadow:@"veryShortStandaloneWeekdaySymbols"];
+}
+
+- (NSArray<NSString *> *)quarterSymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterQuarterSymbols shadow:@"quarterSymbols"];
+}
+
+- (void)setQuarterSymbols:(NSArray<NSString *> *)quarterSymbols {
+    [self _setSymbolArray:quarterSymbols forKey:kCFDateFormatterQuarterSymbols shadow:@"quarterSymbols"];
+}
+
+- (NSArray<NSString *> *)shortQuarterSymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterShortQuarterSymbols shadow:@"shortQuarterSymbols"];
+}
+
+- (void)setShortQuarterSymbols:(NSArray<NSString *> *)shortQuarterSymbols {
+    [self _setSymbolArray:shortQuarterSymbols forKey:kCFDateFormatterShortQuarterSymbols shadow:@"shortQuarterSymbols"];
+}
+
+- (NSArray<NSString *> *)standaloneQuarterSymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterStandaloneQuarterSymbols shadow:@"standaloneQuarterSymbols"];
+}
+
+- (void)setStandaloneQuarterSymbols:(NSArray<NSString *> *)standaloneQuarterSymbols {
+    [self _setSymbolArray:standaloneQuarterSymbols forKey:kCFDateFormatterStandaloneQuarterSymbols shadow:@"standaloneQuarterSymbols"];
+}
+
+- (NSArray<NSString *> *)shortStandaloneQuarterSymbols {
+    return [self _symbolArrayForKey:kCFDateFormatterShortStandaloneQuarterSymbols shadow:@"shortStandaloneQuarterSymbols"];
+}
+
+- (void)setShortStandaloneQuarterSymbols:(NSArray<NSString *> *)shortStandaloneQuarterSymbols {
+    [self _setSymbolArray:shortStandaloneQuarterSymbols forKey:kCFDateFormatterShortStandaloneQuarterSymbols shadow:@"shortStandaloneQuarterSymbols"];
+}
+
+- (NSString *)AMSymbol {
+    return NSFORMATTER_TRANSFER(CFDateFormatterCopyProperty(_formatter, kCFDateFormatterAMSymbol));
+}
+
+- (void)setAMSymbol:(NSString *)AMSymbol {
+    CFDateFormatterSetProperty(_formatter, kCFDateFormatterAMSymbol, NSFORMATTER_CF(CFStringRef, AMSymbol));
+}
+
+- (NSString *)PMSymbol {
+    return NSFORMATTER_TRANSFER(CFDateFormatterCopyProperty(_formatter, kCFDateFormatterPMSymbol));
+}
+
+- (void)setPMSymbol:(NSString *)PMSymbol {
+    CFDateFormatterSetProperty(_formatter, kCFDateFormatterPMSymbol, NSFORMATTER_CF(CFStringRef, PMSymbol));
 }
 
 - (NSString *)stringFromDate:(NSDate *)date {

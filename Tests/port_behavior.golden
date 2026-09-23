@@ -191,6 +191,62 @@ df cal set id                              | gregorian
 df cal islamic id                          | islamic
 df cal islamic spread                      | 1430-02-18
 df cal reset id                            | gregorian
+df style short                             | 2/13/09
+df style long                              | February 13, 2009
+df time short                              | 11:31 PM
+df styles medium short                     | Feb 13, 2009 at 11:31 PM
+df styles after format                     | d=3 t=0 fmt=yyyy-MM-dd out=2009-02-13
+df template class                          | MMM d, yyyy
+df template set out                        | Feb 13, 2009
+df template set fmt                        | MMM d, yyyy
+df template read styles                    | 0/0
+df template de set                         | 13. Februar 2009
+df relative default                        | 0
+df relative set                            | 1
+df relative fmt short                      | 2/13/09
+df gregorian default nil                   | 0
+df gregorian set getter                    | 0
+df era en                                  | BC|AD
+df longera en                              | Before Christ|Anno Domini
+df month en                                | January|February|March|April|May|June|July|August|September|October|November|December
+df shortmonth en                           | Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec
+df vshortmonth en                          | J|F|M|A|M|J|J|A|S|O|N|D
+df weekday en                              | Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday
+df shortweekday en                         | Sun|Mon|Tue|Wed|Thu|Fri|Sat
+df vshortweekday en                        | S|M|T|W|T|F|S
+df standmonth en                           | January|February|March|April|May|June|July|August|September|October|November|December
+df shortstandmonth en                      | Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec
+df vshortstandmonth en                     | J|F|M|A|M|J|J|A|S|O|N|D
+df standweekday en                         | Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday
+df shortstandweekday en                    | Sun|Mon|Tue|Wed|Thu|Fri|Sat
+df vshortstandweekday en                   | S|M|T|W|T|F|S
+df quarter en                              | 1st quarter|2nd quarter|3rd quarter|4th quarter
+df shortquarter en                         | Q1|Q2|Q3|Q4
+df standquarter en                         | 1st quarter|2nd quarter|3rd quarter|4th quarter
+df shortstandquarter en                    | Q1|Q2|Q3|Q4
+df ampm en                                 | AM/PM
+df setmonth roundtrip                      | X1|X2|X3
+df setampm roundtrip                       | Morning
+df month de                                | Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember
+df shortmonth de                           | Jan.|Feb.|März|Apr.|Mai|Juni|Juli|Aug.|Sept.|Okt.|Nov.|Dez.
+df weekday de                              | Sonntag|Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag
+df era de                                  | v. Chr.|n. Chr.
+df quarter de                              | 1. Quartal|2. Quartal|3. Quartal|4. Quartal
+df de format                               | 13.02.2009
+df de full                                 | Freitag, 13. Februar 2009
+df fr long                                 | 13 février 2009
+df localized medshort                      | 13 Feb 2009 at 23:31
+df localized full long                     | Friday, 13 February 2009 at 23:31:30 GMT
+df localized short both                    | 13.2.2009, 23:31
+df localized short date                    | 13.2.2009
+df localized med time                      | 23:31:30
+df localized full time                     | 23:31:30 Greenwich Mean Time
+df localized none                          | 
+df z tokyo                                 | 2009-02-14 08:31:30 +0900
+df parse offset plus0100                   | 1234564290
+df literal quoted                          | 2009.02.13 at 23:31
+df weekdayname long                        | Friday, February 13, 2009
+df yy parse                                | 1234483200
 sc int first                               | 123 ok=1 loc=5
 sc atEnd between                           | 0
 sc int second                              | 45 ok=1 loc=8
