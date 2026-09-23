@@ -201,6 +201,11 @@ typedef NS_CLOSED_ENUM(NSInteger, NSComparisonResult) {
 
 typedef NSComparisonResult (^NSComparator)(id _Nonnull obj1, id _Nonnull obj2);
 
+typedef NS_OPTIONS(NSUInteger, NSSortOptions) {
+    NSSortConcurrent = (1UL << 0),
+    NSSortStable = (1UL << 4),
+};
+
 enum { NSNotFound = NSIntegerMax };
 
 /* Apple's NSObjCRuntime.h defines these, and ported ObjC code relies on

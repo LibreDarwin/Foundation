@@ -46,6 +46,9 @@
 - (NSSet<ObjectType> *)setByAddingObjectsFromSet:(NSSet<ObjectType> *)set;
 - (NSSet<ObjectType> *)setByAddingObjectsFromArray:(NSArray<ObjectType> *)array;
 
+- (NSArray<ObjectType> *)sortedArrayUsingComparator:(NSComparator)cmptr;
+- (NSArray<ObjectType> *)sortedArrayUsingDescriptors:(NSArray<NSSortDescriptor *> *)sortDescriptors;
+
 @end
 
 @interface NSMutableSet<ObjectType> : NSSet<ObjectType>

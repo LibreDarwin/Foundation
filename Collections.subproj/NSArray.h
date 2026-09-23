@@ -15,6 +15,12 @@
 @class NSEnumerator;
 @class NSSortDescriptor;
 
+typedef NS_OPTIONS(NSUInteger, NSBinarySearchingOptions) {
+    NSBinarySearchingFirstEqual = (1UL << 8),
+    NSBinarySearchingLastEqual = (1UL << 9),
+    NSBinarySearchingInsertionIndex = (1UL << 10),
+};
+
 @interface NSArray<__covariant ObjectType> : NSObject <NSCopying, NSMutableCopying, NSFastEnumeration>
 
 + (instancetype)array;

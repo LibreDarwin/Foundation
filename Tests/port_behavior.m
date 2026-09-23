@@ -9,6 +9,11 @@
 
 #pragma clang diagnostic ignored "-Wobjc-literal-conversion"
 
+@interface NSSet (PortIntrospection)
+- (NSArray *)sortedArrayUsingComparator:(NSComparator)cmptr;
+- (NSArray *)sortedArrayUsingDescriptors:(NSArray *)sortDescriptors;
+@end
+
 static void p(const char *label, NSString *value) {
     printf("%-42s | %s\n", label, value ? value.UTF8String : "(null)");
 }
@@ -2251,6 +2256,106 @@ int main(void) {
     p("sd revrev", [NSString stringWithFormat:@"asc=%d eq=%d", sdRR.ascending, [sdRR isEqual:sdE5]]);
 
     p("sd secure coding", [NSString stringWithFormat:@"%d", [NSSortDescriptor supportsSecureCoding]]);
+
+    /* ---------------- NSSet sorting ---------------- */
+    NSSet *nssA = [NSSet setWithArray:@[@"cc", @"aa", @"bb"]];
+    NSComparator nssAsc = ^NSComparisonResult(id x, id y) { return [x compare:y]; };
+    NSArray *nssSortedCmp = [nssA sortedArrayUsingComparator:nssAsc];
+    p("nss sort cmp asc", plainJoin(nssSortedCmp, @","));
+    NSArray *nssSortedDesc = [nssA sortedArrayUsingDescriptors:@[ [NSSortDescriptor sortDescriptorWithKey:@"self" ascending:YES] ]];
+    p("nss sort desc key self", plainJoin(nssSortedDesc, @","));
+    NSArray *nssSortedDescRev = [nssA sortedArrayUsingDescriptors:@[ [NSSortDescriptor sortDescriptorWithKey:@"self" ascending:NO] ]];
+    p("nss sort desc key self rev", plainJoin(nssSortedDescRev, @","));
+    p("nss set count", [NSString stringWithFormat:@"%lu", (unsigned long)nssA.count]);
+    p("nss set contains", [NSString stringWithFormat:@"%d", [nssA containsObject:@"aa"]]);
+    p("nss set member miss", [NSString stringWithFormat:@"%d", [nssA member:@"zz"] == nil]);
+
+    /* ---------------- NSOrderedSet basics ---------------- */
+    NSOrderedSet *osc = [NSOrderedSet orderedSetWithArray:@[@"b", @"a", @"b", @"c", @"a"]];
+    p("osc from array", plainJoin(osc.array, @","));
+    p("osc count", [NSString stringWithFormat:@"%lu", (unsigned long)osc.count]);
+    p("osc objAt 0", [osc objectAtIndex:0]);
+    p("osc objAt 2", [osc objectAtIndex:2]);
+    p("osc first", osc.firstObject);
+    p("osc last", osc.lastObject);
+    p("osc indexOf b", [NSString stringWithFormat:@"%lu", (unsigned long)[osc indexOfObject:@"b"]]);
+    p("osc indexOf c", [NSString stringWithFormat:@"%lu", (unsigned long)[osc indexOfObject:@"c"]]);
+    p("osc indexOf miss", [NSString stringWithFormat:@"%lu", (unsigned long)[osc indexOfObject:@"zz"]]);
+    p("osc contains", [NSString stringWithFormat:@"%d", [osc containsObject:@"c"]]);
+    NSOrderedSet *oscSame = [NSOrderedSet orderedSetWithArray:@[@"b", @"a", @"c"]];
+    NSOrderedSet *oscDiff = [NSOrderedSet orderedSetWithArray:@[@"a", @"b", @"c"]];
+    p("osc isEqualTo same", [NSString stringWithFormat:@"%d", [osc isEqualToOrderedSet:oscSame]]);
+    p("osc isEqualTo order", [NSString stringWithFormat:@"%d", [osc isEqualToOrderedSet:oscDiff]]);
+    p("osc isEqual array", [NSString stringWithFormat:@"%d", [osc isEqual:(id)osc.array]]);
+    p("osc reversed", plainJoin(osc.reversedOrderedSet.array, @","));
+    NSMutableString *oscRevEnum = [NSMutableString string];
+    for (NSString *s in [osc reverseObjectEnumerator]) {
+        if (oscRevEnum.length) [oscRevEnum appendString:@","];
+        [oscRevEnum appendString:s];
+    }
+    p("osc revEnumerate", oscRevEnum);
+    p("osc set count", [NSString stringWithFormat:@"%lu", (unsigned long)osc.set.count]);
+    p("osc copy is self", [NSString stringWithFormat:@"%d", [osc copy] == osc]);
+    NSMutableOrderedSet *oscMC = [osc mutableCopy];
+    [oscMC addObject:@"d"];
+    p("osc mutableCopy orig", [NSString stringWithFormat:@"%lu", (unsigned long)osc.count]);
+    p("osc mutableCopy copy", plainJoin(oscMC.array, @","));
+    NSMutableString *oscEnum = [NSMutableString string];
+    for (NSString *s in osc) {
+        if (oscEnum.length) [oscEnum appendString:@","];
+        [oscEnum appendString:s];
+    }
+    p("osc fastEnum", oscEnum);
+    p("osc sortedArrayCmp", plainJoin([osc sortedArrayUsingComparator:nssAsc], @","));
+    p("osc sortedArrayOpts", plainJoin([osc sortedArrayWithOptions:NSSortStable usingComparator:nssAsc], @","));
+    p("osc sortedArrayDesc", plainJoin([osc sortedArrayUsingDescriptors:@[ [NSSortDescriptor sortDescriptorWithKey:@"self" ascending:NO] ]], @","));
+
+    /* ---------------- NSMutableOrderedSet ---------------- */
+    NSMutableOrderedSet *osm = [NSMutableOrderedSet orderedSetWithArray:@[@"a", @"b", @"c", @"d"]];
+    [osm addObject:@"b"];
+    p("osm add dup", plainJoin(osm.array, @","));
+    [osm insertObject:@"b" atIndex:0];
+    p("osm insert dup", plainJoin(osm.array, @","));
+    [osm insertObject:@"e" atIndex:1];
+    p("osm insert new", plainJoin(osm.array, @","));
+    [osm setObject:@"e" atIndex:4];
+    p("osm set dup", plainJoin(osm.array, @","));
+    [osm setObject:@"f" atIndex:5];
+    p("osm set at end", plainJoin(osm.array, @","));
+    [osm setObject:@"g" atIndex:2];
+    p("osm set replace", plainJoin(osm.array, @","));
+    [osm exchangeObjectAtIndex:1 withObjectAtIndex:4];
+    p("osm exchange", plainJoin(osm.array, @","));
+    [osm removeObjectAtIndex:2];
+    p("osm removeAt", plainJoin(osm.array, @","));
+    [osm removeObject:@"d"];
+    p("osm removeObj", plainJoin(osm.array, @","));
+    NSMutableOrderedSet *osmSort = [NSMutableOrderedSet orderedSetWithArray:@[@"b", @"c", @"a"]];
+    [osmSort sortUsingComparator:nssAsc];
+    p("osm sortCmp", plainJoin(osmSort.array, @","));
+    NSMutableOrderedSet *osmSort2 = [NSMutableOrderedSet orderedSetWithArray:@[@"bb", @"aa", @"cc", @"dd"]];
+    [osmSort2 sortRange:NSMakeRange(1, 2) options:0 usingComparator:^NSComparisonResult(id x, id y) { return [y compare:x]; }];
+    p("osm sortRange", plainJoin(osmSort2.array, @","));
+    NSMutableOrderedSet *osmSort3 = [NSMutableOrderedSet orderedSetWithArray:@[@"b", @"a", @"c"]];
+    [osmSort3 sortUsingDescriptors:@[ [NSSortDescriptor sortDescriptorWithKey:@"self" ascending:NO] ]];
+    p("osm sortDescriptors", plainJoin(osmSort3.array, @","));
+
+    /* ---------------- NSOrderedSet binary search ---------------- */
+    NSOrderedSet *obs = [NSOrderedSet orderedSetWithArray:@[@1, @3, @5, @7, @9]];
+    NSComparator numCmp = ^NSComparisonResult(id x, id y) { return [x compare:y]; };
+    NSRange obsFull = NSMakeRange(0, obs.count);
+    p("obs def hit", [NSString stringWithFormat:@"%lu", (unsigned long)[obs indexOfObject:@5 inSortedRange:obsFull options:0 usingComparator:numCmp]]);
+    p("obs def miss", [NSString stringWithFormat:@"%lu", (unsigned long)[obs indexOfObject:@6 inSortedRange:obsFull options:0 usingComparator:numCmp]]);
+    p("obs first hit", [NSString stringWithFormat:@"%lu", (unsigned long)[obs indexOfObject:@5 inSortedRange:obsFull options:NSBinarySearchingFirstEqual usingComparator:numCmp]]);
+    p("obs last hit", [NSString stringWithFormat:@"%lu", (unsigned long)[obs indexOfObject:@5 inSortedRange:obsFull options:NSBinarySearchingLastEqual usingComparator:numCmp]]);
+    p("obs ins below", [NSString stringWithFormat:@"%lu", (unsigned long)[obs indexOfObject:@0 inSortedRange:obsFull options:NSBinarySearchingInsertionIndex usingComparator:numCmp]]);
+    p("obs ins gap", [NSString stringWithFormat:@"%lu", (unsigned long)[obs indexOfObject:@4 inSortedRange:obsFull options:NSBinarySearchingInsertionIndex usingComparator:numCmp]]);
+    p("obs ins above", [NSString stringWithFormat:@"%lu", (unsigned long)[obs indexOfObject:@10 inSortedRange:obsFull options:NSBinarySearchingInsertionIndex usingComparator:numCmp]]);
+    NSOrderedSet *obsDup = [NSOrderedSet orderedSetWithArray:@[@1, @3, @3, @5, @7]];
+    NSRange obsDupFull = NSMakeRange(0, obsDup.count);
+    p("obs dup def", [NSString stringWithFormat:@"%lu", (unsigned long)[obsDup indexOfObject:@3 inSortedRange:obsDupFull options:0 usingComparator:numCmp]]);
+    p("obs dup last", [NSString stringWithFormat:@"%lu", (unsigned long)[obsDup indexOfObject:@3 inSortedRange:obsDupFull options:NSBinarySearchingLastEqual usingComparator:numCmp]]);
+    p("obs dup in-range", [NSString stringWithFormat:@"%lu", (unsigned long)[obsDup indexOfObject:@5 inSortedRange:NSMakeRange(1, 2) options:0 usingComparator:numCmp]]);
 
     printf("PORT_BEHAVIOR_END\n");
     return 0;

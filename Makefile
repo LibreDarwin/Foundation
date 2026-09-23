@@ -165,6 +165,7 @@ GATE_SRCS = String.subproj/NSString.m \
             Collections.subproj/NSArray.m \
             Collections.subproj/NSEnumerator_array.m \
             Collections.subproj/NSSet.m \
+             Collections.subproj/NSOrderedSet.m \
             Collections.subproj/NSDictionary.m \
             Collections.subproj/NSMapTable.m \
 Collections.subproj/NSData.m \
@@ -207,7 +208,7 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	    build/release/gate/*.o -framework CoreFoundation
 	@build/release/port_behavior > build/release/port_behavior.out
 	@diff Tests/port_behavior.golden build/release/port_behavior.out \
-	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 1049 probes)"
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 1100 probes)"
 
 verify: pairing-sweep behavior-gate
 

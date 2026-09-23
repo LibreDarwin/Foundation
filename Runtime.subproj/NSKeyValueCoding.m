@@ -12,7 +12,9 @@
 @implementation NSObject (NSKeyValueCoding)
 
 - (id)valueForKey:(NSString *)key {
-    (void)key;
+    if ([key isEqualToString:@"self"]) {
+        return self;
+    }
     return nil;
 }
 

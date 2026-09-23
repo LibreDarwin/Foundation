@@ -245,6 +245,14 @@ static void _NSSetAddValue(const void *value, void *context) {
     return result;
 }
 
+- (NSArray *)sortedArrayUsingComparator:(NSComparator)cmptr {
+    return [[self allObjects] sortedArrayUsingComparator:cmptr];
+}
+
+- (NSArray *)sortedArrayUsingDescriptors:(NSArray *)sortDescriptors {
+    return [[self allObjects] sortedArrayUsingDescriptors:sortDescriptors];
+}
+
 /* Fast enumeration snaps the members into an array once per loop and streams
  * that snapshot, for the same reason NSDictionary does: a set is a bridged
  * CFSet, so there is no ivar room.  The snapshot is an associated object,

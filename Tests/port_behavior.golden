@@ -1046,4 +1046,55 @@ sd rev sel cic                             | 1
 sd rev eq orig                             | 0
 sd revrev                                  | asc=1 eq=1
 sd secure coding                           | 1
+nss sort cmp asc                           | aa,bb,cc
+nss sort desc key self                     | aa,bb,cc
+nss sort desc key self rev                 | cc,bb,aa
+nss set count                              | 3
+nss set contains                           | 1
+nss set member miss                        | 1
+osc from array                             | b,a,c
+osc count                                  | 3
+osc objAt 0                                | b
+osc objAt 2                                | c
+osc first                                  | b
+osc last                                   | c
+osc indexOf b                              | 0
+osc indexOf c                              | 2
+osc indexOf miss                           | 9223372036854775807
+osc contains                               | 1
+osc isEqualTo same                         | 1
+osc isEqualTo order                        | 0
+osc isEqual array                          | 0
+osc reversed                               | c,a,b
+osc revEnumerate                           | c,a,b
+osc set count                              | 3
+osc copy is self                           | 1
+osc mutableCopy orig                       | 3
+osc mutableCopy copy                       | b,a,c,d
+osc fastEnum                               | b,a,c
+osc sortedArrayCmp                         | a,b,c
+osc sortedArrayOpts                        | a,b,c
+osc sortedArrayDesc                        | c,b,a
+osm add dup                                | a,b,c,d
+osm insert dup                             | a,b,c,d
+osm insert new                             | a,e,b,c,d
+osm set dup                                | a,e,b,c,d
+osm set at end                             | a,e,b,c,d,f
+osm set replace                            | a,e,g,c,d,f
+osm exchange                               | a,d,g,c,e,f
+osm removeAt                               | a,d,c,e,f
+osm removeObj                              | a,c,e,f
+osm sortCmp                                | a,b,c
+osm sortRange                              | bb,cc,aa,dd
+osm sortDescriptors                        | c,b,a
+obs def hit                                | 2
+obs def miss                               | 9223372036854775807
+obs first hit                              | 2
+obs last hit                               | 2
+obs ins below                              | 0
+obs ins gap                                | 2
+obs ins above                              | 5
+obs dup def                                | 1
+obs dup last                               | 1
+obs dup in-range                           | 2
 PORT_BEHAVIOR_END
