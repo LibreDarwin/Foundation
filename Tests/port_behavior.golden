@@ -766,4 +766,24 @@ dc valid nil cal                           | raise NSInvalidArgumentException
 dc date nil cal                            | nil
 dc isValid set cal                         | 1
 dc date with cal                           | 2024-02-29 00:00:00 +0000
+td init rfd 1000                           | 1000.000000000
+td init rfd eq factory                     | 1
+td init 1970 ref                           | 0.000000000
+td init 1970 zero                          | 0.000000000|-978307200.000000000
+td dateBy adding eq                        | 1
+td isEqual same obj                        | 1
+td isEqual equal value                     | 1
+td isEqual nil                             | 0
+td isEqual string                          | 0
+td isEqualToDate nil                       | 0
+td hash equal                              | 1
+td compare same                            | 0
+td compare nil                             | 0
+td copy identity                           | 1
+td sentinel diff                           | 126227980800.000000000
+td distantFuture eq                        | 1
+td distantPast eq                          | 1
+td desc locale                             | 2009-02-13 23:31:30 +0000
+td earlier equal                           | 1
+td later equal                             | 1
 PORT_BEHAVIOR_END

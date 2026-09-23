@@ -8,6 +8,7 @@
 
 #import <Foundation/NSDate.h>
 #import <Foundation/NSCoder.h>
+#import <Foundation/NSException.h>
 #import <Foundation/NSNumber.h>
 #import <Foundation/NSString.h>
 #include <CoreFoundation/CFDate.h>
@@ -121,6 +122,10 @@ const NSTimeInterval NSTimeIntervalSince1970 = 978307200.0;
 }
 
 - (NSComparisonResult)compare:(NSDate *)other {
+    if (other == nil) {
+        /* Matches Apple: -compare:nil returns NSOrderedSame, no exception. */
+        return NSOrderedSame;
+    }
     return (NSComparisonResult)CFDateCompare(NSDATE_CF(CFDateRef, self),
                                              NSDATE_CF(CFDateRef, other), NULL);
 }
@@ -140,8 +145,8 @@ const NSTimeInterval NSTimeIntervalSince1970 = 978307200.0;
 
 - (id)copyWithZone:(NSZone *)zone {
     (void)zone;
-    return NSDATE_TRANSFER(CFDateCreate(kCFAllocatorDefault,
-                                        CFDateGetAbsoluteTime(NSDATE_CF(CFDateRef, self))));
+    /* NSDate is immutable: copying yields the same instance, like Apple. */
+    return self;
 }
 
 /* Howard Hinnant's civil_from_days inverse (public-domain algorithm): turn a

@@ -1642,6 +1642,31 @@ int main(void) {
     p("dc isValid set cal", dcw.isValidDate ? @"1" : @"0");
     p("dc date with cal", [[dcw date] description] == nil ? @"nil" : [[dcw date] description]);
 
+    /* ---------- NSDate contract bundle (CFDate bridge) ---------- */
+    NSDate *td1 = [[NSDate alloc] initWithTimeIntervalSinceReferenceDate:1000.0];
+    p("td init rfd 1000", [NSString stringWithFormat:@"%.9f", td1.timeIntervalSinceReferenceDate]);
+    p("td init rfd eq factory", [[NSDate dateWithTimeIntervalSinceReferenceDate:1000.0] isEqualToDate:td1] ? @"1" : @"0");
+    p("td init 1970 ref", [NSString stringWithFormat:@"%.9f", [[[NSDate alloc] initWithTimeIntervalSince1970:978307200.0] timeIntervalSinceReferenceDate]]);
+    p("td init 1970 zero", [NSString stringWithFormat:@"%.9f|%.9f",
+                            [[[NSDate alloc] initWithTimeIntervalSince1970:0.0] timeIntervalSince1970],
+                            [[[NSDate alloc] initWithTimeIntervalSince1970:0.0] timeIntervalSinceReferenceDate]]);
+    p("td dateBy adding eq", [[d1 dateByAddingTimeInterval:60.0] isEqualToDate:[NSDate dateWithTimeIntervalSince1970:1234567950.0]] ? @"1" : @"0");
+    p("td isEqual same obj", [d1 isEqual:d1] ? @"1" : @"0");
+    p("td isEqual equal value", [[NSDate dateWithTimeIntervalSince1970:1234567890.0] isEqual:d1] ? @"1" : @"0");
+    p("td isEqual nil", [d1 isEqual:nil] ? @"1" : @"0");
+    p("td isEqual string", [d1 isEqual:@"x"] ? @"1" : @"0");
+    p("td isEqualToDate nil", [d1 isEqualToDate:nil] ? @"1" : @"0");
+    p("td hash equal", [[NSDate dateWithTimeIntervalSince1970:1234567890.0] hash] == d1.hash ? @"1" : @"0");
+    p("td compare same", [NSString stringWithFormat:@"%ld", (long)[d1 compare:d1]]);
+    catchProbe("td compare nil", ^{ return [NSString stringWithFormat:@"%ld", (long)[d1 compare:nil]]; });
+    p("td copy identity", [d1 copy] == d1 ? @"1" : @"0");
+    p("td sentinel diff", [NSString stringWithFormat:@"%.9f", [[NSDate distantFuture] timeIntervalSinceDate:[NSDate distantPast]]]);
+    p("td distantFuture eq", [[NSDate distantFuture] isEqualToDate:[NSDate distantFuture]] ? @"1" : @"0");
+    p("td distantPast eq", [[NSDate distantPast] isEqualToDate:[NSDate distantPast]] ? @"1" : @"0");
+    p("td desc locale", [d1 descriptionWithLocale:nil]);
+    p("td earlier equal", ([d1 earlierDate:d1] == d1) ? @"1" : @"0");
+    p("td later equal", ([d1 laterDate:d1] == d1) ? @"1" : @"0");
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }
