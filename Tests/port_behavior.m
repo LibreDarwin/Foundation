@@ -474,6 +474,59 @@ int main(void) {
     p("nz isEqual string", [NSString stringWithFormat:@"%d", [[NSNull null] isEqual:@"not null"]]);
     p("nz hash congruent", [NSString stringWithFormat:@"%d", [[NSNull null] hash] == [[NSNull null] hash]]);
 
+    /* ---------- NSValue ---------- */
+    int cvInt = 5;
+    NSValue *cvI = [NSValue valueWithBytes:&cvInt objCType:@encode(int)];
+    int cvOut = 0;
+    [cvI getValue:&cvOut];
+    p("cv int roundtrip", [NSString stringWithFormat:@"%d", cvOut]);
+    cvOut = 0;
+    [cvI getValue:&cvOut size:sizeof(int)];
+    p("cv int getValue:size: full", [NSString stringWithFormat:@"%d", cvOut]);
+    p("cv int objCType", [NSString stringWithUTF8String:[cvI objCType]]);
+    p("cv int description", [cvI description]);
+    BOOL cvBool = YES;
+    NSValue *cvB = [NSValue valueWithBytes:&cvBool objCType:@encode(BOOL)];
+    BOOL cvBoolOut = NO;
+    [cvB getValue:&cvBoolOut];
+    p("cv bool roundtrip", [NSString stringWithFormat:@"%d", cvBoolOut]);
+
+    NSRange cvRange = NSMakeRange(3, 7);
+    NSValue *cvR = [NSValue valueWithRange:cvRange];
+    p("cv range objCType", [NSString stringWithUTF8String:[cvR objCType]]);
+    NSRange cvRangeOut = [cvR rangeValue];
+    p("cv range roundtrip", [NSString stringWithFormat:@"%ld,%ld", (long)cvRangeOut.location, (long)cvRangeOut.length]);
+    NSValue *cvP = [NSValue valueWithPoint:NSMakePoint(2.5, 4.0)];
+    NSPoint cvPointOut = [cvP pointValue];
+    p("cv point roundtrip", [NSString stringWithFormat:@"%1.1f,%1.1f", cvPointOut.x, cvPointOut.y]);
+    NSValue *cvS = [NSValue valueWithSize:NSMakeSize(10.0, 20.0)];
+    NSSize cvSizeOut = [cvS sizeValue];
+    p("cv size roundtrip", [NSString stringWithFormat:@"%1.1f,%1.1f", cvSizeOut.width, cvSizeOut.height]);
+    NSValue *cvRC = [NSValue valueWithRect:NSMakeRect(1.0, 2.0, 3.0, 4.0)];
+    NSRect cvRectOut = [cvRC rectValue];
+    p("cv rect roundtrip", [NSString stringWithFormat:@"%1.1f,%1.1f,%1.1f,%1.1f", cvRectOut.origin.x, cvRectOut.origin.y, cvRectOut.size.width, cvRectOut.size.height]);
+
+    const void *cvPtr = (const void *)0x1234;
+    NSValue *cvPt = [NSValue valueWithPointer:cvPtr];
+    p("cv pointer roundtrip", [NSString stringWithFormat:@"%d", [cvPt pointerValue] == cvPtr]);
+    NSString *cvObj = @"qux";
+    NSValue *cvN = [NSValue valueWithNonretainedObject:cvObj];
+    p("cv nonretained roundtrip", [NSString stringWithFormat:@"%d", [cvN nonretainedObjectValue] == cvObj]);
+
+    NSValue *cvI2 = [NSValue valueWithBytes:&cvInt objCType:@encode(int)];
+    p("cv isEqual same-content", [NSString stringWithFormat:@"%d", [cvI isEqual:cvI2]]);
+    int cvInt3 = 6;
+    NSValue *cvI3 = [NSValue valueWithBytes:&cvInt3 objCType:@encode(int)];
+    p("cv isEqual diff-bytes", [NSString stringWithFormat:@"%d", [cvI isEqual:cvI3]]);
+    char cvChar = 5;
+    NSValue *cvC = [NSValue valueWithBytes:&cvChar objCType:@encode(char)];
+    p("cv isEqual diff-type", [NSString stringWithFormat:@"%d", [cvI isEqual:cvC]]);
+    p("cv isEqual nonvalue", [NSString stringWithFormat:@"%d", [cvI isEqual:@"not a value"]]);
+    p("cv hash congruent", [NSString stringWithFormat:@"%d", [cvI hash] == [cvI2 hash]]);
+    p("cv hash differs-bytes", [NSString stringWithFormat:@"%d", [cvI hash] != [cvI3 hash]]);
+    p("cv isEqualToValue same", [NSString stringWithFormat:@"%d", [cvI isEqualToValue:cvI2]]);
+    p("cv copy identity", [NSString stringWithFormat:@"%d", [cvI copy] == cvI]);
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }

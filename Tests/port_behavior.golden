@@ -194,4 +194,24 @@ nz copy identity                           | 1
 nz isEqual self                            | 1
 nz isEqual string                          | 0
 nz hash congruent                          | 1
+cv int roundtrip                           | 5
+cv int getValue:size: full                 | 5
+cv int objCType                            | i
+cv int description                         | {length = 4, bytes = 0x05000000}
+cv bool roundtrip                          | 1
+cv range objCType                          | {_NSRange=QQ}
+cv range roundtrip                         | 3,7
+cv point roundtrip                         | 2.5,4.0
+cv size roundtrip                          | 10.0,20.0
+cv rect roundtrip                          | 1.0,2.0,3.0,4.0
+cv pointer roundtrip                       | 1
+cv nonretained roundtrip                   | 1
+cv isEqual same-content                    | 1
+cv isEqual diff-bytes                      | 0
+cv isEqual diff-type                       | 0
+cv isEqual nonvalue                        | 0
+cv hash congruent                          | 1
+cv hash differs-bytes                      | 1
+cv isEqualToValue same                     | 1
+cv copy identity                           | 1
 PORT_BEHAVIOR_END

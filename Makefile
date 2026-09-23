@@ -176,6 +176,7 @@ GATE_SRCS = String.subproj/NSString.m \
             String.subproj/NSScanner.m \
             Runtime.subproj/NSError.m \
             Runtime.subproj/NSNull.m \
+            Runtime.subproj/NSValue.m \
             URL.subproj/NSURL.m
 
 # The gate executable links against Apple's CoreFoundation for its CF_* C
@@ -186,7 +187,9 @@ BEHAVIOR_LINK_SDK = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.
 behavior-gate: build/gen/Foundation/Foundation.h
 	@rm -rf build/release/gate && mkdir -p build/release/gate
 	@for src in ${GATE_SRCS}; do FLAGS=; \
-	    if test "$${src}" = "Collections.subproj/NSData.m"; then FLAGS=-fno-objc-arc; fi; \
+	    case "$${src}" in \
+	      Collections.subproj/NSData.m|Runtime.subproj/NSValue.m) FLAGS=-fno-objc-arc ;; \
+	    esac; \
 	    ${CC} ${CFLAGS} $${FLAGS} -c $${src} -o build/release/gate/$${src##*/}.o || exit 1; \
 	 done
 	@${CC} ${CFLAGS} -c Tests/port_behavior.m \
@@ -195,7 +198,7 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	    build/release/gate/*.o -framework CoreFoundation
 	@build/release/port_behavior > build/release/port_behavior.out
 	@diff Tests/port_behavior.golden build/release/port_behavior.out \
-	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 197 probes)"
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 217 probes)"
 
 verify: pairing-sweep behavior-gate
 

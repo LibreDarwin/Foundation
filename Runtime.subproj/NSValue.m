@@ -182,8 +182,14 @@ static void NSValueRequireType(const char *actualType, const char *expectedType,
 }
 
 - (NSString *)description {
-    return NSVALUE_TRANSFER(CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
-                                                      CFSTR("<NSValue %s>"), _type));
+    NSMutableString *result = [NSMutableString string];
+    [result appendFormat:@"{length = %lu, bytes = 0x", (unsigned long)_size];
+    const unsigned char *byte = (const unsigned char *)_bytes;
+    for (NSUInteger i = 0; i < _size; i++) {
+        [result appendFormat:@"%02x", (unsigned int)byte[i]];
+    }
+    [result appendString:@"}"];
+    return result;
 }
 
 /* Immutable: a copy is the same object, handed back owned. */
