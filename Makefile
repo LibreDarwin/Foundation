@@ -173,6 +173,7 @@ GATE_SRCS = String.subproj/NSString.m \
             Date.subproj/NSDateComponents.m \
             Date.subproj/NSDateFormatter.m \
             Locale.subproj/NSLocale.m \
+            String.subproj/NSScanner.m \
             URL.subproj/NSURL.m
 
 # The gate executable links against Apple's CoreFoundation for its CF_* C
@@ -192,7 +193,7 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	    build/release/gate/*.o -framework CoreFoundation
 	@build/release/port_behavior > build/release/port_behavior.out
 	@diff Tests/port_behavior.golden build/release/port_behavior.out \
-	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 149 probes)"
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 171 probes)"
 
 verify: pairing-sweep behavior-gate
 

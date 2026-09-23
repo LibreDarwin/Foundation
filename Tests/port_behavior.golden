@@ -147,4 +147,26 @@ df stringFromDate ymd                      | 2009-02-13 23:31:30
 df parse roundtrip                         | 1234567890
 df parse invalid nil                       | 1
 df fractional SSS                          | 2009-02-13 23:31:30.000
+sc int first                               | 123 ok=1 loc=5
+sc atEnd between                           | 0
+sc int second                              | 45 ok=1 loc=8
+sc atEnd done                              | 1
+sc longlong min                            | -9223372036854775808 loc=20
+sc longlong overflow                       | 9223372036854775807
+sc int overflows-max                       | 2147483647
+sc ull max                                 | 18446744073709551615 loc=20
+sc hex ff                                  | 255 loc=4
+sc hex second                              | 16 loc=7
+sc double                                  | 3.14159 loc=7
+sc float                                   | 1.5 loc=3
+sc upTo end                                | start foo  ok=1 loc=10
+sc chars lower                             | abc ok=1 loc=3
+sc upToChars a                             | a loc=1
+sc CI default match                        | AbC ok=1 loc=3
+sc CI strict mismatch                      | ok=0 loc=0
+sc manual loc digits                       | 123 ok=1 loc=6
+sc reset atEnd                             | 0
+sc empty isAtEnd                           | 1
+sc copy location                           | 5
+sc copy scans                              | 123 ok=1
 PORT_BEHAVIOR_END

@@ -305,7 +305,7 @@ static NSString *_NSScannerString(NSString *source, NSUInteger start, NSUInteger
     NSUInteger start = _NSScannerSkip(self, _scanLocation);
     if (!_NSScannerMatches(_string, start, string, _caseSensitive)) return NO;
     _scanLocation = start + [string length];
-    if (result != NULL) *result = string;
+    if (result != NULL) *result = _NSScannerString(_string, start, _scanLocation);
     return YES;
 }
 

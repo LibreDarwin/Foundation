@@ -346,6 +346,89 @@ int main(void) {
     [dfmtMillis setDateFormat:@"yyyy-MM-dd HH:mm:ss.SSS"];
     p("df fractional SSS", [dfmtMillis stringFromDate:fmtBase]);
 
+    /* ---------- NSScanner ---------- */
+    NSScanner *sc = [NSScanner scannerWithString:@"  123 45"];
+    int scVal = 0;
+    BOOL scOK = [sc scanInt:&scVal];
+    p("sc int first", [NSString stringWithFormat:@"%d ok=%d loc=%ld", scVal, scOK, (long)sc.scanLocation]);
+    p("sc atEnd between", [NSString stringWithFormat:@"%d", sc.isAtEnd]);
+    scOK = [sc scanInt:&scVal];
+    p("sc int second", [NSString stringWithFormat:@"%d ok=%d loc=%ld", scVal, scOK, (long)sc.scanLocation]);
+    p("sc atEnd done", [NSString stringWithFormat:@"%d", sc.isAtEnd]);
+
+    NSScanner *scL = [NSScanner scannerWithString:@"-9223372036854775808"];
+    long long ll = 0;
+    [scL scanLongLong:&ll];
+    p("sc longlong min", [NSString stringWithFormat:@"%lld loc=%ld", ll, (long)scL.scanLocation]);
+    NSScanner *scOv = [NSScanner scannerWithString:@"9223372036854775808"];
+    [scOv scanLongLong:&ll];
+    p("sc longlong overflow", [NSString stringWithFormat:@"%lld", ll]);
+    NSScanner *scI2 = [NSScanner scannerWithString:@"2147483648"];
+    [scI2 scanInt:&scVal];
+    p("sc int overflows-max", [NSString stringWithFormat:@"%d", scVal]);
+
+    unsigned long long ull = 0;
+    NSScanner *scU = [NSScanner scannerWithString:@"18446744073709551615"];
+    [scU scanUnsignedLongLong:&ull];
+    p("sc ull max", [NSString stringWithFormat:@"%llu loc=%ld", ull, (long)scU.scanLocation]);
+
+    unsigned hexV = 0;
+    NSScanner *scH = [NSScanner scannerWithString:@"0xFF 10"];
+    [scH scanHexInt:&hexV];
+    p("sc hex ff", [NSString stringWithFormat:@"%u loc=%ld", hexV, (long)scH.scanLocation]);
+    [scH scanHexInt:&hexV];
+    p("sc hex second", [NSString stringWithFormat:@"%u loc=%ld", hexV, (long)scH.scanLocation]);
+
+    double scD = 0.0;
+    NSScanner *scDbl = [NSScanner scannerWithString:@"3.14159 rest"];
+    [scDbl scanDouble:&scD];
+    p("sc double", [NSString stringWithFormat:@"%.5f loc=%ld", scD, (long)scDbl.scanLocation]);
+    NSScanner *scFlt = [NSScanner scannerWithString:@"1.5"];
+    float scF = 0.0f;
+    [scFlt scanFloat:&scF];
+    p("sc float", [NSString stringWithFormat:@"%1.1f loc=%ld", scF, (long)scFlt.scanLocation]);
+
+    NSString *scTok = nil;
+    NSScanner *scS = [NSScanner scannerWithString:@"start foo end"];
+    scOK = [scS scanUpToString:@"end" intoString:&scTok];
+    p("sc upTo end", [NSString stringWithFormat:@"%@ ok=%d loc=%ld", scTok, scOK, (long)scS.scanLocation]);
+    NSScanner *scCS = [NSScanner scannerWithString:@"abcDEF"];
+    scTok = nil;
+    scOK = [scCS scanCharactersFromSet:[NSCharacterSet lowercaseLetterCharacterSet] intoString:&scTok];
+    p("sc chars lower", [NSString stringWithFormat:@"%@ ok=%d loc=%ld", scTok, scOK, (long)scCS.scanLocation]);
+    NSScanner *scUpC = [NSScanner scannerWithString:@"a,b"];
+    scTok = nil;
+    [scUpC scanUpToCharactersFromSet:[NSCharacterSet characterSetWithCharactersInString:@","] intoString:&scTok];
+    p("sc upToChars a", [NSString stringWithFormat:@"%@ loc=%ld", scTok, (long)scUpC.scanLocation]);
+
+    NSScanner *scCI = [NSScanner scannerWithString:@"AbCextra"];
+    scTok = nil;
+    scOK = [scCI scanString:@"abc" intoString:&scTok];
+    p("sc CI default match", [NSString stringWithFormat:@"%@ ok=%d loc=%ld", scTok, scOK, (long)scCI.scanLocation]);
+    NSScanner *scCS2 = [NSScanner scannerWithString:@"AbCextra"];
+    [scCS2 setCaseSensitive:YES];
+    scOK = [scCS2 scanString:@"abc" intoString:&scTok];
+    p("sc CI strict mismatch", [NSString stringWithFormat:@"ok=%d loc=%ld", scOK, (long)scCS2.scanLocation]);
+
+    NSScanner *scLoc = [NSScanner scannerWithString:@"abc123"];
+    [scLoc setScanLocation:3];
+    scTok = nil;
+    scOK = [scLoc scanCharactersFromSet:[NSCharacterSet decimalDigitCharacterSet] intoString:&scTok];
+    p("sc manual loc digits", [NSString stringWithFormat:@"%@ ok=%d loc=%ld", scTok, scOK, (long)scLoc.scanLocation]);
+    [scLoc setScanLocation:0];
+    p("sc reset atEnd", [NSString stringWithFormat:@"%d", scLoc.isAtEnd]);
+    NSScanner *scEmpty = [NSScanner scannerWithString:@""];
+    p("sc empty isAtEnd", [NSString stringWithFormat:@"%d", scEmpty.isAtEnd]);
+
+    NSScanner *scCp = [NSScanner scannerWithString:@"  123"];
+    [scCp scanInt:&scVal];
+    NSScanner *scCp2 = [scCp copy];
+    p("sc copy location", [NSString stringWithFormat:@"%ld", (long)scCp2.scanLocation]);
+    scVal = 0;
+    [scCp2 setScanLocation:0];
+    scOK = [scCp2 scanInt:&scVal];
+    p("sc copy scans", [NSString stringWithFormat:@"%d ok=%d", scVal, scOK]);
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }
