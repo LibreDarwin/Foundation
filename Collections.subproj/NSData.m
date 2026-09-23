@@ -81,7 +81,7 @@ __NSDataAutorelease(CFTypeRef cf)
 + (instancetype)dataWithData:(NSData *)data
 {
 	if (data == nil) {
-		return nil;
+		return [self data];
 	}
 	return __NSDataAutorelease(CFDataCreateCopy(kCFAllocatorDefault,
 						    (CFDataRef)data));
@@ -116,7 +116,7 @@ __NSDataAutorelease(CFTypeRef cf)
 {
 	[self release];
 	if (data == nil) {
-		return nil;
+		return (id)CFDataCreate(kCFAllocatorDefault, NULL, 0);
 	}
 	return (id)CFDataCreateCopy(kCFAllocatorDefault, (CFDataRef)data);
 }
@@ -218,7 +218,7 @@ __NSDataAutorelease(CFTypeRef cf)
 	NSMutableData	*copy;
 
 	if (data == nil) {
-		return nil;
+		return [self dataWithCapacity:0];
 	}
 	copy = [self dataWithCapacity:0];
 	[copy appendData:data];

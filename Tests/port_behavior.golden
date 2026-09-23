@@ -689,4 +689,32 @@ md2 remove count                           | 2
 md2 remove missing                         | 2
 md2 set nil key                            | NSInvalidArgumentException
 md2 set nil val                            | NSInvalidArgumentException
+da alloc init len                          | 0
+da data empty len                          | 0
+da withBytes eq                            | 1
+da fromData copy eq                        | 1
+da fromData nil                            | ?
+da noCopy len                              | 3
+da noCopy b1                               | ad
+da getBytes full                           | 1
+da getBytes range                          | 1
+da isEqual nil                             | 0
+da copy identity                           | 1
+da copy isEqual                            | 1
+da empty subdata                           | 0
+da subdata tail                            | 20|30
+da m alloc init len                        | 0
+da m cap len                               | 0
+da m dataWithLength                        | 5|00|00
+da m dataWithBytes                         | 3|02
+da m dataWithData nil                      | ?
+da m appendBytes                           | 4|00|80
+da m setLength shrink                      | 2
+da m setLength grow                        | 6|00|00
+da m replace                               | 00|aa|bb
+da m reset                                 | 00|00|00
+da m setData                               | 2|00|01
+da m appendData nil                        | 2
+da m appendData                            | 4|02|80
+da m mutableBytes                          | 11|ee|00
 PORT_BEHAVIOR_END

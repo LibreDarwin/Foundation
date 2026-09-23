@@ -1483,6 +1483,81 @@ int main(void) {
         p("md2 set nil val", [NSString stringWithFormat:@"%@", [e name]]);
     }
 
+    /* ---------- NSData contract bundle (CFData bridge, NSCFData isa) ---------- */
+    p("da alloc init len", [[[NSData alloc] init] length] == 0 ? @"0" : @"?");
+    p("da data empty len", [[NSData data] length] == 0 ? @"0" : @"?");
+    p("da withBytes eq", memcmp(data.bytes, bytes, 8) == 0 ? @"1" : @"0");
+    p("da fromData copy eq", [data isEqualToData:[NSData dataWithData:data]] ? @"1" : @"0");
+    p("da fromData nil", [NSData dataWithData:nil] == nil ? @"nil" : @"?");
+    unsigned char *dnb = (unsigned char *)malloc(3);
+    dnb[0] = 0xde; dnb[1] = 0xad; dnb[2] = 0xbe;
+    NSData *dnoCopy = [NSData dataWithBytesNoCopy:dnb length:3 freeWhenDone:NO];
+    p("da noCopy len", [NSString stringWithFormat:@"%lu", (unsigned long)[dnoCopy length]]);
+    const unsigned char *dnbp = (const unsigned char *)dnoCopy.bytes;
+    p("da noCopy b1", [NSString stringWithFormat:@"%02x", dnbp[1]]);
+    unsigned char gb[8];
+    [data getBytes:gb length:8];
+    p("da getBytes full", memcmp(gb, bytes, 8) == 0 ? @"1" : @"0");
+    unsigned char gr[3];
+    [data getBytes:gr range:NSMakeRange(2, 3)];
+    p("da getBytes range", memcmp(gr, bytes + 2, 3) == 0 ? @"1" : @"0");
+    p("da isEqual nil", [data isEqualToData:nil] ? @"1" : @"0");
+    p("da copy identity", [data copy] == data ? @"1" : @"0");
+    p("da copy isEqual", [data isEqualToData:[data copy]] ? @"1" : @"0");
+    p("da empty subdata", [[data subdataWithRange:NSMakeRange(0, 0)] length] == 0 ? @"0" : @"?");
+    NSData *daTail = [data subdataWithRange:NSMakeRange(6, 2)];
+    const unsigned char *dtp = (const unsigned char *)daTail.bytes;
+    p("da subdata tail", [NSString stringWithFormat:@"%02x|%02x", dtp[0], dtp[1]]);
+
+    p("da m alloc init len", [[[NSMutableData alloc] init] length] == 0 ? @"0" : @"?");
+    p("da m cap len", [[NSMutableData dataWithCapacity:4] length] == 0 ? @"0" : @"?");
+    NSMutableData *mz = [NSMutableData dataWithLength:5];
+    const unsigned char *mzp = (const unsigned char *)mz.bytes;
+    p("da m dataWithLength", [NSString stringWithFormat:@"%lu|%02x|%02x",
+                              (unsigned long)[mz length], mzp[0], mzp[4]]);
+    NSMutableData *mdw = [NSMutableData dataWithBytes:bytes length:3];
+    const unsigned char *mdwp = (const unsigned char *)mdw.bytes;
+    p("da m dataWithBytes", [NSString stringWithFormat:@"%lu|%02x",
+                             (unsigned long)[mdw length], mdwp[2]]);
+    p("da m dataWithData nil", [NSMutableData dataWithData:nil] == nil ? @"nil" : @"?");
+
+    NSMutableData *mdta = [NSMutableData data];
+    [mdta appendBytes:bytes length:4];
+    p("da m appendBytes", [NSString stringWithFormat:@"%lu|%02x|%02x",
+                           (unsigned long)[mdta length],
+                           ((const unsigned char *)mdta.bytes)[0],
+                           ((const unsigned char *)mdta.bytes)[3]]);
+    [mdta setLength:2];
+    p("da m setLength shrink", [NSString stringWithFormat:@"%lu", (unsigned long)[mdta length]]);
+    [mdta setLength:6];
+    const unsigned char *mdp1 = (const unsigned char *)mdta.bytes;
+    p("da m setLength grow", [NSString stringWithFormat:@"%lu|%02x|%02x",
+                              (unsigned long)[mdta length], mdp1[0], mdp1[5]]);
+    unsigned char repB[2] = {0xaa, 0xbb};
+    [mdta replaceBytesInRange:NSMakeRange(1, 2) withBytes:repB];
+    const unsigned char *mdp2 = (const unsigned char *)mdta.bytes;
+    p("da m replace", [NSString stringWithFormat:@"%02x|%02x|%02x", mdp2[0], mdp2[1], mdp2[2]]);
+    [mdta resetBytesInRange:NSMakeRange(0, 3)];
+    const unsigned char *mdp3 = (const unsigned char *)mdta.bytes;
+    p("da m reset", [NSString stringWithFormat:@"%02x|%02x|%02x", mdp3[0], mdp3[1], mdp3[2]]);
+    [mdta setData:[NSData dataWithBytes:bytes length:2]];
+    p("da m setData", [NSString stringWithFormat:@"%lu|%02x|%02x",
+                       (unsigned long)[mdta length],
+                       ((const unsigned char *)mdta.bytes)[0],
+                       ((const unsigned char *)mdta.bytes)[1]]);
+    [mdta appendData:nil];
+    p("da m appendData nil", [NSString stringWithFormat:@"%lu", (unsigned long)[mdta length]]);
+    [mdta appendData:[NSData dataWithBytes:bytes + 2 length:2]];
+    const unsigned char *mdp4 = (const unsigned char *)mdta.bytes;
+    p("da m appendData", [NSString stringWithFormat:@"%lu|%02x|%02x",
+                          (unsigned long)[mdta length], mdp4[2], mdp4[3]]);
+    NSMutableData *mm = [NSMutableData dataWithLength:3];
+    ((unsigned char *)mm.mutableBytes)[1] = 0xee;
+    [mm appendData:data];
+    const unsigned char *mmp = (const unsigned char *)mm.bytes;
+    p("da m mutableBytes", [NSString stringWithFormat:@"%lu|%02x|%02x",
+                            (unsigned long)[mm length], mmp[1], mmp[3]]);
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }
