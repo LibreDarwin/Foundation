@@ -556,4 +556,39 @@ cs m invert A                              | 1
 cs m invert 5                              | 0
 cs m invert sp                             | 1
 cs m copy A                                | 1
+st withchars                               | Hi
+st withutf8                                | café
+st withformat obj                          | a-42
+st utf8 bytes                              | 5
+st utf8 roundtrip                          | 1
+st data len                                | 2
+st data b0                                 | 41
+st data b1                                 | 42
+st init bytes ok                           | 1
+st init bytes bad                          | nil
+st eq nil                                  | 0
+st prefix empty                            | 0
+st suffix empty                            | 0
+st caseIns                                 | 0
+st compare                                 | -1
+st compare literal                         | -1
+st compare CI                              | 0
+st lowercase I                             | i é
+st uppercase eacute                        | É
+st uppercase sz                            | SS
+st lowercase sz                            | ß
+st parts count                             | 4
+st parts join                              | a|b||
+st parts emptysep                          | ab
+st subFrom range                           | NSRangeException
+st subTo range                             | NSRangeException
+st repl range                              | NSInvalidArgumentException
+st hasPrefix nil                           | NSInvalidArgumentException
+st comps sep nil                           | NSInvalidArgumentException
+st percent add                             | a%20b&c/%C3%A9
+st percent rep                             | a b/cé
+st percent rep bad                         | (null)
+st m cap0                                  | 0
+st m replace count                         | 2 = a-b-c
+st m insert range                          | NSInvalidArgumentException
 PORT_BEHAVIOR_END

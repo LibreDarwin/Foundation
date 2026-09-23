@@ -19,6 +19,16 @@ static NSString *csMember(NSCharacterSet *cs, unsigned int c) {
     return [NSString stringWithFormat:@"%d", [cs characterIsMember:(unichar)c]];
 }
 
+static NSString *joinWith(NSArray *arr, NSString *sep) {
+    NSMutableString *s = [NSMutableString stringWithCapacity:0];
+    NSUInteger n = [arr count];
+    for (NSUInteger i = 0; i < n; i++) {
+        if (i != 0) [s appendString:sep];
+        [s appendString:[arr objectAtIndex:i]];
+    }
+    return [NSString stringWithFormat:@"%@", s];
+}
+
 static NSString *nnInfo(NSNumber *n) {
     return [NSString stringWithFormat:@"%s %@", [n objCType], [n stringValue]];
 }
@@ -1150,6 +1160,95 @@ int main(void) {
     p("cs m invert sp", csMember(mcs, ' '));
     NSCharacterSet *mcsCopy = [mcs copy];
     p("cs m copy A", csMember(mcsCopy, 'A'));
+
+    /* ---- NSString: class factories + pinned contract on the CF bridge ---- */
+    unichar stChars[2] = { 'H', 'i' };
+    p("st withchars", [NSString stringWithCharacters:stChars length:2]);
+    p("st withutf8", [NSString stringWithUTF8String:"caf\xC3\xA9"]);
+    p("st withformat obj", [NSString stringWithFormat:@"%@-%@", @"a", @42]);
+
+    const char *stUtf8 = [@"café" UTF8String];
+    p("st utf8 bytes", [NSString stringWithFormat:@"%zu", strlen(stUtf8)]);
+    p("st utf8 roundtrip", [[NSString stringWithUTF8String:stUtf8] isEqualToString:@"café"] ? @"1" : @"0");
+
+    NSData *stData = [@"AB" dataUsingEncoding:NSUTF8StringEncoding];
+    p("st data len", [NSString stringWithFormat:@"%lu", (unsigned long)[stData length]]);
+    const unsigned char *stDataBytes = [stData bytes];
+    p("st data b0", [NSString stringWithFormat:@"%02x", stDataBytes[0]]);
+    p("st data b1", [NSString stringWithFormat:@"%02x", stDataBytes[1]]);
+
+    p("st init bytes ok", [[[NSString alloc] initWithBytes:"Hi" length:2
+                                                 encoding:NSUTF8StringEncoding] isEqualToString:@"Hi"] ? @"1" : @"0");
+    const unsigned char stBad[2] = { 0xC3, 0x28 };
+    p("st init bytes bad", [[[NSString alloc] initWithBytes:stBad length:2
+                                                   encoding:NSUTF8StringEncoding] length] > 0 ? @"non-nil" : @"nil");
+
+    p("st eq nil", [@"abc" isEqualToString:nil] ? @"1" : @"0");
+    p("st prefix empty", [@"abc" hasPrefix:@""] ? @"1" : @"0");
+    p("st suffix empty", [@"abc" hasSuffix:@""] ? @"1" : @"0");
+
+    long stCi = [@"Hello" caseInsensitiveCompare:@"hello"];
+    p("st caseIns", [NSString stringWithFormat:@"%ld", stCi]);
+    long stCmp = [@"ABC" compare:@"abc"];
+    p("st compare", [NSString stringWithFormat:@"%ld", stCmp]);
+    long stCmpLit = [@"ABC" compare:@"abc" options:NSLiteralSearch];
+    p("st compare literal", [NSString stringWithFormat:@"%ld", stCmpLit]);
+    long stCmpCI = [@"ABC" compare:@"abc" options:NSCaseInsensitiveSearch];
+    p("st compare CI", [NSString stringWithFormat:@"%ld", stCmpCI]);
+
+    p("st lowercase I", [@"I É" lowercaseString]);
+    p("st uppercase eacute", [@"é" uppercaseString]);
+    p("st uppercase sz", [@"ß" uppercaseString]);
+    p("st lowercase sz", [@"ß" lowercaseString]);
+
+    NSArray *stParts = [@"a,b,," componentsSeparatedByString:@","];
+    p("st parts count", [NSString stringWithFormat:@"%lu", (unsigned long)[stParts count]]);
+    p("st parts join", joinWith(stParts, @"|"));
+    p("st parts emptysep", joinWith([@"ab" componentsSeparatedByString:@""], @"|"));
+
+    @try {
+        [@"abc" substringFromIndex:9];
+    } @catch (id e) {
+        p("st subFrom range", [NSString stringWithFormat:@"%@", [e name]]);
+    }
+    @try {
+        [@"abc" substringToIndex:9];
+    } @catch (id e) {
+        p("st subTo range", [NSString stringWithFormat:@"%@", [e name]]);
+    }
+    @try {
+        [@"abc" stringByReplacingCharactersInRange:NSMakeRange(1, 9) withString:@"x"];
+    } @catch (id e) {
+        p("st repl range", [NSString stringWithFormat:@"%@", [e name]]);
+    }
+    @try {
+        [@"abc" hasPrefix:nil];
+    } @catch (id e) {
+        p("st hasPrefix nil", [NSString stringWithFormat:@"%@", [e name]]);
+    }
+    @try {
+        [@"a,b" componentsSeparatedByString:nil];
+    } @catch (id e) {
+        p("st comps sep nil", [NSString stringWithFormat:@"%@", [e name]]);
+    }
+
+    p("st percent add", [@"a b&c/é" stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]);
+    p("st percent rep", [@"a%20b%2Fc%C3%A9" stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding]);
+    p("st percent rep bad", [@"%zz" stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding]);
+
+    NSMutableString *mst = [NSMutableString stringWithCapacity:0];
+    p("st m cap0", [mst length] == 0 ? @"0" : @"?");
+    [mst appendString:@"aXbXc"];
+    NSUInteger stReplCount = [mst replaceOccurrencesOfString:@"X" withString:@"-"
+                                                     options:0 range:NSMakeRange(0, [mst length])];
+    p("st m replace count", [NSString stringWithFormat:@"%lu = %@",
+                             (unsigned long)stReplCount, mst]);
+    @try {
+        NSMutableString *mst2 = [NSMutableString string];
+        [mst2 insertString:@"X" atIndex:99];
+    } @catch (id e) {
+        p("st m insert range", [NSString stringWithFormat:@"%@", [e name]]);
+    }
 
     printf("PORT_BEHAVIOR_END\n");
     return 0;
