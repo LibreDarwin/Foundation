@@ -9,18 +9,16 @@
 #import <Foundation/NSNull.h>
 #import <Foundation/NSCoder.h>
 #import <Foundation/NSString.h>
+#include <CoreFoundation/CFBase.h>
 #include <CoreFoundation/CFString.h>
 
 @implementation NSNull
 
-/* NSNull is a singleton; equality is identity, so every path that could hand
- * back an instance hands back the shared one. */
+/* NSNull is toll-free bridged with CFNull: +null returns the CF singleton, so
+ * identity ([NSNull null] == kCFNull), equality and copy all agree with
+ * Apple. */
 + (NSNull *)null {
-    static NSNull *shared = nil;
-    if (shared == nil) {
-        shared = [[self alloc] init];
-    }
-    return shared;
+    return (__bridge NSNull *)kCFNull;
 }
 
 - (NSString *)description {

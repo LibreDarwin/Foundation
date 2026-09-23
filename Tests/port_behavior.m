@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <CoreFoundation/CFBase.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -463,6 +464,15 @@ int main(void) {
     NSError *errSnap = [NSError errorWithDomain:@"TestDomain" code:1 userInfo:mutInfo];
     [mutInfo setObject:@"changed" forKey:@"K"];
     p("pr userInfo snapshot", [errSnap.userInfo objectForKey:@"K"]);
+
+    /* ---------- NSNull ---------- */
+    p("nz null identity", [NSString stringWithFormat:@"%d", [NSNull null] == [NSNull null]]);
+    p("nz null is kCFNull", [NSString stringWithFormat:@"%d", [NSNull null] == (__bridge id)kCFNull]);
+    p("nz description", [[NSNull null] description]);
+    p("nz copy identity", [NSString stringWithFormat:@"%d", [[NSNull null] copy] == [NSNull null]]);
+    p("nz isEqual self", [NSString stringWithFormat:@"%d", [[NSNull null] isEqual:[NSNull null]]]);
+    p("nz isEqual string", [NSString stringWithFormat:@"%d", [[NSNull null] isEqual:@"not null"]]);
+    p("nz hash congruent", [NSString stringWithFormat:@"%d", [[NSNull null] hash] == [[NSNull null] hash]]);
 
     printf("PORT_BEHAVIOR_END\n");
     return 0;

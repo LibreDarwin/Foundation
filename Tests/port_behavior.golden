@@ -187,4 +187,11 @@ pr isEqual diff-code                       | 0
 pr isEqual diff-domain                     | 0
 pr hash congruent                          | 1
 pr userInfo snapshot                       | mutable
+nz null identity                           | 1
+nz null is kCFNull                         | 1
+nz description                             | <null>
+nz copy identity                           | 1
+nz isEqual self                            | 1
+nz isEqual string                          | 0
+nz hash congruent                          | 1
 PORT_BEHAVIOR_END
