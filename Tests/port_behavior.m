@@ -304,6 +304,32 @@ int main(void) {
     NSDateComponents *empty = [NSDateComponents new];
     calCheck(cal, "cal empty comps", t1, empty, 0, @"(nil)");
 
+    /* ---------- NSLocale ---------- */
+    /* Explicit identifiers only: the golden stays portable (current/system
+     * locale follow host preferences).  The port and Apple both read locale
+     * data from CoreFoundation. */
+    NSLocale *lUS = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+    p("locale en_US identifier", lUS.localeIdentifier);
+    p("locale en_US country", [lUS objectForKey:NSLocaleCountryCode]);
+    p("locale en_US currency", [lUS objectForKey:NSLocaleCurrencyCode]);
+    p("locale en_US decimalSep", [lUS objectForKey:NSLocaleDecimalSeparator]);
+    p("locale en_US groupSep", [lUS objectForKey:NSLocaleGroupingSeparator]);
+    p("locale en_US usesMetric", [NSString stringWithFormat:@"%@", [lUS objectForKey:NSLocaleUsesMetricSystem]]);
+    NSLocale *lDE = [NSLocale localeWithLocaleIdentifier:@"de_DE"];
+    p("locale de_DE identifier", lDE.localeIdentifier);
+    p("locale de_DE country", [lDE objectForKey:NSLocaleCountryCode]);
+    p("locale de_DE currency", [lDE objectForKey:NSLocaleCurrencyCode]);
+    p("locale de_DE decimalSep", [lDE objectForKey:NSLocaleDecimalSeparator]);
+    p("locale de_DE groupSep", [lDE objectForKey:NSLocaleGroupingSeparator]);
+    p("locale en displayName fr", [lUS displayNameForKey:NSLocaleLanguageCode value:@"fr"]);
+    p("locale en displayName Country:DE", [lUS displayNameForKey:NSLocaleCountryCode value:@"DE"]);
+    p("locale de displayName fr", [lDE displayNameForKey:NSLocaleLanguageCode value:@"fr"]);
+    p("locale en_US isEqual en_US", [NSString stringWithFormat:@"%d", [lUS isEqual:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]);
+    p("locale en_US isEqual de_DE", [NSString stringWithFormat:@"%d", [lUS isEqual:lDE]]);
+    p("locale equal hash", [NSString stringWithFormat:@"%lu=%lu", (unsigned long)lUS.hash, (unsigned long)[NSLocale localeWithLocaleIdentifier:@"en_US"].hash]);
+    p("locale copy roundtrip", [[lUS copy] localeIdentifier]);
+    p("locale init alloc de_DE", [[[NSLocale alloc] initWithLocaleIdentifier:@"de_DE"] localeIdentifier]);
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }

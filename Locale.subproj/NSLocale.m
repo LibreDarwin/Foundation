@@ -8,6 +8,7 @@
 
 #import <Foundation/NSLocale.h>
 #include <CoreFoundation/CFLocale.h>
+#include <CoreFoundation/CFNumber.h>
 
 #if __has_feature(objc_arc)
 #define NSLOCALE_TRANSFER(value) ((__bridge_transfer id)(value))
@@ -18,6 +19,23 @@
 #define NSLOCALE_BORROWED(value) ((id)(value))
 #define NSLOCALE_CF(type, value) ((type)(value))
 #endif
+
+@interface NSLocale () {
+    CFLocaleRef _locale;
+}
+- (CFLocaleRef)_backingLocale;
+- (instancetype)_initWithBackingLocale:(CFLocaleRef)backing;
+@end
+
+/* NSLocale is an owning wrapper, not toll-free with CFLocale: it was created
+ * through the CoreFoundation constructor and answers through the CFLocale it
+ * holds.  Every entry point unwraps that backing locale instead of casting
+ * self, which on a host CoreFoundation would dispatch the message to the
+ * bridged class. */
+static CFLocaleRef NSLocaleBacking(NSLocale *locale) {
+    if (locale == nil || ![locale isKindOfClass:[NSLocale class]]) return NULL;
+    return [locale _backingLocale];
+}
 
 NSLocaleKey const NSLocaleIdentifier = @"kCFLocaleIdentifierKey";
 NSLocaleKey const NSLocaleLanguageCode = @"kCFLocaleLanguageCodeKey";
@@ -52,59 +70,79 @@ static CFStringRef NSLocaleCFKey(NSLocaleKey key) {
 
 @implementation NSLocale
 
+- (CFLocaleRef)_backingLocale {
+    return _locale;
+}
+
+- (instancetype)_initWithBackingLocale:(CFLocaleRef)backing {
+    if (backing == NULL) return nil;
+    self = [super init];
+    if (self != nil) {
+        _locale = backing;
+    }
+    return self;
+}
+
 + (instancetype)currentLocale {
-    return NSLOCALE_TRANSFER(CFLocaleCopyCurrent());
+    return [[NSLocale alloc] _initWithBackingLocale:CFLocaleCopyCurrent()];
 }
 
 + (instancetype)systemLocale {
-    return NSLOCALE_TRANSFER(CFLocaleCreateCopy(kCFAllocatorDefault, CFLocaleGetSystem()));
+    return [[NSLocale alloc] _initWithBackingLocale:
+        CFLocaleCreateCopy(kCFAllocatorDefault, CFLocaleGetSystem())];
 }
 
 + (instancetype)localeWithLocaleIdentifier:(NSString *)identifier {
-    return NSLOCALE_TRANSFER(CFLocaleCreate(kCFAllocatorDefault,
-                                             NSLOCALE_CF(CFStringRef, identifier)));
+    return [[NSLocale alloc] initWithLocaleIdentifier:identifier];
 }
 
 - (instancetype)initWithLocaleIdentifier:(NSString *)identifier {
-    return NSLOCALE_TRANSFER(CFLocaleCreate(kCFAllocatorDefault,
-                                             NSLOCALE_CF(CFStringRef, identifier)));
+    CFLocaleRef backing = CFLocaleCreate(kCFAllocatorDefault,
+                                         NSLOCALE_CF(CFStringRef, identifier));
+    if (backing == NULL) return nil;
+    _locale = backing;
+    return self;
+}
+
+- (void)dealloc {
+    if (_locale != NULL) CFRelease(_locale);
 }
 
 - (NSString *)localeIdentifier {
-    return NSLOCALE_BORROWED(CFLocaleGetIdentifier(NSLOCALE_CF(CFLocaleRef, self)));
+    return NSLOCALE_BORROWED(CFLocaleGetIdentifier(NSLocaleBacking(self)));
 }
 
 - (id)objectForKey:(NSLocaleKey)key {
-    CFStringRef cfKey = NSLocaleCFKey(key);
-    return NSLOCALE_BORROWED(CFLocaleGetValue(NSLOCALE_CF(CFLocaleRef, self), cfKey));
+    /* The metric flag is stored as a CFBoolean; Apple's objectForKey: answers
+     * the string form ("1"/"0"), not the raw boolean. */
+    CFTypeRef value = CFLocaleGetValue(NSLocaleBacking(self), NSLocaleCFKey(key));
+    if (value != NULL && CFGetTypeID(value) == CFBooleanGetTypeID()) {
+        return CFBooleanGetValue((CFBooleanRef)value) ? @"1" : @"0";
+    }
+    return NSLOCALE_BORROWED(value);
 }
 
 - (NSString *)displayNameForKey:(NSLocaleKey)key value:(id)value {
     CFStringRef result = CFLocaleCopyDisplayNameForPropertyValue(
-        NSLOCALE_CF(CFLocaleRef, self), NSLocaleCFKey(key), NSLOCALE_CF(CFStringRef, value));
+        NSLocaleBacking(self), NSLocaleCFKey(key), NSLOCALE_CF(CFStringRef, value));
     return NSLOCALE_TRANSFER(result);
 }
 
 - (id)copyWithZone:(NSZone *)zone {
     (void)zone;
-    return NSLOCALE_TRANSFER(CFLocaleCreateCopy(kCFAllocatorDefault,
-                                                NSLOCALE_CF(CFLocaleRef, self)));
+    return [[NSLocale alloc] _initWithBackingLocale:
+        CFLocaleCreateCopy(kCFAllocatorDefault, NSLocaleBacking(self))];
 }
 
 - (BOOL)isEqual:(id)object {
-    return object != nil && CFEqual(NSLOCALE_CF(CFTypeRef, self),
-                                    NSLOCALE_CF(CFTypeRef, object));
+    if (object == nil) return NO;
+    if (object == self) return YES;
+    if (![object isKindOfClass:[NSLocale class]]) return NO;
+    return CFEqual(NSLocaleBacking(self), NSLocaleBacking(object));
 }
 
 - (NSUInteger)hash {
-    return (NSUInteger)CFHash(NSLOCALE_CF(CFTypeRef, self));
+    return (NSUInteger)CFHash(NSLocaleBacking(self));
 }
 
 @end
-
-#if DEPLOYMENT_RUNTIME_OBJC
-__attribute__((constructor))
-static void __NSCFLocaleBridgeInit(void) {
-    _CFRuntimeBridgeClasses(CFLocaleGetTypeID(), "NSLocale");
-}
-#endif

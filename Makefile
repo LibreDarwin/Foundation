@@ -138,14 +138,19 @@ pairing-sweep:
 #  dylib), run it, and diff byte-for-byte against the Apple-ground-truth
 #  harness output captured in Tests/port_behavior.golden.
 #
-#  Why compile sources into the binary instead of linking the dylib: the
-#  built Foundation dylib LC_LOADs Apple's CoreFoundation, whose toll-free
-#  classes (NSArray, NS*String, ...) collide with the port's - the port
-#  classes lose dispatch and the run aborts ('-[__NSArrayI addObject:]
-#  unrecognized selector').  When the port .m files are compiled into the
-#  executable's main image instead, those classes register FIRST, win
-#  dispatch over CoreFoundation's duplicates (harmless 'implemented in
-#  both' warnings), and the real port code runs.  This is the same reason
+#  Why compile the sources into the binary instead of linking the built
+#  dylib: the dylib and this executable both LC_LOAD Apple's
+#  CoreFoundation, whose toll-free classes share names with the port's
+#  (NSArray, NSString, ...).  A name lookup on the host resolves to
+#  CoreFoundation's class (it registered first), so an object created by
+#  CoreFoundation inherits CoreFoundation's implementation -- or crashes
+#  on an abstract-class instance ('-[NSArray count]: method sent to an
+#  instance of an abstract class').  Compiling the port .m files into the
+#  executable's main image binds the port's class objects there, and
+#  because message dispatch follows the instance's class pointer (not its
+#  name), instances the port's own factories create always run the port's
+#  code.  The CF-toll-free classes (NSCalendar, NSLocale, ...) are owning
+#  wrappers so every instance is a port class.  This is the same reason
 #  the gate must not link -framework Foundation (Apple's): its classes
 #  would shadow the port's.  Only -framework CoreFoundation is linked, to
 #  satisfy the CF_* C symbols the port sources call.
@@ -166,6 +171,7 @@ GATE_SRCS = String.subproj/NSString.m \
             Date.subproj/NSDate.m \
             Date.subproj/NSCalendar.m \
             Date.subproj/NSDateComponents.m \
+            Locale.subproj/NSLocale.m \
             URL.subproj/NSURL.m
 
 # The gate executable links against Apple's CoreFoundation for its CF_* C
@@ -185,7 +191,7 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	    build/release/gate/*.o -framework CoreFoundation
 	@build/release/port_behavior > build/release/port_behavior.out
 	@diff Tests/port_behavior.golden build/release/port_behavior.out \
-	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 124 probes)"
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 142 probes)"
 
 verify: pairing-sweep behavior-gate
 

@@ -121,4 +121,23 @@ cal unit year=2020 past                    | (nil)
 cal feb30 strict                           | (nil)
 cal quarter=1 from May5                    | 2025-01-01 00:00:00
 cal empty comps                            | (nil)
+locale en_US identifier                    | en_US
+locale en_US country                       | US
+locale en_US currency                      | USD
+locale en_US decimalSep                    | .
+locale en_US groupSep                      | ,
+locale en_US usesMetric                    | 0
+locale de_DE identifier                    | de_DE
+locale de_DE country                       | DE
+locale de_DE currency                      | EUR
+locale de_DE decimalSep                    | ,
+locale de_DE groupSep                      | .
+locale en displayName fr                   | French
+locale en displayName Country:DE           | Germany
+locale de displayName fr                   | Französisch
+locale en_US isEqual en_US                 | 1
+locale en_US isEqual de_DE                 | 0
+locale equal hash                          | 17464408573887=17464408573887
+locale copy roundtrip                      | en_US
+locale init alloc de_DE                    | de_DE
 PORT_BEHAVIOR_END
