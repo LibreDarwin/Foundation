@@ -15,6 +15,10 @@ static void p(const char *label, NSString *value) {
 
 static void exHandler(NSException *e) { (void)e; }
 
+static NSString *csMember(NSCharacterSet *cs, unsigned int c) {
+    return [NSString stringWithFormat:@"%d", [cs characterIsMember:(unichar)c]];
+}
+
 static NSString *nnInfo(NSNumber *n) {
     return [NSString stringWithFormat:@"%s %@", [n objCType], [n stringValue]];
 }
@@ -1035,6 +1039,117 @@ int main(void) {
     NSException *exSnap = [NSException exceptionWithName:NSGenericException reason:@"r" userInfo:exMut];
     [exMut setObject:@"v2" forKey:@"k"];
     p("ex userinfo snap", [exSnap.userInfo objectForKey:@"k"]);
+
+    /* ---- NSCharacterSet (thin CFCharacterSet bridge) ---- */
+    NSCharacterSet *csWs = [NSCharacterSet whitespaceCharacterSet];
+    p("cs ws sp", csMember(csWs, ' '));
+    p("cs ws tab", csMember(csWs, '\t'));
+    p("cs ws nl", csMember(csWs, '\n'));
+    p("cs ws cr", csMember(csWs, '\r'));
+    p("cs ws vtab", csMember(csWs, '\v'));
+    p("cs ws nbsp", csMember(csWs, 0x00a0));
+    p("cs ws zb", csMember(csWs, 0x200b));
+    p("cs ws ls2028", csMember(csWs, 0x2028));
+    p("cs ws ps2029", csMember(csWs, 0x2029));
+
+    NSCharacterSet *csWsnl = [NSCharacterSet whitespaceAndNewlineCharacterSet];
+    p("cs wsnl sp", csMember(csWsnl, ' '));
+    p("cs wsnl nl", csMember(csWsnl, '\n'));
+    p("cs wsnl cr", csMember(csWsnl, '\r'));
+
+    NSCharacterSet *csAlnum = [NSCharacterSet alphanumericCharacterSet];
+    p("cs alnum a", csMember(csAlnum, 'a'));
+    p("cs alnum A", csMember(csAlnum, 'A'));
+    p("cs alnum 5", csMember(csAlnum, '5'));
+    p("cs alnum !", csMember(csAlnum, '!'));
+    p("cs alnum sp", csMember(csAlnum, ' '));
+
+    NSCharacterSet *csDigit = [NSCharacterSet decimalDigitCharacterSet];
+    p("cs digit 0", csMember(csDigit, '0'));
+    p("cs digit 9", csMember(csDigit, '9'));
+    p("cs digit a", csMember(csDigit, 'a'));
+    p("cs digit arabic0", csMember(csDigit, 0x0660));
+
+    NSCharacterSet *csLetter = [NSCharacterSet letterCharacterSet];
+    p("cs letter a", csMember(csLetter, 'a'));
+    p("cs letter A", csMember(csLetter, 'A'));
+    p("cs letter 1", csMember(csLetter, '1'));
+    p("cs letter eacute", csMember(csLetter, 0x00e9));
+    p("cs letter sz", csMember(csLetter, 0x00df));
+
+    NSCharacterSet *csLower = [NSCharacterSet lowercaseLetterCharacterSet];
+    p("cs lower a", csMember(csLower, 'a'));
+    p("cs lower A", csMember(csLower, 'A'));
+    p("cs lower 1", csMember(csLower, '1'));
+    p("cs lower eacute", csMember(csLower, 0x00e9));
+
+    NSCharacterSet *csUpper = [NSCharacterSet uppercaseLetterCharacterSet];
+    p("cs upper a", csMember(csUpper, 'a'));
+    p("cs upper A", csMember(csUpper, 'A'));
+    p("cs upper 1", csMember(csUpper, '1'));
+    p("cs upper eacute", csMember(csUpper, 0x00e9));
+
+    NSCharacterSet *csPunct = [NSCharacterSet punctuationCharacterSet];
+    p("cs punct comma", csMember(csPunct, ','));
+    p("cs punct dot", csMember(csPunct, '.'));
+    p("cs punct bang", csMember(csPunct, '!'));
+    p("cs punct sp", csMember(csPunct, ' '));
+    p("cs punct a", csMember(csPunct, 'a'));
+
+    NSCharacterSet *csCtrl = [NSCharacterSet controlCharacterSet];
+    p("cs ctrl tab", csMember(csCtrl, '\t'));
+    p("cs ctrl nl", csMember(csCtrl, '\n'));
+    p("cs ctrl cr", csMember(csCtrl, '\r'));
+    p("cs ctrl sp", csMember(csCtrl, ' '));
+    p("cs ctrl a", csMember(csCtrl, 'a'));
+
+    NSCharacterSet *csNl = [NSCharacterSet newlineCharacterSet];
+    p("cs nl nl", csMember(csNl, '\n'));
+    p("cs nl cr", csMember(csNl, '\r'));
+    p("cs nl ls2028", csMember(csNl, 0x2028));
+    p("cs nl ps2029", csMember(csNl, 0x2029));
+    p("cs nl sp", csMember(csNl, ' '));
+
+    NSCharacterSet *csStr = [NSCharacterSet characterSetWithCharactersInString:@"ab"];
+    p("cs str a", csMember(csStr, 'a'));
+    p("cs str b", csMember(csStr, 'b'));
+    p("cs str c", csMember(csStr, 'c'));
+
+    NSCharacterSet *csRange = [NSCharacterSet characterSetWithRange:NSMakeRange('A', 26)];
+    p("cs range A", csMember(csRange, 'A'));
+    p("cs range Z", csMember(csRange, 'Z'));
+    p("cs range bracket", csMember(csRange, '['));
+    p("cs range a", csMember(csRange, 'a'));
+
+    NSCharacterSet *csInv = [csWs invertedSet];
+    p("cs inv sp", csMember(csInv, ' '));
+    p("cs inv a", csMember(csInv, 'a'));
+    p("cs inv nl", csMember(csInv, '\n'));
+
+    p("cs ws class", [NSString stringWithFormat:@"%s", object_getClassName(csWs)]);
+    p("cs range class", [NSString stringWithFormat:@"%s", object_getClassName(csRange)]);
+    p("cs copy identity", [csWs copy] != csWs ? @"1" : @"0");
+    p("cs eq same", [csWs isEqual:csWs] ? @"1" : @"0");
+    p("cs eq fresh ws", [csWs isEqual:[NSCharacterSet whitespaceCharacterSet]] ? @"1" : @"0");
+
+    NSMutableCharacterSet *mcs = [NSMutableCharacterSet characterSetWithRange:NSMakeRange('A', 26)];
+    p("cs m class", [NSString stringWithFormat:@"%s", object_getClassName(mcs)]);
+    p("cs m A", csMember(mcs, 'A'));
+    p("cs m a", csMember(mcs, 'a'));
+    [mcs addCharactersInString:@"xyz"];
+    p("cs m addstr x", csMember(mcs, 'x'));
+    [mcs addCharactersInRange:NSMakeRange('0', 10)];
+    p("cs m addrange 5", csMember(mcs, '5'));
+    [mcs removeCharactersInRange:NSMakeRange('A', 26)];
+    p("cs m rmrange A", csMember(mcs, 'A'));
+    [mcs removeCharactersInString:@"xyz"];
+    p("cs m rmstr x", csMember(mcs, 'x'));
+    [mcs invert];
+    p("cs m invert A", csMember(mcs, 'A'));
+    p("cs m invert 5", csMember(mcs, '5'));
+    p("cs m invert sp", csMember(mcs, ' '));
+    NSCharacterSet *mcsCopy = [mcs copy];
+    p("cs m copy A", csMember(mcsCopy, 'A'));
 
     printf("PORT_BEHAVIOR_END\n");
     return 0;

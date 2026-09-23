@@ -481,4 +481,79 @@ ex hash equal                              | 1
 ex copy identity                           | 0
 ex copy desc equal                         | 1
 ex userinfo snap                           | v2
+cs ws sp                                   | 1
+cs ws tab                                  | 1
+cs ws nl                                   | 0
+cs ws cr                                   | 0
+cs ws vtab                                 | 0
+cs ws nbsp                                 | 1
+cs ws zb                                   | 1
+cs ws ls2028                               | 0
+cs ws ps2029                               | 0
+cs wsnl sp                                 | 1
+cs wsnl nl                                 | 1
+cs wsnl cr                                 | 1
+cs alnum a                                 | 1
+cs alnum A                                 | 1
+cs alnum 5                                 | 1
+cs alnum !                                 | 0
+cs alnum sp                                | 0
+cs digit 0                                 | 1
+cs digit 9                                 | 1
+cs digit a                                 | 0
+cs digit arabic0                           | 1
+cs letter a                                | 1
+cs letter A                                | 1
+cs letter 1                                | 0
+cs letter eacute                           | 1
+cs letter sz                               | 1
+cs lower a                                 | 1
+cs lower A                                 | 0
+cs lower 1                                 | 0
+cs lower eacute                            | 1
+cs upper a                                 | 0
+cs upper A                                 | 1
+cs upper 1                                 | 0
+cs upper eacute                            | 0
+cs punct comma                             | 1
+cs punct dot                               | 1
+cs punct bang                              | 1
+cs punct sp                                | 0
+cs punct a                                 | 0
+cs ctrl tab                                | 1
+cs ctrl nl                                 | 1
+cs ctrl cr                                 | 1
+cs ctrl sp                                 | 0
+cs ctrl a                                  | 0
+cs nl nl                                   | 1
+cs nl cr                                   | 1
+cs nl ls2028                               | 1
+cs nl ps2029                               | 1
+cs nl sp                                   | 0
+cs str a                                   | 1
+cs str b                                   | 1
+cs str c                                   | 0
+cs range A                                 | 1
+cs range Z                                 | 1
+cs range bracket                           | 0
+cs range a                                 | 0
+cs inv sp                                  | 0
+cs inv a                                   | 1
+cs inv nl                                  | 1
+cs ws class                                | __NSCFCharacterSet
+cs range class                             | __NSCFCharacterSet
+cs copy identity                           | 0
+cs eq same                                 | 1
+cs eq fresh ws                             | 1
+cs m class                                 | __NSCFCharacterSet
+cs m A                                     | 1
+cs m a                                     | 0
+cs m addstr x                              | 1
+cs m addrange 5                            | 1
+cs m rmrange A                             | 0
+cs m rmstr x                               | 0
+cs m invert A                              | 1
+cs m invert 5                              | 0
+cs m invert sp                             | 1
+cs m copy A                                | 1
 PORT_BEHAVIOR_END
