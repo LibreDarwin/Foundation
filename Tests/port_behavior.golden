@@ -206,6 +206,21 @@ df relative set                            | 1
 df relative fmt short                      | 2/13/09
 df gregorian default nil                   | 0
 df gregorian set getter                    | 0
+df formatter class fb                      | 1040
+df formatter inst fb                       | 0
+df twodigit default nil                    | 0
+df twodigit default getter                 | -631152000
+df twodigit parse 13@default               | 1356998400
+df formatter inst fb set1040               | 1040
+df formatter inst fb setdflt               | 0
+df twodigit set1990 getter                 | 631152000
+df twodigit parse 30@1990                  | 1893456000
+df twodigit parse 60@1990                  | 2840140800
+df twodigit parse 89@1990                  | 3755376000
+df twodigit parse 90@1990                  | 631152000
+df twodigit parse 68@1970                  | 3092601600
+df twodigit parse 70@1970                  | 0
+df twodigit reset nil getter               | -631152000
 df era en                                  | BC|AD
 df longera en                              | Before Christ|Anno Domini
 df month en                                | January|February|March|April|May|June|July|August|September|October|November|December

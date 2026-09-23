@@ -42,6 +42,14 @@
     return [[self alloc] init];
 }
 
++ (NSDateFormatterBehavior)defaultFormatterBehavior {
+    return NSDateFormatterBehavior10_4;
+}
+
++ (void)setDefaultFormatterBehavior:(NSDateFormatterBehavior)behavior {
+    /* Deprecated on modern OS: Apple warns and ignores. */
+}
+
 + (NSString *)localizedStringFromDate:(NSDate *)date dateStyle:(NSDateFormatterStyle)dstyle timeStyle:(NSDateFormatterStyle)tstyle {
     /* +localizedStringFromDate: dates the book to the behavior-10_0 era: it
      * renders the hardcoded classic patterns (never the ICU style-derived
@@ -241,6 +249,30 @@
 
 - (void)setGregorianStartDate:(NSDate *)date {
     CFDateFormatterSetProperty(_formatter, kCFDateFormatterGregorianStartDate,
+                               date ? NSFORMATTER_CF(CFDateRef, date) : NULL);
+}
+
+- (NSDateFormatterBehavior)formatterBehavior {
+    return _formatterBehavior;
+}
+
+- (void)setFormatterBehavior:(NSDateFormatterBehavior)behavior {
+    _formatterBehavior = behavior;
+}
+
+- (NSDate *)twoDigitStartDate {
+    CFDateRef date = CFDateFormatterCopyProperty(_formatter, kCFDateFormatterTwoDigitStartDate);
+    if (date == NULL) {
+        /* null_resettable: the default pivot is 1950-01-01. */
+        return [NSDate dateWithTimeIntervalSinceReferenceDate:(-631152000.0 - 978307200.0)];
+    }
+    NSDate *result = [NSDate dateWithTimeIntervalSinceReferenceDate:CFDateGetAbsoluteTime(date)];
+    CFRelease(date);
+    return result;
+}
+
+- (void)setTwoDigitStartDate:(NSDate *)date {
+    CFDateFormatterSetProperty(_formatter, kCFDateFormatterTwoDigitStartDate,
                                date ? NSFORMATTER_CF(CFDateRef, date) : NULL);
 }
 

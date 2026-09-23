@@ -27,11 +27,19 @@ typedef NS_ENUM(NSUInteger, NSDateFormatterStyle) {
     NSDateFormatterFullStyle = 4
 };
 
+typedef NS_ENUM(NSUInteger, NSDateFormatterBehavior) {
+    NSDateFormatterBehaviorDefault = 0,
+    NSDateFormatterBehavior10_0 = 1000,
+    NSDateFormatterBehavior10_4 = 1040,
+};
+
 @interface NSDateFormatter : NSObject {
     void *_formatter;
     NSMutableDictionary *_symbolOverrides;
+    NSDateFormatterBehavior _formatterBehavior;
 }
 
+@property (class) NSDateFormatterBehavior defaultFormatterBehavior;
 + (instancetype)dateFormatter;
 + (NSString *)localizedStringFromDate:(NSDate *)date dateStyle:(NSDateFormatterStyle)dstyle timeStyle:(NSDateFormatterStyle)tstyle;
 + (nullable NSString *)dateFormatFromTemplate:(NSString *)tmplate options:(NSUInteger)opts locale:(nullable NSLocale *)locale;
@@ -49,6 +57,8 @@ typedef NS_ENUM(NSUInteger, NSDateFormatterStyle) {
 @property (nullable, copy) NSCalendar *calendar;
 @property BOOL doesRelativeDateFormatting;
 @property (nullable, copy) NSDate *gregorianStartDate;
+@property NSDateFormatterBehavior formatterBehavior;
+@property (nullable, copy) NSDate *twoDigitStartDate;
 
 @property (copy) NSArray<NSString *> *eraSymbols;
 @property (copy) NSArray<NSString *> *monthSymbols;
