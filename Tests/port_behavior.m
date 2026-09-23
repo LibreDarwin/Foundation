@@ -421,6 +421,34 @@ int main(void) {
     NSDateFormatter *dfmtMillis = [[NSDateFormatter alloc] init];
     [dfmtMillis setDateFormat:@"yyyy-MM-dd HH:mm:ss.SSS"];
     p("df fractional SSS", [dfmtMillis stringFromDate:fmtBase]);
+    NSDateFormatter *dfLen = [[NSDateFormatter alloc] init];
+    p("df lenient default", [NSString stringWithFormat:@"%d", dfLen.isLenient]);
+    [dfLen setLenient:YES];
+    p("df lenient set", [NSString stringWithFormat:@"%d", dfLen.isLenient]);
+    p("df defaultDate default nil", [NSString stringWithFormat:@"%d", dfLen.defaultDate == nil]);
+    [dfLen setDateFormat:@"yyyy-MM-dd"];
+    [dfLen setDefaultDate:[NSDate dateWithTimeIntervalSince1970:1234567890.0]];
+    p("df defaultDate getter", [NSString stringWithFormat:@"%.0f", dfLen.defaultDate.timeIntervalSince1970]);
+    NSDate *dfParsed = [dfLen dateFromString:@"2009-02-13"];
+    p("df defaultDate parse", [NSString stringWithFormat:@"%.0f|%@", dfParsed.timeIntervalSince1970, [dfLen stringFromDate:dfParsed]]);
+    NSDateFormatter *dfLoc = [[NSDateFormatter alloc] init];
+    [dfLoc setLocale:[NSLocale localeWithLocaleIdentifier:@"fr_FR"]];
+    p("df locale set roundtrip", dfLoc.locale.localeIdentifier);
+    [dfLoc setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    p("df locale formatted", [dfLoc stringFromDate:fmtBase]);
+    NSDateFormatter *dfObj = [[NSDateFormatter alloc] init];
+    [dfObj setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    id dv = nil;
+    NSError *derr = nil;
+    NSRange dr = NSMakeRange(0, 19);
+    BOOL dgot = [dfObj getObjectValue:&dv forString:@"2009-02-13 23:31:30" range:&dr error:&derr];
+    p("df getObjectValue ok", [NSString stringWithFormat:@"%d val=%.0f err=%d range=%ld/%ld",
+                               dgot, dv ? [dv timeIntervalSince1970] : 0.0, derr != nil,
+                               (long)dr.location, (long)dr.length]);
+    dv = nil;
+    derr = nil;
+    dgot = [dfObj getObjectValue:&dv forString:@"garbage" range:NULL error:&derr];
+    p("df getObjectValue bad", [NSString stringWithFormat:@"%d val=%d err=%d", dgot, dv != nil, derr != nil]);
 
     /* ---------- NSScanner ---------- */
     NSScanner *sc = [NSScanner scannerWithString:@"  123 45"];

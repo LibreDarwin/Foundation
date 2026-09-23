@@ -7,7 +7,10 @@
  */
 
 #import <Foundation/NSDateFormatter.h>
+#import <Foundation/FoundationErrors.h>
+#import <Foundation/NSDictionary.h>
 #include <CoreFoundation/CFDateFormatter.h>
+#include <CoreFoundation/CFNumber.h>
 
 #if __has_feature(objc_arc)
 #define NSFORMATTER_TRANSFER(value) ((__bridge_transfer id)(value))
@@ -95,6 +98,50 @@
                                                    CFDateFormatterGetLocale(_formatter)));
 }
 
+- (void)setLocale:(NSLocale *)locale {
+    if (locale == nil) locale = [NSLocale currentLocale];
+    CFLocaleRef cfLocale = NULL;
+    if ([locale isKindOfClass:[NSLocale class]]) {
+        cfLocale = [locale _backingLocale];
+    } else {
+        cfLocale = NSFORMATTER_CF(CFLocaleRef, locale);
+    }
+    /* CFDateFormatterSetLocale is SPI; recreate like setDateStyle does. */
+    CFDateFormatterRef replacement = CFDateFormatterCreate(
+        kCFAllocatorDefault, cfLocale, CFDateFormatterGetDateStyle(_formatter),
+        CFDateFormatterGetTimeStyle(_formatter));
+    if (replacement == NULL) return;
+    CFStringRef format = CFDateFormatterGetFormat(_formatter);
+    if (format != NULL) CFDateFormatterSetFormat(replacement, format);
+    CFRelease(_formatter);
+    _formatter = replacement;
+}
+
+- (BOOL)isLenient {
+    CFTypeRef value = CFDateFormatterCopyProperty(_formatter, kCFDateFormatterIsLenient);
+    BOOL lenient = value != NULL && CFBooleanGetValue((CFBooleanRef)value);
+    if (value != NULL) CFRelease(value);
+    return lenient;
+}
+
+- (void)setLenient:(BOOL)lenient {
+    CFDateFormatterSetProperty(_formatter, kCFDateFormatterIsLenient,
+                               lenient ? kCFBooleanTrue : kCFBooleanFalse);
+}
+
+- (NSDate *)defaultDate {
+    CFDateRef date = CFDateFormatterCopyProperty(_formatter, kCFDateFormatterDefaultDate);
+    if (date == NULL) return nil;
+    NSDate *result = [NSDate dateWithTimeIntervalSinceReferenceDate:CFDateGetAbsoluteTime(date)];
+    CFRelease(date);
+    return result;
+}
+
+- (void)setDefaultDate:(NSDate *)date {
+    CFDateFormatterSetProperty(_formatter, kCFDateFormatterDefaultDate,
+                               date ? NSFORMATTER_CF(CFDateRef, date) : NULL);
+}
+
 - (NSString *)stringFromDate:(NSDate *)date {
     return NSFORMATTER_TRANSFER(CFDateFormatterCreateStringWithDate(
         kCFAllocatorDefault, _formatter, NSFORMATTER_CF(CFDateRef, date)));
@@ -107,6 +154,29 @@
     NSDate *result = [NSDate dateWithTimeIntervalSinceReferenceDate:CFDateGetAbsoluteTime(date)];
     CFRelease(date);
     return result;
+}
+
+- (BOOL)getObjectValue:(id *)obj forString:(NSString *)string range:(NSRange *)rangep error:(NSError **)error {
+    if (obj == nil) return NO;
+    *obj = nil;
+    if (error != nil) *error = nil;
+    CFRange range = CFRangeMake(rangep ? rangep->location : 0, rangep ? rangep->length : 0);
+    CFAbsoluteTime absolute = 0.0;
+    Boolean ok = CFDateFormatterGetAbsoluteTimeFromString(
+        _formatter, NSFORMATTER_CF(CFStringRef, string), rangep ? &range : NULL, &absolute);
+    if (!ok) {
+        if (error != nil) {
+            *error = [NSError errorWithDomain:NSCocoaErrorDomain code:NSFormattingError
+                        userInfo:@{ NSLocalizedDescriptionKey: @"Could not be parsed." }];
+        }
+        return NO;
+    }
+    *obj = [NSDate dateWithTimeIntervalSinceReferenceDate:absolute];
+    if (rangep != NULL) {
+        rangep->location = range.location;
+        rangep->length = range.length;
+    }
+    return YES;
 }
 
 @end

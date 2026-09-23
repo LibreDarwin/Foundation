@@ -157,6 +157,15 @@ df stringFromDate ymd                      | 2009-02-13 23:31:30
 df parse roundtrip                         | 1234567890
 df parse invalid nil                       | 1
 df fractional SSS                          | 2009-02-13 23:31:30.000
+df lenient default                         | 0
+df lenient set                             | 1
+df defaultDate default nil                 | 1
+df defaultDate getter                      | 1234567890
+df defaultDate parse                       | 1234567890|2009-02-13
+df locale set roundtrip                    | fr_FR
+df locale formatted                        | 2009-02-13 23:31:30
+df getObjectValue ok                       | 1 val=1234567890 err=0 range=0/19
+df getObjectValue bad                      | 0 val=0 err=1
 sc int first                               | 123 ok=1 loc=5
 sc atEnd between                           | 0
 sc int second                              | 45 ok=1 loc=8

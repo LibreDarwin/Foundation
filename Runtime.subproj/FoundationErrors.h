@@ -32,4 +32,9 @@ enum {
     NSPropertyListWriteUnknownVersionError = 3853,
 };
 
+/* Formatting error range (NSCocoaErrorDomain). */
+enum {
+    NSFormattingError = 2048,
+};
+
 #endif /* FoundationErrors_h */

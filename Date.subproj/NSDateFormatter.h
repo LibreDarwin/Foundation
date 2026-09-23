@@ -12,6 +12,8 @@
 #import <Foundation/NSObject.h>
 #import <Foundation/NSDate.h>
 #import <Foundation/NSLocale.h>
+#import <Foundation/NSRange.h>
+#import <Foundation/NSError.h>
 
 typedef NS_ENUM(NSUInteger, NSDateFormatterStyle) {
     NSDateFormatterNoStyle = 0,
@@ -32,10 +34,13 @@ typedef NS_ENUM(NSUInteger, NSDateFormatterStyle) {
 @property NSDateFormatterStyle dateStyle;
 @property NSDateFormatterStyle timeStyle;
 @property (copy) NSString *dateFormat;
-@property (readonly, copy) NSLocale *locale;
+@property (copy) NSLocale *locale;
+@property (getter=isLenient) BOOL lenient;
+@property (nullable, copy) NSDate *defaultDate;
 
 - (NSString *)stringFromDate:(NSDate *)date;
 - (NSDate *)dateFromString:(NSString *)string;
+- (BOOL)getObjectValue:(id *)obj forString:(NSString *)string range:(NSRange *)rangep error:(NSError **)error;
 
 @end
 
