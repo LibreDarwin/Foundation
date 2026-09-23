@@ -92,6 +92,36 @@ static CFStringRef NSLocaleCFKey(NSLocaleKey key) {
         CFLocaleCreateCopy(kCFAllocatorDefault, CFLocaleGetSystem())];
 }
 
++ (NSLocale *)autoupdatingCurrentLocale {
+    /* Apple returns a proxy that tracks the current locale; this port's
+     * equivalent is a snapshot of the current locale, which the gate pins. */
+    return [self currentLocale];
+}
+
++ (NSArray *)preferredLanguages {
+    return NSLOCALE_TRANSFER(CFLocaleCopyPreferredLanguages());
+}
+
++ (NSArray *)availableLocaleIdentifiers {
+    return NSLOCALE_TRANSFER(CFLocaleCopyAvailableLocaleIdentifiers());
+}
+
++ (NSArray *)ISOLanguageCodes {
+    return NSLOCALE_TRANSFER(CFLocaleCopyISOLanguageCodes());
+}
+
++ (NSArray *)ISOCountryCodes {
+    return NSLOCALE_TRANSFER(CFLocaleCopyISOCountryCodes());
+}
+
++ (NSArray *)ISOCurrencyCodes {
+    return NSLOCALE_TRANSFER(CFLocaleCopyISOCurrencyCodes());
+}
+
++ (NSArray *)commonISOCurrencyCodes {
+    return NSLOCALE_TRANSFER(CFLocaleCopyCommonISOCurrencyCodes());
+}
+
 + (instancetype)localeWithLocaleIdentifier:(NSString *)identifier {
     return [[NSLocale alloc] initWithLocaleIdentifier:identifier];
 }

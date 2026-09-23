@@ -12,6 +12,7 @@
 #import <Foundation/NSObject.h>
 
 @class NSString;
+@class NSArray;
 
 typedef NSString *NSLocaleKey;
 
@@ -34,6 +35,13 @@ FOUNDATION_EXPORT NSLocaleKey const NSLocaleUsesMetricSystem;
 + (instancetype)currentLocale;
 + (instancetype)systemLocale;
 + (instancetype)localeWithLocaleIdentifier:(NSString *)identifier;
++ (NSLocale *)autoupdatingCurrentLocale;
++ (NSArray *)preferredLanguages;
++ (NSArray *)availableLocaleIdentifiers;
++ (NSArray *)ISOLanguageCodes;
++ (NSArray *)ISOCountryCodes;
++ (NSArray *)ISOCurrencyCodes;
++ (NSArray *)commonISOCurrencyCodes;
 
 - (instancetype)initWithLocaleIdentifier:(NSString *)identifier;
 - (NSString *)localeIdentifier;

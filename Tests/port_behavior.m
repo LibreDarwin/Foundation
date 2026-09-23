@@ -405,6 +405,24 @@ int main(void) {
     p("locale equal hash", [NSString stringWithFormat:@"%lu=%lu", (unsigned long)lUS.hash, (unsigned long)[NSLocale localeWithLocaleIdentifier:@"en_US"].hash]);
     p("locale copy roundtrip", [[lUS copy] localeIdentifier]);
     p("locale init alloc de_DE", [[[NSLocale alloc] initWithLocaleIdentifier:@"de_DE"] localeIdentifier]);
+    p("locale autoupdating eq current", [[NSLocale autoupdatingCurrentLocale].localeIdentifier isEqualToString:[NSLocale currentLocale].localeIdentifier] ? @"1" : @"0");
+    p("locale preferred count", [NSLocale preferredLanguages].count > 0 ? @"1" : @"0");
+    p("locale available count", [NSLocale availableLocaleIdentifiers].count > 100 ? @"1" : @"0");
+    p("locale avail contains en_US", [[NSLocale availableLocaleIdentifiers] containsObject:@"en_US"] ? @"1" : @"0");
+    p("locale avail contains de_DE", [[NSLocale availableLocaleIdentifiers] containsObject:@"de_DE"] ? @"1" : @"0");
+    p("locale availloc contains qq", [[NSLocale availableLocaleIdentifiers] containsObject:@"qq"] ? @"1" : @"0");
+    p("locale lang contains en", [[NSLocale ISOLanguageCodes] containsObject:@"en"] ? @"1" : @"0");
+    p("locale lang contains qq", [[NSLocale ISOLanguageCodes] containsObject:@"qq"] ? @"1" : @"0");
+    p("locale country contains US", [[NSLocale ISOCountryCodes] containsObject:@"US"] ? @"1" : @"0");
+    p("locale country contains GB", [[NSLocale ISOCountryCodes] containsObject:@"GB"] ? @"1" : @"0");
+    p("locale country contains qq", [[NSLocale ISOCountryCodes] containsObject:@"qq"] ? @"1" : @"0");
+    p("locale currency contains USD", [[NSLocale ISOCurrencyCodes] containsObject:@"USD"] ? @"1" : @"0");
+    p("locale currency contains JPY", [[NSLocale ISOCurrencyCodes] containsObject:@"JPY"] ? @"1" : @"0");
+    p("locale currency contains qqq", [[NSLocale ISOCurrencyCodes] containsObject:@"QQQ"] ? @"1" : @"0");
+    p("locale common currencies", ([[NSLocale commonISOCurrencyCodes] containsObject:@"USD"] &&
+                                   [[NSLocale commonISOCurrencyCodes] containsObject:@"EUR"] &&
+                                   [[NSLocale commonISOCurrencyCodes] containsObject:@"JPY"] &&
+                                   [[NSLocale commonISOCurrencyCodes] containsObject:@"GBP"]) ? @"1" : @"0");
 
     /* ---------- NSDateFormatter ---------- */
     /* ASCII-only date formats (digits never localize) keep the output

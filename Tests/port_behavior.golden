@@ -150,6 +150,21 @@ locale en_US isEqual de_DE                 | 0
 locale equal hash                          | 17464408573887=17464408573887
 locale copy roundtrip                      | en_US
 locale init alloc de_DE                    | de_DE
+locale autoupdating eq current             | 1
+locale preferred count                     | 1
+locale available count                     | 1
+locale avail contains en_US                | 1
+locale avail contains de_DE                | 1
+locale availloc contains qq                | 0
+locale lang contains en                    | 1
+locale lang contains qq                    | 0
+locale country contains US                 | 1
+locale country contains GB                 | 1
+locale country contains qq                 | 0
+locale currency contains USD               | 1
+locale currency contains JPY               | 1
+locale currency contains qqq               | 0
+locale common currencies                   | 1
 df default dateStyle                       | 0
 df default timeStyle                       | 0
 df dateFormat getter                       | yyyy-MM-dd HH:mm:ss
