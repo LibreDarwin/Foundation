@@ -201,6 +201,18 @@ sc CI strict mismatch                      | ok=0 loc=0
 sc manual loc digits                       | 123 ok=1 loc=6
 sc reset atEnd                             | 0
 sc empty isAtEnd                           | 1
+sc loc at end                              | 3
+sc loc past end                            | raise NSRangeException
+sc default skip sp                         | 1
+sc default skip nl                         | 1
+sc no skip scanInt                         | ok=0 val=-1 loc=0
+sc hexLongLong max                         | ok=1 val=18446744073709551615 loc=20
+sc hexLongLong bad                         | ok=0 loc=0
+sc hexDouble                               | ok=1 val=3.00 loc=9
+sc hexFloat                                | ok=1 val=3.000000 loc=9
+sc integer neg                             | ok=1 val=-42 loc=5
+sc upToChars mid                           | alpha ok=1 loc=5
+sc CI match lower                          | ABC ok=1 loc=3
 sc copy location                           | 5
 sc copy scans                              | 123 ok=1
 pr basic domain                            | TestDomain

@@ -12,6 +12,7 @@
  */
 
 #import <Foundation/NSScanner.h>
+#import <Foundation/NSException.h>
 #include <CoreFoundation/CFString.h>
 #include <ctype.h>
 #include <errno.h>
@@ -113,7 +114,16 @@ static NSString *_NSScannerString(NSString *source, NSUInteger start, NSUInteger
 
 - (NSString *)string { return _string; }
 - (NSUInteger)scanLocation { return _scanLocation; }
-- (void)setScanLocation:(NSUInteger)location { _scanLocation = location; }
+- (void)setScanLocation:(NSUInteger)location {
+    if (location > [_string length]) {
+        @throw [NSException exceptionWithName:NSRangeException
+                                       reason:[NSString stringWithFormat:
+                                           @"scanLocation %lu beyond bounds of string (length %lu)",
+                                           (unsigned long)location, (unsigned long)[_string length]]
+                                     userInfo:nil];
+    }
+    _scanLocation = location;
+}
 - (NSCharacterSet *)charactersToBeSkipped { return _charactersToBeSkipped; }
 - (BOOL)caseSensitive { return _caseSensitive; }
 - (id)locale { return _locale; }
