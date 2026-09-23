@@ -199,6 +199,8 @@ typedef NS_CLOSED_ENUM(NSInteger, NSComparisonResult) {
     NSOrderedDescending = 1,
 };
 
+typedef NSComparisonResult (^NSComparator)(id _Nonnull obj1, id _Nonnull obj2);
+
 enum { NSNotFound = NSIntegerMax };
 
 /* Apple's NSObjCRuntime.h defines these, and ported ObjC code relies on

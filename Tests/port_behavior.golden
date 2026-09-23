@@ -1007,4 +1007,43 @@ tz default sys                             | 1
 tz default set                             | 1
 tz default reset                           | 1
 tz setdefault nil                          | no raise
+sd dflt selcompare                         | 1
+sd dflt getters                            | name asc=1
+sd dflt desc                               | asc=0
+sd nilkey                                  | keyNil=1 selcompare=1
+sd sel variant                             | selNull=0 cmpNull=1
+sd cmp variant                             | key=x asc=1 selNull=1 cmpNonNil=1
+sd cmp sel b a                             | 1
+sd cmp sel a b                             | -1
+sd rev asc                                 | asc=0 selcompare=1
+sd rev cmp a b                             | 1
+sd cmp len asc                             | 1
+sd cmp len inv                             | -1
+sd cmp len rev                             | -1
+sd key cmp zeta                            | 1
+sd key cmp alpha                           | -1
+sd key dflt cmp                            | 1
+sd sort n asc                              | 1,2,3
+sd sort n desc                             | 3,2,1
+sd arr cmp sort                            | aa,bb,cc
+sd arr sel sort                            | aa,bb,cc
+sd marr sel sort                           | aa,bb,cc
+sd marr cmp rev                            | cc,bb,aa
+sd multi a asc b desc                      | 12 11 20
+sd keyed cmp dict                          | 1,2
+sd sort desc rev                           | bb,aa
+sd eq same                                 | 1
+sd eq asc diff                             | 0
+sd eq key diff                             | 0
+sd eq sel same                             | 1
+sd eq sel diff                             | 0
+sd eq cmp cmp                              | 0
+sd eq cmp key                              | 0
+sd eq dflt explicit                        | 0
+sd eq explicit dflt                        | 0
+sd rev key asc                             | key=name asc=0
+sd rev sel cic                             | 1
+sd rev eq orig                             | 0
+sd revrev                                  | asc=1 eq=1
+sd secure coding                           | 1
 PORT_BEHAVIOR_END

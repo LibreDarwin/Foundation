@@ -8,8 +8,10 @@
 
 #import <Foundation/NSArray.h>
 #import "NSEnumerator_array.h"
+#import <Foundation/NSSortDescriptor.h>
 #include <CoreFoundation/CFArray.h>
 #include <CoreFoundation/ForFoundationOnly.h>
+#include <objc/message.h>
 #include <objc/runtime.h>
 #include <stdlib.h>
 
@@ -33,6 +35,31 @@ static CFArrayRef NSNSArrayCreate(const id *objects, NSUInteger count) {
                                       &kCFTypeArrayCallBacks);
     free(values);
     return result;
+}
+
+static CFComparisonResult NSNSArrayDispatchSelector(const void *object1, const void *object2,
+                                                    void *context) {
+    CFComparisonResult (*fn)(id, SEL, id) = (CFComparisonResult (*)(id, SEL, id))objc_msgSend;
+    return fn((__bridge id)object1, (SEL)context, (__bridge id)object2);
+}
+
+static CFComparisonResult NSNSArrayDispatchComparator(const void *object1, const void *object2,
+                                                      void *context) {
+    NSComparator cmptr = (__bridge NSComparator)context;
+    return (CFComparisonResult)cmptr((__bridge id)object1, (__bridge id)object2);
+}
+
+static CFComparisonResult NSNSArrayDispatchDescriptors(const void *object1, const void *object2,
+                                                       void *context) {
+    NSArray *descriptors = (__bridge NSArray *)context;
+    for (NSSortDescriptor *descriptor in descriptors) {
+        NSComparisonResult result = [descriptor compareObject:(__bridge id)object1
+                                                     toObject:(__bridge id)object2];
+        if (result != NSOrderedSame) {
+            return (CFComparisonResult)result;
+        }
+    }
+    return kCFCompareEqualTo;
 }
 
 @implementation NSArray
@@ -123,6 +150,33 @@ static CFArrayRef NSNSArrayCreate(const id *objects, NSUInteger count) {
     return filled;
 }
 
+- (NSArray *)sortedArrayUsingSelector:(SEL)comparator {
+    if (comparator == NULL) {
+        return [self copy];
+    }
+    CFMutableArrayRef sorted = CFArrayCreateMutableCopy(kCFAllocatorDefault, 0,
+                                                        NSARRAY_CF(CFArrayRef, self));
+    CFArraySortValues(sorted, CFRangeMake(0, CFArrayGetCount(sorted)),
+                      NSNSArrayDispatchSelector, (void *)comparator);
+    return NSARRAY_ID(sorted);
+}
+
+- (NSArray *)sortedArrayUsingComparator:(NSComparator)cmptr {
+    CFMutableArrayRef sorted = CFArrayCreateMutableCopy(kCFAllocatorDefault, 0,
+                                                        NSARRAY_CF(CFArrayRef, self));
+    CFArraySortValues(sorted, CFRangeMake(0, CFArrayGetCount(sorted)),
+                      NSNSArrayDispatchComparator, (__bridge void *)cmptr);
+    return NSARRAY_ID(sorted);
+}
+
+- (NSArray *)sortedArrayUsingDescriptors:(NSArray *)sortDescriptors {
+    CFMutableArrayRef sorted = CFArrayCreateMutableCopy(kCFAllocatorDefault, 0,
+                                                        NSARRAY_CF(CFArrayRef, self));
+    CFArraySortValues(sorted, CFRangeMake(0, CFArrayGetCount(sorted)),
+                      NSNSArrayDispatchDescriptors, (__bridge void *)sortDescriptors);
+    return NSARRAY_ID(sorted);
+}
+
 @end
 
 @implementation NSMutableArray
@@ -161,6 +215,27 @@ static CFArrayRef NSNSArrayCreate(const id *objects, NSUInteger count) {
 
 - (void)removeAllObjects {
     CFArrayRemoveAllValues(NSARRAY_CF(CFMutableArrayRef, self));
+}
+
+- (void)sortUsingSelector:(SEL)comparator {
+    if (comparator == NULL) {
+        return;
+    }
+    CFArraySortValues(NSARRAY_CF(CFMutableArrayRef, self),
+                      CFRangeMake(0, CFArrayGetCount(NSARRAY_CF(CFArrayRef, self))),
+                      NSNSArrayDispatchSelector, (void *)comparator);
+}
+
+- (void)sortUsingComparator:(NSComparator)cmptr {
+    CFArraySortValues(NSARRAY_CF(CFMutableArrayRef, self),
+                      CFRangeMake(0, CFArrayGetCount(NSARRAY_CF(CFArrayRef, self))),
+                      NSNSArrayDispatchComparator, (__bridge void *)cmptr);
+}
+
+- (void)sortUsingDescriptors:(NSArray *)sortDescriptors {
+    CFArraySortValues(NSARRAY_CF(CFMutableArrayRef, self),
+                      CFRangeMake(0, CFArrayGetCount(NSARRAY_CF(CFArrayRef, self))),
+                      NSNSArrayDispatchDescriptors, (__bridge void *)sortDescriptors);
 }
 
 @end

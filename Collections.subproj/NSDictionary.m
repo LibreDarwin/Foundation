@@ -181,6 +181,10 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
                                                 NSDICT_CF(const void *, key)));
 }
 
+- (nullable id)valueForKey:(NSString *)key {
+    return [self objectForKey:key];
+}
+
 - (nullable id)objectForKeyedSubscript:(id)key {
     return [self objectForKey:key];
 }

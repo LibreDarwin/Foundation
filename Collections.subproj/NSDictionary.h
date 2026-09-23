@@ -33,6 +33,7 @@
 - (NSUInteger)count;
 - (nullable id)objectForKey:(id)key;
 - (nullable id)objectForKeyedSubscript:(id)key;
+- (nullable id)valueForKey:(NSString *)key;
 - (BOOL)isEqualToDictionary:(NSDictionary<KeyType, ObjectType> *)dictionary;
 - (NSUInteger)hash;
 - (id)copyWithZone:(NSZone *)zone;

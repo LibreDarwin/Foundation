@@ -2150,6 +2150,108 @@ int main(void) {
         return @"no raise";
     });
 
+    /* ---------- NSSortDescriptor ---------- */
+    NSSortDescriptor *sdKey = [[NSSortDescriptor alloc] initWithKey:@"name" ascending:YES];
+    p("sd dflt selcompare", [NSString stringWithFormat:@"%d", sdKey.selector == @selector(compare:)]);
+    p("sd dflt getters", [NSString stringWithFormat:@"%@ asc=%d", sdKey.key, sdKey.ascending]);
+    NSSortDescriptor *sdKeyD = [[NSSortDescriptor alloc] initWithKey:@"name" ascending:NO];
+    p("sd dflt desc", [NSString stringWithFormat:@"asc=%d", sdKeyD.ascending]);
+    NSSortDescriptor *sdNilKey = [[NSSortDescriptor alloc] initWithKey:nil ascending:YES];
+    p("sd nilkey", [NSString stringWithFormat:@"keyNil=%d selcompare=%d", sdNilKey.key == nil, sdNilKey.selector == @selector(compare:)]);
+    NSSortDescriptor *sdSel = [[NSSortDescriptor alloc] initWithKey:nil ascending:YES selector:@selector(compare:)];
+    p("sd sel variant", [NSString stringWithFormat:@"selNull=%d cmpNull=%d", sdSel.selector == NULL, sdSel.comparator == nil]);
+    NSSortDescriptor *sdCmp = [NSSortDescriptor sortDescriptorWithKey:@"x" ascending:YES comparator:^NSComparisonResult(id a, id b) { return [a compare:b]; }];
+    p("sd cmp variant", [NSString stringWithFormat:@"key=%@ asc=%d selNull=%d cmpNonNil=%d", sdCmp.key, sdCmp.ascending, sdCmp.selector == NULL, sdCmp.comparator != nil]);
+
+    p("sd cmp sel b a", [NSString stringWithFormat:@"%d", (int)[sdSel compareObject:@"b" toObject:@"a"]]);
+    p("sd cmp sel a b", [NSString stringWithFormat:@"%d", (int)[sdSel compareObject:@"a" toObject:@"b"]]);
+    NSSortDescriptor *sdSelR = [sdSel reversedSortDescriptor];
+    p("sd rev asc", [NSString stringWithFormat:@"asc=%d selcompare=%d", sdSelR.ascending, sdSelR.selector == @selector(compare:)]);
+    p("sd rev cmp a b", [NSString stringWithFormat:@"%d", (int)[sdSelR compareObject:@"a" toObject:@"b"]]);
+
+    NSSortDescriptor *sdLen = [[NSSortDescriptor alloc] initWithKey:nil ascending:YES comparator:^NSComparisonResult(id a, id b) {
+        NSUInteger la = [a length], lb = [b length];
+        return la == lb ? NSOrderedSame : (la < lb ? NSOrderedAscending : NSOrderedDescending);
+    }];
+    p("sd cmp len asc", [NSString stringWithFormat:@"%d", (int)[sdLen compareObject:@"aaa" toObject:@"bb"]]);
+    p("sd cmp len inv", [NSString stringWithFormat:@"%d", (int)[sdLen compareObject:@"bb" toObject:@"aaa"]]);
+    NSSortDescriptor *sdLenR = [sdLen reversedSortDescriptor];
+    p("sd cmp len rev", [NSString stringWithFormat:@"%d", (int)[sdLenR compareObject:@"aaa" toObject:@"bb"]]);
+
+    NSSortDescriptor *sdKeyed = [[NSSortDescriptor alloc] initWithKey:@"name" ascending:YES selector:@selector(caseInsensitiveCompare:)];
+    p("sd key cmp zeta", [NSString stringWithFormat:@"%d", (int)[sdKeyed compareObject:@{@"name": @"zeta"} toObject:@{@"name": @"alpha"}]]);
+    p("sd key cmp alpha", [NSString stringWithFormat:@"%d", (int)[sdKeyed compareObject:@{@"name": @"alpha"} toObject:@{@"name": @"zeta"}]]);
+    p("sd key dflt cmp", [NSString stringWithFormat:@"%d", (int)[sdKey compareObject:@{@"name": @"beta"} toObject:@{@"name": @"alpha"}]]);
+
+    NSArray *sdArr = @[ @{@"n": @3}, @{@"n": @1}, @{@"n": @2} ];
+    NSArray *sdSort = [sdArr sortedArrayUsingDescriptors:@[ [[NSSortDescriptor alloc] initWithKey:@"n" ascending:YES] ]];
+    NSMutableArray *sdSortKeys = [NSMutableArray array];
+    for (id o in sdSort) [sdSortKeys addObject:[[o objectForKey:@"n"] stringValue]];
+    p("sd sort n asc", plainJoin(sdSortKeys, @","));
+    NSArray *sdSortD = [sdArr sortedArrayUsingDescriptors:@[ [[NSSortDescriptor alloc] initWithKey:@"n" ascending:NO] ]];
+    NSMutableArray *sdSortDKeys = [NSMutableArray array];
+    for (id o in sdSortD) [sdSortDKeys addObject:[[o objectForKey:@"n"] stringValue]];
+    p("sd sort n desc", plainJoin(sdSortDKeys, @","));
+
+    NSArray *sdStrs = @[@"bb", @"aa", @"cc"];
+    p("sd arr cmp sort", plainJoin([sdStrs sortedArrayUsingComparator:^NSComparisonResult(id x, id y) { return [x compare:y]; }], @","));
+    p("sd arr sel sort", plainJoin([sdStrs sortedArrayUsingSelector:@selector(compare:)], @","));
+    NSMutableArray *sdM = [NSMutableArray arrayWithArray:sdStrs];
+    [sdM sortUsingSelector:@selector(compare:)];
+    p("sd marr sel sort", plainJoin(sdM, @","));
+    [sdM sortUsingComparator:^NSComparisonResult(id x, id y) {
+        return [x compare:y] == NSOrderedAscending ? NSOrderedDescending
+             : ([x compare:y] == NSOrderedDescending ? NSOrderedAscending : NSOrderedSame);
+    }];
+    p("sd marr cmp rev", plainJoin(sdM, @","));
+
+    NSArray *sdMulti = @[ @{@"a": @1, @"b": @2}, @{@"a": @1, @"b": @1}, @{@"a": @2, @"b": @0} ];
+    NSArray *sdMSort = [sdMulti sortedArrayUsingDescriptors:@[
+        [[NSSortDescriptor alloc] initWithKey:@"a" ascending:YES],
+        [[NSSortDescriptor alloc] initWithKey:@"b" ascending:NO],
+    ]];
+    NSMutableArray *sdMKeys = [NSMutableArray array];
+    for (id o in sdMSort) [sdMKeys addObject:[NSString stringWithFormat:@"%@%@", [[o objectForKey:@"a"] stringValue], [[o objectForKey:@"b"] stringValue]]];
+    p("sd multi a asc b desc", plainJoin(sdMKeys, @" "));
+
+    NSArray *sdKeyedCmp = @[ @{@"n": @2}, @{@"n": @1} ];
+    NSArray *sdKC = [sdKeyedCmp sortedArrayUsingDescriptors:@[ [[NSSortDescriptor alloc] initWithKey:@"n" ascending:YES comparator:^NSComparisonResult(id x, id y) { return [x compare:y]; }] ]];
+    NSMutableArray *sdKCKeys = [NSMutableArray array];
+    for (id o in sdKC) [sdKCKeys addObject:[[o objectForKey:@"n"] stringValue]];
+    p("sd keyed cmp dict", plainJoin(sdKCKeys, @","));
+
+    NSMutableArray *sdMD = [NSMutableArray arrayWithArray:@[@"bb", @"aa"]];
+    [sdMD sortUsingDescriptors:@[ [NSSortDescriptor sortDescriptorWithKey:nil ascending:NO] ]];
+    p("sd sort desc rev", plainJoin(sdMD, @","));
+
+    NSSortDescriptor *sdE1 = [[NSSortDescriptor alloc] initWithKey:@"name" ascending:YES];
+    NSSortDescriptor *sdE2 = [[NSSortDescriptor alloc] initWithKey:@"name" ascending:YES];
+    NSSortDescriptor *sdE3 = [[NSSortDescriptor alloc] initWithKey:@"name" ascending:NO];
+    NSSortDescriptor *sdE4 = [[NSSortDescriptor alloc] initWithKey:@"n" ascending:YES];
+    NSSortDescriptor *sdE5 = [[NSSortDescriptor alloc] initWithKey:@"name" ascending:YES selector:@selector(caseInsensitiveCompare:)];
+    NSSortDescriptor *sdE6 = [[NSSortDescriptor alloc] initWithKey:@"name" ascending:YES selector:@selector(caseInsensitiveCompare:)];
+    NSSortDescriptor *sdE7 = [[NSSortDescriptor alloc] initWithKey:@"name" ascending:YES selector:@selector(compare:)];
+    p("sd eq same", [NSString stringWithFormat:@"%d", [sdE1 isEqual:sdE2]]);
+    p("sd eq asc diff", [NSString stringWithFormat:@"%d", [sdE1 isEqual:sdE3]]);
+    p("sd eq key diff", [NSString stringWithFormat:@"%d", [sdE1 isEqual:sdE4]]);
+    p("sd eq sel same", [NSString stringWithFormat:@"%d", [sdE5 isEqual:sdE6]]);
+    p("sd eq sel diff", [NSString stringWithFormat:@"%d", [sdE5 isEqual:sdE7]]);
+    NSSortDescriptor *sdE8 = [[NSSortDescriptor alloc] initWithKey:@"name" ascending:YES comparator:^NSComparisonResult(id x, id y) { return [x compare:y]; }];
+    NSSortDescriptor *sdE9 = [[NSSortDescriptor alloc] initWithKey:@"name" ascending:YES comparator:^NSComparisonResult(id x, id y) { return [x compare:y]; }];
+    p("sd eq cmp cmp", [NSString stringWithFormat:@"%d", [sdE8 isEqual:sdE9]]);
+    p("sd eq cmp key", [NSString stringWithFormat:@"%d", [sdE8 isEqual:sdE1]]);
+    p("sd eq dflt explicit", [NSString stringWithFormat:@"%d", [sdE1 isEqual:sdE5]]);
+    p("sd eq explicit dflt", [NSString stringWithFormat:@"%d", [sdE5 isEqual:sdE1]]);
+
+    NSSortDescriptor *sdR = [sdE5 reversedSortDescriptor];
+    p("sd rev key asc", [NSString stringWithFormat:@"key=%@ asc=%d", sdR.key, sdR.ascending]);
+    p("sd rev sel cic", [NSString stringWithFormat:@"%d", sdR.selector == @selector(caseInsensitiveCompare:)]);
+    p("sd rev eq orig", [NSString stringWithFormat:@"%d", [sdR isEqual:sdE5]]);
+    NSSortDescriptor *sdRR = [sdR reversedSortDescriptor];
+    p("sd revrev", [NSString stringWithFormat:@"asc=%d eq=%d", sdRR.ascending, [sdRR isEqual:sdE5]]);
+
+    p("sd secure coding", [NSString stringWithFormat:@"%d", [NSSortDescriptor supportsSecureCoding]]);
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }

@@ -13,6 +13,7 @@
 #import <Foundation/NSObjCRuntime.h>
 
 @class NSEnumerator;
+@class NSSortDescriptor;
 
 @interface NSArray<__covariant ObjectType> : NSObject <NSCopying, NSMutableCopying, NSFastEnumeration>
 
@@ -30,6 +31,9 @@
 - (id)mutableCopyWithZone:(NSZone *)zone;
 - (NSEnumerator *)objectEnumerator;
 - (NSEnumerator *)reverseObjectEnumerator;
+- (NSArray<ObjectType> *)sortedArrayUsingSelector:(SEL)comparator;
+- (NSArray<ObjectType> *)sortedArrayUsingComparator:(NSComparator)cmptr;
+- (NSArray<ObjectType> *)sortedArrayUsingDescriptors:(NSArray<NSSortDescriptor *> *)sortDescriptors;
 
 @end
 
@@ -41,6 +45,9 @@
 - (void)addObjectsFromArray:(NSArray<ObjectType> *)array;
 - (void)removeObjectAtIndex:(NSUInteger)index;
 - (void)removeAllObjects;
+- (void)sortUsingSelector:(SEL)comparator;
+- (void)sortUsingComparator:(NSComparator)cmptr;
+- (void)sortUsingDescriptors:(NSArray<NSSortDescriptor *> *)sortDescriptors;
 
 @end
 
