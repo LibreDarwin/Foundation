@@ -429,6 +429,41 @@ int main(void) {
     scOK = [scCp2 scanInt:&scVal];
     p("sc copy scans", [NSString stringWithFormat:@"%d ok=%d", scVal, scOK]);
 
+    /* ---------- NSError ---------- */
+    NSError *errA = [NSError errorWithDomain:@"TestDomain" code:42 userInfo:nil];
+    p("pr basic domain", errA.domain);
+    p("pr basic code", [NSString stringWithFormat:@"%ld", (long)errA.code]);
+    NSError *errNeg = [NSError errorWithDomain:@"TestDomain" code:-1004 userInfo:nil];
+    p("pr negative code", [NSString stringWithFormat:@"%ld", (long)errNeg.code]);
+    NSDictionary *richInfo = @{NSLocalizedDescriptionKey: @"Boom happened",
+                               NSLocalizedFailureReasonErrorKey: @"the widget broke",
+                               NSLocalizedRecoverySuggestionErrorKey: @"replace the widget",
+                               @"ExtraKey": @"kept value"};
+    NSError *errRich = [NSError errorWithDomain:@"TestDomain" code:17 userInfo:richInfo];
+    p("pr localizedDescription present", errRich.localizedDescription);
+    p("pr localizedDescription fallback", errA.localizedDescription);
+    p("pr description nil-userinfo", [errA description]);
+    p("pr userInfo count", [NSString stringWithFormat:@"%lu", (unsigned long)[errRich.userInfo count]]);
+    p("pr userInfo extra key", [errRich.userInfo objectForKey:@"ExtraKey"]);
+    p("pr failureReason lookup", errRich.localizedFailureReason);
+    p("pr recoverySuggestion lookup", errRich.localizedRecoverySuggestion);
+    NSError *errInit = [[NSError alloc] initWithDomain:@"TestDomain" code:42 userInfo:nil];
+    p("pr init matches basic", [NSString stringWithFormat:@"%d", [errInit isEqual:errA]]);
+    p("pr copy identity", [NSString stringWithFormat:@"%d", [errA copy] == errA]);
+    p("pr isEqual same", [NSString stringWithFormat:@"%d", [errA isEqual:errA]]);
+    NSError *errB = [NSError errorWithDomain:@"TestDomain" code:42 userInfo:nil];
+    p("pr isEqual congruent", [NSString stringWithFormat:@"%d", [errA isEqual:errB]]);
+    NSError *errC = [NSError errorWithDomain:@"TestDomain" code:43 userInfo:nil];
+    p("pr isEqual diff-code", [NSString stringWithFormat:@"%d", [errA isEqual:errC]]);
+    NSError *errD = [NSError errorWithDomain:@"OtherDomain" code:42 userInfo:nil];
+    p("pr isEqual diff-domain", [NSString stringWithFormat:@"%d", [errA isEqual:errD]]);
+    p("pr hash congruent", [NSString stringWithFormat:@"%d", [errA hash] == [errB hash]]);
+    NSMutableDictionary *mutInfo = [NSMutableDictionary dictionaryWithCapacity:1];
+    [mutInfo setObject:@"mutable" forKey:@"K"];
+    NSError *errSnap = [NSError errorWithDomain:@"TestDomain" code:1 userInfo:mutInfo];
+    [mutInfo setObject:@"changed" forKey:@"K"];
+    p("pr userInfo snapshot", [errSnap.userInfo objectForKey:@"K"]);
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }

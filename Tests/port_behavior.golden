@@ -169,4 +169,22 @@ sc reset atEnd                             | 0
 sc empty isAtEnd                           | 1
 sc copy location                           | 5
 sc copy scans                              | 123 ok=1
+pr basic domain                            | TestDomain
+pr basic code                              | 42
+pr negative code                           | -1004
+pr localizedDescription present            | Boom happened
+pr localizedDescription fallback           | The operation couldn’t be completed. (TestDomain error 42.)
+pr description nil-userinfo                | Error Domain=TestDomain Code=42 "(null)"
+pr userInfo count                          | 4
+pr userInfo extra key                      | kept value
+pr failureReason lookup                    | the widget broke
+pr recoverySuggestion lookup               | replace the widget
+pr init matches basic                      | 1
+pr copy identity                           | 0
+pr isEqual same                            | 1
+pr isEqual congruent                       | 1
+pr isEqual diff-code                       | 0
+pr isEqual diff-domain                     | 0
+pr hash congruent                          | 1
+pr userInfo snapshot                       | mutable
 PORT_BEHAVIOR_END

@@ -115,7 +115,7 @@ NSErrorUserInfoKey const NSUnderlyingErrorKey = @"NSUnderlyingError";
 }
 
 - (id)copyWithZone:(NSZone *)zone {
-    return self;
+    return [[[self class] allocWithZone:zone] initWithDomain:_domain code:_code userInfo:_userInfo];
 }
 
 - (void)encodeWithCoder:(NSCoder *)coder {
