@@ -119,6 +119,12 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
     return NSDICT_ID(NSNSDictionaryCreate(objects, keys, count));
 }
 
+- (instancetype)init {
+    return NSDICT_ID(CFDictionaryCreate(kCFAllocatorDefault, NULL, NULL, 0,
+                                        &kCFTypeDictionaryKeyCallBacks,
+                                        &kCFTypeDictionaryValueCallBacks));
+}
+
 - (void)enumerateKeysAndObjectsUsingBlock:(void (^)(id, id, BOOL *))block {
     CFIndex n = CFDictionaryGetCount(NSDICT_CF(CFDictionaryRef, self));
     if (n <= 0 || block == NULL) {
@@ -267,6 +273,12 @@ static const void *NSDICT_FastEnumerationKeysKey = &NSDICT_FastEnumerationKeysKe
 
 + (instancetype)dictionary {
     return [self dictionaryWithCapacity:0];
+}
+
+- (instancetype)init {
+    return NSDICT_ID(CFDictionaryCreateMutable(kCFAllocatorDefault, 0,
+                                               &kCFTypeDictionaryKeyCallBacks,
+                                               &kCFTypeDictionaryValueCallBacks));
 }
 
 - (void)setObject:(id)object forKey:(id)key {

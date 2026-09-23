@@ -659,4 +659,34 @@ cn fromArr sorted                          | x,y
 cn enumerator                              | 2
 cn fromSet sorted                          | m,x,y
 cn fromSet count                           | 3
+dd alloc init                              | 0
+dd count                                   | 3
+dd isEqual content                         | 0
+dd isEqual diff                            | 1
+dd hash equal                              | 1
+dd copy identity                           | 1
+dd mutableCopy identity                    | 1
+dd mutableCopy eq                          | 1
+dd allKeys sorted                          | a,b,c
+dd objectForKeyedSubscript                 | 2
+dd missing                                 | nil
+dd objectForKey nil                        | nil
+dd enumerate sorted                        | a=2,b=1,c=3
+dd isEqual nil                             | 0
+dd fromFile count                          | 2
+dd fromFile name                           | probe
+dd fromFile num                            | 7
+dd fromURL count                           | 2
+dd fromURL num                             | 7
+dd fromURL err nil                         | 1
+dd fromFile bad path                       | nil
+md2 cap count                              | 0
+md2 alloc init                             | 0
+md2 set1 count                             | 1
+md2 replace                                | 2|v2b
+md2 subscript set                          | v3
+md2 remove count                           | 2
+md2 remove missing                         | 2
+md2 set nil key                            | NSInvalidArgumentException
+md2 set nil val                            | NSInvalidArgumentException
 PORT_BEHAVIOR_END

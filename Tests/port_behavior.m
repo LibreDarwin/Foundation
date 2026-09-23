@@ -1398,6 +1398,91 @@ int main(void) {
     p("cn fromSet sorted", sortedObjects(cnSet));
     p("cn fromSet count", [cnSet count] == 3 ? @"3" : @"?");
 
+    /* ---------- NSDictionary contract bundle (CFDictionary bridge + plist) ---------- */
+    NSDictionary *dd0 = [NSDictionary dictionaryWithObjects:(id[]){@"2", @"1", @"3"}
+                                                    forKeys:(id[]){@"a", @"b", @"c"} count:3];
+    p("dd alloc init", [[[NSDictionary alloc] init] count] == 0 ? @"0" : @"?");
+    p("dd count", [NSString stringWithFormat:@"%lu", (unsigned long)[dd0 count]]);
+    p("dd isEqual content", [dd0 isEqualToDictionary:[NSDictionary dictionaryWithObjects:(id[]){@"2", @"9", @"3"}
+                                                                                 forKeys:(id[]){@"a", @"b", @"c"} count:3]] ? @"1" : @"0");
+    p("dd isEqual diff", [dd0 isEqualToDictionary:[NSDictionary dictionaryWithObjects:(id[]){@"2", @"9", @"3"}
+                                                                             forKeys:(id[]){@"a", @"b", @"c"} count:3]] ? @"0" : @"1");
+    p("dd hash equal", [dd0 hash] == [[NSDictionary dictionaryWithObjects:(id[]){@"2", @"1", @"3"}
+                                                                  forKeys:(id[]){@"a", @"b", @"c"} count:3] hash] ? @"1" : @"0");
+    p("dd copy identity", [dd0 copy] == dd0 ? @"1" : @"0");
+    p("dd mutableCopy identity", [dd0 mutableCopy] == dd0 ? @"0" : @"1");
+    p("dd mutableCopy eq", [[dd0 mutableCopy] isEqualToDictionary:dd0] ? @"1" : @"0");
+    p("dd allKeys sorted", sortedKeys(dd0));
+    p("dd objectForKeyedSubscript", dd0[@"a"]);
+    p("dd missing", [dd0 objectForKey:@"z"] == nil ? @"nil" : @"?");
+    p("dd objectForKey nil", [dd0 objectForKey:nil] == nil ? @"nil" : @"?");
+    NSMutableArray *ddPairs = [NSMutableArray array];
+    [dd0 enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        [ddPairs addObject:[NSString stringWithFormat:@"%@=%@", key, obj]];
+    }];
+    p("dd enumerate sorted", sortedJoin(ddPairs));
+    p("dd isEqual nil", [dd0 isEqualToDictionary:nil] ? @"1" : @"0");
+
+    const char *tmpd = getenv("TMPDIR");
+    NSString *plistPath = [NSString stringWithFormat:@"%s/port_behavior_ddict.plist",
+                           tmpd ? tmpd : "/tmp"];
+    FILE *pf = fopen(plistPath.UTF8String, "wb");
+    fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+          "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" "
+          "\"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
+          "<plist version=\"1.0\">\n<dict>\n"
+          "<key>name</key><string>probe</string>\n"
+          "<key>num</key><integer>7</integer>\n"
+          "</dict>\n</plist>\n", pf);
+    fclose(pf);
+    NSDictionary *dFile = [NSDictionary dictionaryWithContentsOfFile:plistPath];
+    if (dFile != nil) {
+        p("dd fromFile count", [NSString stringWithFormat:@"%lu", (unsigned long)[dFile count]]);
+        p("dd fromFile name", dFile[@"name"]);
+        p("dd fromFile num", [NSString stringWithFormat:@"%@", dFile[@"num"]]);
+    } else {
+        p("dd fromFile count", @"nil");
+        p("dd fromFile name", @"nil");
+        p("dd fromFile num", @"nil");
+    }
+    NSURL *plistURL = [NSURL fileURLWithPath:plistPath];
+    NSError *plistErr = nil;
+    NSDictionary *dURL = [NSDictionary dictionaryWithContentsOfURL:plistURL error:&plistErr];
+    if (dURL != nil) {
+        p("dd fromURL count", [NSString stringWithFormat:@"%lu", (unsigned long)[dURL count]]);
+        p("dd fromURL num", [NSString stringWithFormat:@"%@", dURL[@"num"]]);
+        p("dd fromURL err nil", plistErr == nil ? @"1" : @"0");
+    } else {
+        p("dd fromURL count", @"nil");
+        p("dd fromURL err nil", plistErr == nil ? @"1" : @"0");
+    }
+    p("dd fromFile bad path", [NSDictionary dictionaryWithContentsOfFile:@"/nonexistent/pb.plist"] == nil ? @"nil" : @"?");
+
+    NSMutableDictionary *mdd = [NSMutableDictionary dictionaryWithCapacity:4];
+    p("md2 cap count", [mdd count] == 0 ? @"0" : @"?");
+    p("md2 alloc init", [[[NSMutableDictionary alloc] init] count] == 0 ? @"0" : @"?");
+    [mdd setObject:@"v1" forKey:@"k1"];
+    p("md2 set1 count", [mdd count] == 1 ? @"1" : @"?");
+    [mdd setObject:@"v2" forKey:@"k2"];
+    [mdd setObject:@"v2b" forKey:@"k2"];
+    p("md2 replace", [NSString stringWithFormat:@"%lu|%@", (unsigned long)[mdd count], mdd[@"k2"]]);
+    mdd[@"k3"] = @"v3";
+    p("md2 subscript set", mdd[@"k3"]);
+    [mdd removeObjectForKey:@"k1"];
+    p("md2 remove count", [NSString stringWithFormat:@"%lu", (unsigned long)[mdd count]]);
+    [mdd removeObjectForKey:@"nope"];
+    p("md2 remove missing", [mdd count] == 2 ? @"2" : @"?");
+    @try {
+        [mdd setObject:@"x" forKey:nil];
+    } @catch (id e) {
+        p("md2 set nil key", [NSString stringWithFormat:@"%@", [e name]]);
+    }
+    @try {
+        [mdd setObject:nil forKey:@"kk"];
+    } @catch (id e) {
+        p("md2 set nil val", [NSString stringWithFormat:@"%@", [e name]]);
+    }
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }
