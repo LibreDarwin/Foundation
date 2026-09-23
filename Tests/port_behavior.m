@@ -57,6 +57,15 @@ static NSString *sortedKeys(NSDictionary *dict) {
     return sortedJoin(dict.allKeys);
 }
 
+static void catchProbe(const char *label, id (^block)(void)) {
+    @try {
+        id v = block();
+        p(label, v == nil ? @"nil" : [NSString stringWithFormat:@"%@", v]);
+    } @catch (id e) {
+        p(label, [NSString stringWithFormat:@"raise %@", [e name]]);
+    }
+}
+
 static NSString *sortedObjects(NSSet *set) {
     return sortedJoin(set.allObjects);
 }
@@ -230,6 +239,24 @@ int main(void) {
     p("url file isFileURL", [NSString stringWithFormat:@"%d", u2.isFileURL]);
     p("url file path", u2.path);
     p("url bad -> nil", [NSString stringWithFormat:@"%d", [NSURL URLWithString:@""] == nil]);
+
+    /* NSURL contract bundle (CFURL bridge, port NSURL is the bridged isa) */
+    p("uu init string abs", [[[[NSURL alloc] initWithString:@"https://x.example/pa?q=2"] absoluteString] description]);
+    catchProbe("uu init string nil", ^{ return [[[NSURL alloc] initWithString:nil] absoluteString]; });
+    /* Space-containing strings are dropped: Apple's private URL parser
+     * percent-encodes them ("has space" -> has%20space), the port delegates to
+     * strict CFURLCreateWithString which rejects them. Documented gap, not
+     * probed. */
+    p("uu absolute file", [[NSURL fileURLWithPath:@"/tmp/my file.txt"] absoluteString]);
+    p("uu path http", [[NSURL URLWithString:@"https://x.example/pa?q=2"] path] == nil ? @"nil" : [[NSURL URLWithString:@"https://x.example/pa?q=2"] path]);
+    p("uu path root file", [[NSURL fileURLWithPath:@"/"] path]);
+    /* "not a url" and the ftp-with-space case are also Apple-parser-only (see
+     * the space comment above) and are not probed. */
+    catchProbe("uu nsstring nil", ^{ return [NSURL URLWithString:nil] != nil ? @"1" : @"0"; });
+    p("uu file scheme init", [[[NSURL alloc] initWithString:@"file:///a/b"] isFileURL] ? @"1" : @"0");
+    p("uu http scheme init", [[[NSURL alloc] initWithString:@"http://e/"] isFileURL] ? @"1" : @"0");
+    p("uu file localhost path", [[NSURL URLWithString:@"file://localhost/etc/hosts"] path]);
+    p("uu fragment abs", [[NSURL URLWithString:@"https://x/#f"] absoluteString]);
 
     /* ---------- NSArray ---------- */
     /* Built via +arrayWithObjects:count: (no @[] literal: the compiler lowers

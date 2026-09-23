@@ -64,6 +64,16 @@ url isFileURL                              | 0
 url file isFileURL                         | 1
 url file path                              | /tmp/my file.txt
 url bad -> nil                             | 0
+uu init string abs                         | https://x.example/pa?q=2
+uu init string nil                         | raise NSInvalidArgumentException
+uu absolute file                           | file:///tmp/my%20file.txt
+uu path http                               | /pa
+uu path root file                          | /
+uu nsstring nil                            | 0
+uu file scheme init                        | 1
+uu http scheme init                        | 0
+uu file localhost path                     | /etc/hosts
+uu fragment abs                            | https://x/#f
 array count                                | 3
 array idx0                                 | z
 array idx2                                 | m

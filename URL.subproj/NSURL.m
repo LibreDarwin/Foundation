@@ -7,6 +7,7 @@
  */
 
 #import <Foundation/NSURL.h>
+#import <Foundation/NSException.h>
 #include <CoreFoundation/CFURL.h>
 #include <CoreFoundation/ForFoundationOnly.h>
 #include <objc/runtime.h>
@@ -14,6 +15,9 @@
 @implementation NSURL
 
 + (nullable instancetype)URLWithString:(NSString *)string {
+    if (string == nil) {
+        return nil;
+    }
     return [[self alloc] initWithString:string];
 }
 
@@ -24,6 +28,11 @@
 }
 
 - (nullable instancetype)initWithString:(NSString *)string {
+    if (string == nil) {
+        @throw [NSException exceptionWithName:NSInvalidArgumentException
+                                       reason:@"nil string parameter"
+                                     userInfo:nil];
+    }
     return CFBridgingRelease(CFURLCreateWithString(kCFAllocatorDefault,
                                                    (CFStringRef)string, NULL));
 }
