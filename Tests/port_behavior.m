@@ -1756,6 +1756,57 @@ int main(void) {
     p("td earlier equal", ([d1 earlierDate:d1] == d1) ? @"1" : @"0");
     p("td later equal", ([d1 laterDate:d1] == d1) ? @"1" : @"0");
 
+    NSTimeZone *tzNY = [NSTimeZone timeZoneWithName:@"America/New_York"];
+    NSTimeZone *tzParis = [NSTimeZone timeZoneWithName:@"Europe/Paris"];
+    NSTimeZone *tzTokyo = [NSTimeZone timeZoneWithName:@"Asia/Tokyo"];
+    NSTimeZone *tzKolkata = [NSTimeZone timeZoneWithName:@"Asia/Kolkata"];
+    p("tz NY gmt winter", [NSString stringWithFormat:@"%ld", (long)[tzNY secondsFromGMTForDate:d1]]);
+    p("tz Paris gmt winter", [NSString stringWithFormat:@"%ld", (long)[tzParis secondsFromGMTForDate:d1]]);
+    p("tz Tokyo gmt", [NSString stringWithFormat:@"%ld", (long)[tzTokyo secondsFromGMTForDate:d1]]);
+    p("tz Kolkata gmt", [NSString stringWithFormat:@"%ld", (long)[tzKolkata secondsFromGMTForDate:d1]]);
+    p("tz Tokyo now gmt", [NSString stringWithFormat:@"%ld", (long)[tzTokyo secondsFromGMT]]);
+    p("tz NY abbr winter", [tzNY abbreviationForDate:d1]);
+    p("tz Paris abbr winter", [tzParis abbreviationForDate:d1]);
+    p("tz NY dst winter", [tzNY isDaylightSavingTimeForDate:d1] ? @"1" : @"0");
+    NSDate *dSummer = [d1 dateByAddingTimeInterval:150.0 * 86400.0];
+    p("tz NY dst summer", [tzNY isDaylightSavingTimeForDate:dSummer] ? @"1" : @"0");
+    p("tz Tokyo dst summer", [tzTokyo isDaylightSavingTimeForDate:dSummer] ? @"1" : @"0");
+    p("tz NY dstoff summer", [NSString stringWithFormat:@"%.0f", [tzNY daylightSavingTimeOffsetForDate:dSummer]]);
+    p("tz NY dstoff winter", [NSString stringWithFormat:@"%.0f", [tzNY daylightSavingTimeOffsetForDate:d1]]);
+    p("tz NY next dst", [NSString stringWithFormat:@"%.0f", [[tzNY nextDaylightSavingTimeTransitionAfterDate:d1] timeIntervalSince1970]]);
+    p("tz NY next std", [NSString stringWithFormat:@"%.0f", [[tzNY nextDaylightSavingTimeTransitionAfterDate:dSummer] timeIntervalSince1970]]);
+    p("tz Tokyo next dst", [tzTokyo nextDaylightSavingTimeTransitionAfterDate:d1] == nil ? @"1" : @"0");
+    NSTimeZone *tzGMT530 = [NSTimeZone timeZoneForSecondsFromGMT:19800];
+    p("tz gmt530 name", tzGMT530.name);
+    p("tz gmt530 offset", [NSString stringWithFormat:@"%ld", (long)[tzGMT530 secondsFromGMTForDate:d1]]);
+    NSTimeZone *tzGMT = [NSTimeZone timeZoneForSecondsFromGMT:0];
+    p("tz gmt name", tzGMT.name);
+    p("tz gmt offset", [NSString stringWithFormat:@"%ld", (long)[tzGMT secondsFromGMTForDate:d1]]);
+    p("tz known count", [NSTimeZone knownTimeZoneNames].count > 50 ? @"1" : @"0");
+    p("tz known ny", [[NSTimeZone knownTimeZoneNames] containsObject:@"America/New_York"] ? @"1" : @"0");
+    p("tz known tokyo", [[NSTimeZone knownTimeZoneNames] containsObject:@"Asia/Tokyo"] ? @"1" : @"0");
+    p("tz abbrdict est", [NSTimeZone abbreviationDictionary][@"EST"]);
+    p("tz abbrdict pst", [NSTimeZone abbreviationDictionary][@"PST"]);
+    p("tz abbrdict utc", [NSTimeZone abbreviationDictionary][@"UTC"]);
+    p("tz abbr est", [NSTimeZone timeZoneWithAbbreviation:@"EST"].name);
+    p("tz abbr bad", [NSTimeZone timeZoneWithAbbreviation:@"QQQ"] == nil ? @"1" : @"0");
+    p("tz isEqual ny", [tzNY isEqual:[NSTimeZone timeZoneWithName:@"America/New_York"]] ? @"1" : @"0");
+    p("tz isEqual paris", [tzNY isEqual:tzParis] ? @"1" : @"0");
+    p("tz hash ny", [tzNY hash] == [[NSTimeZone timeZoneWithName:@"America/New_York"] hash] ? @"1" : @"0");
+    p("tz badname", [NSTimeZone timeZoneWithName:@"NoSuch/Zone"] == nil ? @"1" : @"0");
+    p("tz data len", tzNY.data.length > 0 ? @"1" : @"0");
+    p("tz local len", [NSTimeZone localTimeZone].name.length > 0 ? @"1" : @"0");
+    p("tz system len", [NSTimeZone systemTimeZone].name.length > 0 ? @"1" : @"0");
+    p("tz default sys", [[NSTimeZone defaultTimeZone] isEqual:[NSTimeZone systemTimeZone]] ? @"1" : @"0");
+    [NSTimeZone setDefaultTimeZone:tzNY];
+    p("tz default set", [[NSTimeZone defaultTimeZone].name isEqualToString:@"America/New_York"] ? @"1" : @"0");
+    [NSTimeZone resetSystemTimeZone];
+    p("tz default reset", [[NSTimeZone defaultTimeZone].name isEqualToString:@"America/New_York"] ? @"1" : @"0");
+    catchProbe("tz setdefault nil", ^id{
+        [NSTimeZone setDefaultTimeZone:nil];
+        return @"no raise";
+    });
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }

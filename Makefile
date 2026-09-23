@@ -175,6 +175,7 @@ Numeric.subproj/NSDecimal.m \
             Date.subproj/NSCalendar.m \
             Date.subproj/NSDateComponents.m \
             Date.subproj/NSDateFormatter.m \
+            Date.subproj/NSTimeZone.m \
             Locale.subproj/NSLocale.m \
             String.subproj/NSScanner.m \
             Runtime.subproj/NSError.m \

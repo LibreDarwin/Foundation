@@ -822,4 +822,42 @@ td distantPast eq                          | 1
 td desc locale                             | 2009-02-13 23:31:30 +0000
 td earlier equal                           | 1
 td later equal                             | 1
+tz NY gmt winter                           | -18000
+tz Paris gmt winter                        | 3600
+tz Tokyo gmt                               | 32400
+tz Kolkata gmt                             | 19800
+tz Tokyo now gmt                           | 32400
+tz NY abbr winter                          | EST
+tz Paris abbr winter                       | GMT+1
+tz NY dst winter                           | 0
+tz NY dst summer                           | 1
+tz Tokyo dst summer                        | 0
+tz NY dstoff summer                        | 3600
+tz NY dstoff winter                        | 0
+tz NY next dst                             | 1236495600
+tz NY next std                             | 1257055200
+tz Tokyo next dst                          | 1
+tz gmt530 name                             | GMT+0530
+tz gmt530 offset                           | 19800
+tz gmt name                                | GMT
+tz gmt offset                              | 0
+tz known count                             | 1
+tz known ny                                | 1
+tz known tokyo                             | 1
+tz abbrdict est                            | America/New_York
+tz abbrdict pst                            | America/Los_Angeles
+tz abbrdict utc                            | UTC
+tz abbr est                                | America/New_York
+tz abbr bad                                | 1
+tz isEqual ny                              | 1
+tz isEqual paris                           | 0
+tz hash ny                                 | 1
+tz badname                                 | 1
+tz data len                                | 1
+tz local len                               | 1
+tz system len                              | 1
+tz default sys                             | 1
+tz default set                             | 1
+tz default reset                           | 1
+tz setdefault nil                          | no raise
 PORT_BEHAVIOR_END
