@@ -140,4 +140,11 @@ locale en_US isEqual de_DE                 | 0
 locale equal hash                          | 17464408573887=17464408573887
 locale copy roundtrip                      | en_US
 locale init alloc de_DE                    | de_DE
+df default dateStyle                       | 0
+df default timeStyle                       | 0
+df dateFormat getter                       | yyyy-MM-dd HH:mm:ss
+df stringFromDate ymd                      | 2009-02-13 23:31:30
+df parse roundtrip                         | 1234567890
+df parse invalid nil                       | 1
+df fractional SSS                          | 2009-02-13 23:31:30.000
 PORT_BEHAVIOR_END

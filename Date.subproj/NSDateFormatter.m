@@ -17,6 +17,12 @@
 #define NSFORMATTER_CF(type, value) ((type)(value))
 #endif
 
+/* NSLocale owns its CFLocale rather than being toll-free with it; extract the
+ * backing locale for CFDateFormatterCreate instead of casting the wrapper. */
+@interface NSLocale ()
+- (CFLocaleRef)_backingLocale;
+@end
+
 @implementation NSDateFormatter
 
 + (instancetype)dateFormatter {
@@ -30,7 +36,11 @@
 - (instancetype)initWithDateFormat:(NSString *)format locale:(NSLocale *)locale {
     self = [super init];
     if (self != nil) {
-        CFLocaleRef cfLocale = NSFORMATTER_CF(CFLocaleRef, locale);
+        CFLocaleRef cfLocale = NULL;
+        if (locale != nil) {
+            if ([locale isKindOfClass:[NSLocale class]]) cfLocale = [locale _backingLocale];
+            else cfLocale = NSFORMATTER_CF(CFLocaleRef, locale);
+        }
         _formatter = CFDateFormatterCreate(kCFAllocatorDefault, cfLocale,
                                             kCFDateFormatterNoStyle,
                                             kCFDateFormatterNoStyle);

@@ -330,6 +330,22 @@ int main(void) {
     p("locale copy roundtrip", [[lUS copy] localeIdentifier]);
     p("locale init alloc de_DE", [[[NSLocale alloc] initWithLocaleIdentifier:@"de_DE"] localeIdentifier]);
 
+    /* ---------- NSDateFormatter ---------- */
+    /* ASCII-only date formats (digits never localize) keep the output
+     * independent of the host locale; TZ=UTC is pinned at the top of main. */
+    NSDateFormatter *dfmt = [[NSDateFormatter alloc] init];
+    p("df default dateStyle", [NSString stringWithFormat:@"%lu", (unsigned long)dfmt.dateStyle]);
+    p("df default timeStyle", [NSString stringWithFormat:@"%lu", (unsigned long)dfmt.timeStyle]);
+    [dfmt setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    p("df dateFormat getter", dfmt.dateFormat);
+    NSDate *fmtBase = [NSDate dateWithTimeIntervalSince1970:1234567890.0];
+    p("df stringFromDate ymd", [dfmt stringFromDate:fmtBase]);
+    p("df parse roundtrip", [NSString stringWithFormat:@"%.0f", [dfmt dateFromString:@"2009-02-13 23:31:30"].timeIntervalSince1970]);
+    p("df parse invalid nil", [NSString stringWithFormat:@"%d", [dfmt dateFromString:@"garbage"] == nil]);
+    NSDateFormatter *dfmtMillis = [[NSDateFormatter alloc] init];
+    [dfmtMillis setDateFormat:@"yyyy-MM-dd HH:mm:ss.SSS"];
+    p("df fractional SSS", [dfmtMillis stringFromDate:fmtBase]);
+
     printf("PORT_BEHAVIOR_END\n");
     return 0;
 }
