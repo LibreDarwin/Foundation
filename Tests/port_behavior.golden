@@ -448,4 +448,37 @@ ne user class                              | __NSFrozenDictionaryM
 ne emptyuser desc                          | Error Domain=empty.example Code=3 "(null)"
 ne nilseq userInfo                         | non-nil
 ne nilseq desc                             | The operation couldn’t be completed. (nilseq.example error 4.)
+ex cname generic                           | NSGenericException
+ex cname range                             | NSRangeException
+ex cname invalarg                          | NSInvalidArgumentException
+ex cname internal                          | NSInternalInconsistencyException
+ex cname malloc                            | NSMallocException
+ex cname notavail                          | NSObjectNotAvailableException
+ex cname destinv                           | NSDestinationInvalidException
+ex cname invarch                           | NSInvalidArchiveOperationException
+ex cname invunarch                         | NSInvalidUnarchiveOperationException
+ex name                                    | NSRangeException
+ex reason                                  | index 5 beyond bounds
+ex userinfo val                            | val
+ex userinfo same                           | 1
+ex desc                                    | index 5 beyond bounds
+ex nil userinfo                            | nil
+ex nil desc                                | nil thing
+ex raise name                              | NSInvalidArgumentException
+ex raise reason                            | bad arg 42 and foo
+ex raise desc                              | bad arg 42 and foo
+ex raise uinfo                             | nil
+ex raise stack addrs                       | 1
+ex raise stack syms                        | 1
+ex callstack addrs                         | 0
+ex callstack syms                          | 0
+ex handler set/get                         | 1
+ex handler reset/get                       | 1
+ex isEqual self                            | 1
+ex isEqual samecontent                     | 1
+ex isEqual diffUser                        | 1
+ex hash equal                              | 1
+ex copy identity                           | 0
+ex copy desc equal                         | 1
+ex userinfo snap                           | v2
 PORT_BEHAVIOR_END

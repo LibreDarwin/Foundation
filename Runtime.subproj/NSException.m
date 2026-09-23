@@ -70,12 +70,14 @@ void NSSetUncaughtExceptionHandler(NSUncaughtExceptionHandler *handler) {
         _name = name;
         _reason = reason;
         _userInfo = userInfo;
-        _returnAddressCount = backtrace(_returnAddresses, 128);
     }
     return self;
 }
 
 - (void)raise {
+    if (_returnAddressCount == 0) {
+        _returnAddressCount = backtrace(_returnAddresses, 128);
+    }
     if (_uncaughtHandler != NULL) {
         _uncaughtHandler(self);
     }
@@ -119,10 +121,28 @@ void NSSetUncaughtExceptionHandler(NSUncaughtExceptionHandler *handler) {
 }
 
 - (NSString *)description {
-    return (NSString *)CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
-                                                CFSTR("%@: %@"),
-                                                (CFStringRef)_name,
-                                                (CFStringRef)_reason);
+    return _reason;
+}
+
+- (BOOL)isEqual:(id)object {
+    if (object == self) {
+        return YES;
+    }
+    if (![object isKindOfClass:[NSException class]]) {
+        return NO;
+    }
+    NSException *ex = (NSException *)object;
+    return (_name == [ex name] || [_name isEqual:[ex name]])
+        && (_reason == [ex reason] || [_reason isEqual:[ex reason]]);
+}
+
+- (NSUInteger)hash {
+    return [_name hash] ^ [_reason hash];
+}
+
+- (id)copyWithZone:(NSZone *)zone {
+    (void)zone;
+    return self;
 }
 
 @end

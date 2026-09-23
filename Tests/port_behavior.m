@@ -13,6 +13,8 @@ static void p(const char *label, NSString *value) {
     printf("%-42s | %s\n", label, value ? value.UTF8String : "(null)");
 }
 
+static void exHandler(NSException *e) { (void)e; }
+
 static NSString *nnInfo(NSNumber *n) {
     return [NSString stringWithFormat:@"%s %@", [n objCType], [n stringValue]];
 }
@@ -968,6 +970,71 @@ int main(void) {
     NSError *neNilSeq = [NSError errorWithDomain:@"nilseq.example" code:4 userInfo:nil];
     p("ne nilseq userInfo", [neNilSeq userInfo] != nil ? @"non-nil" : @"nil");
     p("ne nilseq desc", [neNilSeq localizedDescription]);
+
+    /* ---- NSException ---- */
+    p("ex cname generic", NSGenericException);
+    p("ex cname range", NSRangeException);
+    p("ex cname invalarg", NSInvalidArgumentException);
+    p("ex cname internal", NSInternalInconsistencyException);
+    p("ex cname malloc", NSMallocException);
+    p("ex cname notavail", NSObjectNotAvailableException);
+    p("ex cname destinv", NSDestinationInvalidException);
+    p("ex cname invarch", NSInvalidArchiveOperationException);
+    p("ex cname invunarch", NSInvalidUnarchiveOperationException);
+
+    NSDictionary *exUI = @{@"key" : @"val"};
+    NSException *exE = [NSException exceptionWithName:NSRangeException
+                                               reason:@"index 5 beyond bounds"
+                                             userInfo:exUI];
+    p("ex name", [exE name]);
+    p("ex reason", [exE reason]);
+    p("ex userinfo val", [exE.userInfo objectForKey:@"key"]);
+    p("ex userinfo same", [exE userInfo] == exUI ? @"1" : @"0");
+    p("ex desc", [exE description]);
+
+    NSException *exNil = [NSException exceptionWithName:NSInternalInconsistencyException
+                                                 reason:@"nil thing"
+                                               userInfo:nil];
+    p("ex nil userinfo", [exNil userInfo] != nil ? @"non-nil" : @"nil");
+    p("ex nil desc", [exNil description]);
+
+    @try {
+        [NSException raise:NSInvalidArgumentException format:@"bad arg %d and %@", 42, @"foo"];
+    } @catch (NSException *e) {
+        p("ex raise name", [NSString stringWithFormat:@"%@", [e name]]);
+        p("ex raise reason", [e reason]);
+        p("ex raise desc", [e description]);
+        p("ex raise uinfo", [e userInfo] != nil ? @"non-nil" : @"nil");
+        p("ex raise stack addrs", [[e callStackReturnAddresses] count] > 0 ? @"1" : @"0");
+        p("ex raise stack syms", [[e callStackSymbols] count] > 0 ? @"1" : @"0");
+    }
+
+    p("ex callstack addrs", [[exE callStackReturnAddresses] count] > 0 ? @"1" : @"0");
+    p("ex callstack syms", [[exE callStackSymbols] count] > 0 ? @"1" : @"0");
+
+    NSSetUncaughtExceptionHandler(exHandler);
+    p("ex handler set/get", NSGetUncaughtExceptionHandler() == exHandler ? @"1" : @"0");
+    NSSetUncaughtExceptionHandler(NULL);
+    p("ex handler reset/get", NSGetUncaughtExceptionHandler() == NULL ? @"1" : @"0");
+
+    p("ex isEqual self", [exE isEqual:exE] ? @"1" : @"0");
+    p("ex isEqual samecontent", [exE isEqual:[NSException exceptionWithName:NSRangeException
+                                                                    reason:@"index 5 beyond bounds"
+                                                                  userInfo:exUI]] ? @"1" : @"0");
+    p("ex isEqual diffUser", [exE isEqual:[NSException exceptionWithName:NSRangeException
+                                                                 reason:@"index 5 beyond bounds"
+                                                               userInfo:@{@"other" : @2}]] ? @"1" : @"0");
+    p("ex hash equal", [exE hash] == [[NSException exceptionWithName:NSRangeException
+                                                              reason:@"index 5 beyond bounds"
+                                                            userInfo:exUI] hash] ? @"1" : @"0");
+    p("ex copy identity", [exE copy] != exE ? @"1" : @"0");
+    p("ex copy desc equal", [[[exE copy] description] isEqualToString:[exE description]] ? @"1" : @"0");
+
+    NSMutableDictionary *exMut = [NSMutableDictionary dictionary];
+    [exMut setObject:@"v1" forKey:@"k"];
+    NSException *exSnap = [NSException exceptionWithName:NSGenericException reason:@"r" userInfo:exMut];
+    [exMut setObject:@"v2" forKey:@"k"];
+    p("ex userinfo snap", [exSnap.userInfo objectForKey:@"k"]);
 
     printf("PORT_BEHAVIOR_END\n");
     return 0;
