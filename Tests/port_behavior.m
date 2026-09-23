@@ -2,6 +2,7 @@
 #import <CoreFoundation/CFBase.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #pragma clang diagnostic ignored "-Wobjc-literal-conversion"
 
@@ -44,6 +45,28 @@ static NSString *plainJoin(NSArray *arr, NSString *sep) {
         [out appendString:[arr objectAtIndex:i]];
     }
     return out;
+}
+
+static NSDecimal dmv(int limb, int exponent, int negative) {
+    NSDecimal d;
+    memset(&d, 0, sizeof d);
+    if (limb != 0) {
+        d._mantissa[0] = (unsigned short)(limb & 0xffff);
+        d._length = 1;
+    }
+    d._exponent = (signed char)exponent;
+    d._isNegative = (unsigned int)(negative ? 1 : 0);
+    d._isCompact = 1;
+    return d;
+}
+
+static NSString *dmfmt(NSDecimal *d, NSCalculationError err) {
+    return [NSString stringWithFormat:@"%@ err=%ld", NSDecimalString(d, nil), (long)err];
+}
+
+static NSString *dmround(NSDecimal *r, NSDecimal *v, NSInteger scale, NSRoundingMode mode) {
+    NSDecimalRound(r, v, scale, mode);
+    return NSDecimalString(r, nil);
 }
 
 static NSString *calFmt(NSCalendar *cal, NSDate *d) {
@@ -605,6 +628,121 @@ int main(void) {
     NSMapInsert(nsIntT, (const void *)7, (const void *)8);
     p("ns integer key get", [NSString stringWithFormat:@"%d", NSMapGet(nsIntT, (const void *)7) == (const void *)8]);
     NSFreeMapTable(nsIntT);
+
+    /* ---------- NSDecimal ---------- */
+    NSDecimal dm0 = dmv(0, 0, 0);
+    NSDecimal dmOne = dmv(1, 0, 0);
+    NSDecimal dmTwo = dmv(2, 0, 0);
+    NSDecimal dmFive = dmv(5, 0, 0);
+    NSDecimal dmFifteen = dmv(15, 0, 0);
+    NSDecimal dmPoint5 = dmv(5, -1, 0);
+    NSDecimal dmNegPoint5 = dmv(5, -1, 1);
+    NSDecimal dm1375 = dmv(1375, -3, 0);
+    NSDecimal dmNeg1375 = dmv(1375, -3, 1);
+    NSDecimal dm12345 = dmv(12345, 0, 0);
+    NSDecimal dm12345d = dmv(12345, -2, 0);
+    NSDecimal dmHundred = dmv(100, 0, 0);
+    NSDecimal dmNan = dmv(0, 0, 1);
+    NSDecimal dmThird = dmv(3, 0, 0);
+    NSDecimal dmSeventh = dmv(7, 0, 0);
+    NSDecimal dmBigExp = dmv(1, 100, 0);
+    NSDecimal dmNegExp = dmv(5, -100, 0);
+    NSDecimal dmTiny = dmv(1, -6, 0);
+
+    p("dm str zero", NSDecimalString(&dm0, nil));
+    p("dm str one", NSDecimalString(&dmOne, nil));
+    p("dm str 100", NSDecimalString(&dmHundred, nil));
+    p("dm str 12345", NSDecimalString(&dm12345, nil));
+    p("dm str 0.5", NSDecimalString(&dmPoint5, nil));
+    p("dm str -0.5", NSDecimalString(&dmNegPoint5, nil));
+    p("dm str 1.375", NSDecimalString(&dm1375, nil));
+    p("dm str 123.45", NSDecimalString(&dm12345d, nil));
+    p("dm str nan", NSDecimalString(&dmNan, nil));
+
+    p("dm cmp 1 vs 2", [NSString stringWithFormat:@"%ld", (long)NSDecimalCompare(&dmOne, &dmTwo)]);
+    p("dm cmp 2 vs 2", [NSString stringWithFormat:@"%ld", (long)NSDecimalCompare(&dmTwo, &dmTwo)]);
+    p("dm cmp 5 vs 2", [NSString stringWithFormat:@"%ld", (long)NSDecimalCompare(&dmFive, &dmTwo)]);
+    p("dm cmp -0.5 vs 0.5", [NSString stringWithFormat:@"%ld", (long)NSDecimalCompare(&dmNegPoint5, &dmPoint5)]);
+    p("dm cmp nan vs 1", [NSString stringWithFormat:@"%ld", (long)NSDecimalCompare(&dmNan, &dmOne)]);
+    p("dm cmp 1 vs nan", [NSString stringWithFormat:@"%ld", (long)NSDecimalCompare(&dmOne, &dmNan)]);
+
+    NSDecimal dmRes = dmv(0, 0, 0);
+    p("dm add 0.5+0.5", dmfmt(&dmRes, NSDecimalAdd(&dmRes, &dmPoint5, &dmPoint5, NSRoundPlain)));
+    p("dm sub 1-0.5", dmfmt(&dmRes, NSDecimalSubtract(&dmRes, &dmOne, &dmPoint5, NSRoundPlain)));
+    p("dm sub 0.5-(-0.5)", dmfmt(&dmRes, NSDecimalSubtract(&dmRes, &dmPoint5, &dmNegPoint5, NSRoundPlain)));
+    p("dm add 1e127+1e-6", dmfmt(&dmRes, NSDecimalAdd(&dmRes, &dmBigExp, &dmTiny, NSRoundPlain)));
+    p("dm add nan", dmfmt(&dmRes, NSDecimalAdd(&dmRes, &dmNan, &dmOne, NSRoundPlain)));
+    p("dm mul 15*2", dmfmt(&dmRes, NSDecimalMultiply(&dmRes, &dmFifteen, &dmTwo, NSRoundPlain)));
+    p("dm mul 0.5*-0.5", dmfmt(&dmRes, NSDecimalMultiply(&dmRes, &dmPoint5, &dmNegPoint5, NSRoundPlain)));
+    p("dm div 7/3", dmfmt(&dmRes, NSDecimalDivide(&dmRes, &dmSeventh, &dmThird, NSRoundPlain)));
+    p("dm div 1/3 down", dmfmt(&dmRes, NSDecimalDivide(&dmRes, &dmOne, &dmThird, NSRoundDown)));
+    p("dm div 1/2", dmfmt(&dmRes, NSDecimalDivide(&dmRes, &dmOne, &dmTwo, NSRoundPlain)));
+    p("dm div 1/0", dmfmt(&dmRes, NSDecimalDivide(&dmRes, &dmOne, &dm0, NSRoundPlain)));
+    p("dm div 0/3", dmfmt(&dmRes, NSDecimalDivide(&dmRes, &dm0, &dmThird, NSRoundPlain)));
+
+    NSDecimal dmR = dmv(0, 0, 0);
+    p("dm round 1.375 plain@0", dmround(&dmR, &dm1375, 0, NSRoundPlain));
+    p("dm round 1.375 plain@2", dmround(&dmR, &dm1375, 2, NSRoundPlain));
+    p("dm round 1.375 plain@-1", dmround(&dmR, &dm1375, -1, NSRoundPlain));
+    p("dm round nan", dmround(&dmR, &dmNan, 0, NSRoundPlain));
+    NSDecimal dm15 = dmv(15, -1, 0);
+    NSDecimal dm25 = dmv(25, -1, 0);
+    NSDecimal dmNeg15 = dmv(15, -1, 1);
+    NSDecimal dmNeg25 = dmv(25, -1, 1);
+    p("dm round 1.5 plain", dmround(&dmR, &dm15, 0, NSRoundPlain));
+    p("dm round 1.5 down", dmround(&dmR, &dm15, 0, NSRoundDown));
+    p("dm round 1.5 up", dmround(&dmR, &dm15, 0, NSRoundUp));
+    p("dm round 1.5 bankers", dmround(&dmR, &dm15, 0, NSRoundBankers));
+    p("dm round 2.5 plain", dmround(&dmR, &dm25, 0, NSRoundPlain));
+    p("dm round 2.5 bankers", dmround(&dmR, &dm25, 0, NSRoundBankers));
+    p("dm round -1.5 plain", dmround(&dmR, &dmNeg15, 0, NSRoundPlain));
+    p("dm round -1.5 down", dmround(&dmR, &dmNeg15, 0, NSRoundDown));
+    p("dm round -1.5 up", dmround(&dmR, &dmNeg15, 0, NSRoundUp));
+    p("dm round -1.5 bankers", dmround(&dmR, &dmNeg15, 0, NSRoundBankers));
+    p("dm round -2.5 bankers", dmround(&dmR, &dmNeg25, 0, NSRoundBankers));
+
+    NSDecimal dmA = dmv(10, 0, 0);
+    NSDecimal dmB2 = dmv(5, -1, 0);
+    NSCalculationError dmNormErr = NSDecimalNormalize(&dmA, &dmB2, NSRoundPlain);
+    p("dm normalize 10,0.5", [NSString stringWithFormat:@"%@|%@ err=%ld",
+        NSDecimalString(&dmA, nil), NSDecimalString(&dmB2, nil), (long)dmNormErr]);
+    p("dm power 2^0", dmfmt(&dmRes, NSDecimalPower(&dmRes, &dmTwo, 0, NSRoundPlain)));
+    p("dm power 2^10", dmfmt(&dmRes, NSDecimalPower(&dmRes, &dmTwo, 10, NSRoundPlain)));
+    p("dm power 0^0", dmfmt(&dmRes, NSDecimalPower(&dmRes, &dm0, 0, NSRoundPlain)));
+    p("dm power 1.5^2", dmfmt(&dmRes, NSDecimalPower(&dmRes, &dm15, 2, NSRoundPlain)));
+    p("dm mul10 0.5*1e3", dmfmt(&dmRes, NSDecimalMultiplyByPowerOf10(&dmRes, &dmPoint5, 3, NSRoundPlain)));
+    p("dm mul10 1.375*1e-2", dmfmt(&dmRes, NSDecimalMultiplyByPowerOf10(&dmRes, &dm1375, -2, NSRoundPlain)));
+    p("dm mul10 overflow", dmfmt(&dmRes, NSDecimalMultiplyByPowerOf10(&dmRes, &dmBigExp, 30, NSRoundPlain)));
+    p("dm mul10 underflow", dmfmt(&dmRes, NSDecimalMultiplyByPowerOf10(&dmRes, &dmNegExp, -100, NSRoundPlain)));
+
+    p("dm isNaN zero", [NSString stringWithFormat:@"%d", NSDecimalIsNotANumber(&dm0)]);
+    p("dm isNaN nan", [NSString stringWithFormat:@"%d", NSDecimalIsNotANumber(&dmNan)]);
+    NSDecimal dmCopy = dmv(0, 0, 0);
+    NSDecimalCopy(&dmCopy, &dm1375);
+    p("dm copy", NSDecimalString(&dmCopy, nil));
+    NSDecimal dmWide = dmv(0, 0, 0);
+    dmWide._mantissa[0] = 7;
+    dmWide._length = 8;
+    dmWide._isCompact = 0;
+    p("dm wide len", [NSString stringWithFormat:@"%u", dmWide._length]);
+    NSDecimalCompact(&dmWide);
+    p("dm compact len", [NSString stringWithFormat:@"%u", dmWide._length]);
+    p("dm compact str", NSDecimalString(&dmWide, nil));
+    p("dm compact sign", [NSString stringWithFormat:@"%u", dmWide._isNegative]);
+
+    NSDictionary *dmLdot = [NSDictionary dictionaryWithObjects:(id[]){@".", @""}
+                                                       forKeys:(id[]){@"NSDecimalSeparator", @"NSGroupingSeparator"} count:2];
+    NSDictionary *dmLcomma = [NSDictionary dictionaryWithObjects:(id[]){@",", @" "}
+                                                         forKeys:(id[]){@"NSDecimalSeparator", @"NSGroupingSeparator"} count:2];
+    p("dm loc 12345 dot", NSDecimalString(&dm12345, dmLdot));
+    p("dm loc 123.45 dot", NSDecimalString(&dm12345d, dmLdot));
+    p("dm loc 12345 comma", NSDecimalString(&dm12345, dmLcomma));
+    p("dm loc 123.45 comma", NSDecimalString(&dm12345d, dmLcomma));
+    p("dm loc 0.5 comma", NSDecimalString(&dmPoint5, dmLcomma));
+    NSDecimal dmBigGroup = dmv(1234, 3, 0);
+    p("dm loc 1234000 comma", NSDecimalString(&dmBigGroup, dmLcomma));
+    NSDecimal dmNeg12345 = dmv(12345, 0, 1);
+    p("dm loc -12345 comma", NSDecimalString(&dmNeg12345, dmLcomma));
 
     printf("PORT_BEHAVIOR_END\n");
     return 0;

@@ -242,4 +242,69 @@ ns null get absent                         | 1
 ns null insert rejects                     | 1
 ns null remove rejects                     | 1
 ns integer key get                         | 1
+dm str zero                                | 0
+dm str one                                 | 1
+dm str 100                                 | 100
+dm str 12345                               | 12345
+dm str 0.5                                 | 0.5
+dm str -0.5                                | -0.5
+dm str 1.375                               | 1.375
+dm str 123.45                              | 123.45
+dm str nan                                 | NaN
+dm cmp 1 vs 2                              | -1
+dm cmp 2 vs 2                              | 0
+dm cmp 5 vs 2                              | 1
+dm cmp -0.5 vs 0.5                         | -1
+dm cmp nan vs 1                            | -1
+dm cmp 1 vs nan                            | 1
+dm add 0.5+0.5                             | 1 err=0
+dm sub 1-0.5                               | 0.5 err=0
+dm sub 0.5-(-0.5)                          | 1 err=0
+dm add 1e127+1e-6                          | 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 err=1
+dm add nan                                 | NaN err=3
+dm mul 15*2                                | 30 err=0
+dm mul 0.5*-0.5                            | -0.25 err=0
+dm div 7/3                                 | 2.33333333333333333333333333333333333333 err=0
+dm div 1/3 down                            | 0.33333333333333333333333333333333333333 err=0
+dm div 1/2                                 | 0.5 err=0
+dm div 1/0                                 | NaN err=4
+dm div 0/3                                 | 0 err=0
+dm round 1.375 plain@0                     | 1
+dm round 1.375 plain@2                     | 1.38
+dm round 1.375 plain@-1                    | 0
+dm round nan                               | NaN
+dm round 1.5 plain                         | 2
+dm round 1.5 down                          | 1
+dm round 1.5 up                            | 2
+dm round 1.5 bankers                       | 2
+dm round 2.5 plain                         | 3
+dm round 2.5 bankers                       | 2
+dm round -1.5 plain                        | -2
+dm round -1.5 down                         | -2
+dm round -1.5 up                           | -1
+dm round -1.5 bankers                      | -2
+dm round -2.5 bankers                      | -2
+dm normalize 10,0.5                        | 10.0|0.5 err=0
+dm power 2^0                               | 1 err=0
+dm power 2^10                              | 1024 err=0
+dm power 0^0                               | 1 err=0
+dm power 1.5^2                             | 2.25 err=0
+dm mul10 0.5*1e3                           | 500 err=0
+dm mul10 1.375*1e-2                        | 0.01375 err=0
+dm mul10 overflow                          | NaN err=3
+dm mul10 underflow                         | NaN err=2
+dm isNaN zero                              | 0
+dm isNaN nan                               | 1
+dm copy                                    | 1.375
+dm wide len                                | 8
+dm compact len                             | 1
+dm compact str                             | 7
+dm compact sign                            | 0
+dm loc 12345 dot                           | 12345
+dm loc 123.45 dot                          | 123.45
+dm loc 12345 comma                         | 12345
+dm loc 123.45 comma                        | 123,45
+dm loc 0.5 comma                           | 0,5
+dm loc 1234000 comma                       | 1234000
+dm loc -12345 comma                        | -12345
 PORT_BEHAVIOR_END
