@@ -591,4 +591,25 @@ st percent rep bad                         | (null)
 st m cap0                                  | 0
 st m replace count                         | 2 = a-b-c
 st m insert range                          | NSInvalidArgumentException
+ar factory empty                           | 0
+ar empty eq empty                          | 1
+ar empty eq nonempty                       | 0
+ar withObjects                             | p|q|r
+ar withArray eq                            | 1
+ar alloc init                              | 0
+ar isEqual nil                             | 0
+ar isEqual string                          | 0
+ar isEqual copy                            | 1
+ar hash equal                              | 1
+ar copy identity                           | 1
+ar mutableCopy identity                    | 1
+ar mutableCopy eq                          | 1
+ar subscript                               | a
+ar objectAt bounds                         | NSRangeException
+ar subscript bounds                        | NSRangeException
+ar contains nil                            | 0
+ar m cap count                             | 0
+ar m alloc init                            | 0
+ar m addFromArray                          | z,a,m
+ar m add nil                               | NSInvalidArgumentException
 PORT_BEHAVIOR_END

@@ -49,6 +49,10 @@ static CFArrayRef NSNSArrayCreate(const id *objects, NSUInteger count) {
     return NSARRAY_ID(CFArrayCreateCopy(kCFAllocatorDefault, NSARRAY_CF(CFArrayRef, array)));
 }
 
+- (instancetype)init {
+    return NSARRAY_ID(CFArrayCreate(kCFAllocatorDefault, NULL, 0, &kCFTypeArrayCallBacks));
+}
+
 - (NSUInteger)count {
     return (NSUInteger)CFArrayGetCount(NSARRAY_CF(CFArrayRef, self));
 }
@@ -134,6 +138,10 @@ static CFArrayRef NSNSArrayCreate(const id *objects, NSUInteger count) {
 
 + (instancetype)arrayWithArray:(NSArray *)array {
     return NSARRAY_ID(CFArrayCreateMutableCopy(kCFAllocatorDefault, 0, NSARRAY_CF(CFArrayRef, array)));
+}
+
+- (instancetype)init {
+    return NSARRAY_ID(CFArrayCreateMutable(kCFAllocatorDefault, 0, &kCFTypeArrayCallBacks));
 }
 
 - (void)addObject:(id)object {

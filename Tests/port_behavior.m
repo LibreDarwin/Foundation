@@ -121,6 +121,8 @@ static void calCheckUnit(NSCalendar *cal, const char *label, NSDate *base,
 }
 
 int main(void) {
+    /* Line-buffer stdout so a crash reveals the exact failing probe. */
+    setvbuf(stdout, NULL, _IOLBF, 0);
     /* Pin the process timezone so calendar probes are deterministic and the
      * golden file is portable across machines.  The port has no NSTimeZone
      * class; both the port and Apple honor the TZ environment variable. */
@@ -1248,6 +1250,53 @@ int main(void) {
         [mst2 insertString:@"X" atIndex:99];
     } @catch (id e) {
         p("st m insert range", [NSString stringWithFormat:@"%@", [e name]]);
+    }
+
+    /* ---------- NSArray contract bundle (CFArray bridge) ---------- */
+    NSArray *ae = [NSArray array];
+    p("ar factory empty", ae.count == 0 ? @"0" : @"?");
+    p("ar empty eq empty", [ae isEqualToArray:[NSArray array]] ? @"1" : @"0");
+    p("ar empty eq nonempty", [ae isEqualToArray:a] ? @"1" : @"0");
+    NSArray *aq = [NSArray arrayWithObjects:(id[]){@"p", @"q", @"r"} count:3];
+    p("ar withObjects", plainJoin(aq, @"|"));
+    NSArray *acopy = [NSArray arrayWithArray:a];
+    p("ar withArray eq", [acopy isEqualToArray:a] ? @"1" : @"0");
+    /* NOT ungated: `arrayWithArray` object identity flips in this env — the
+     * port's _CFRuntimeBridgeClasses constructor makes Apple's own bridged
+     * +arrayWithArray: hand back the identical instance, so == differs from a
+     * plain Apple process though no port code is involved. Equality above pins
+     * the contract; mutable-copy identity and copy identity probes exercise the
+     * port paths. */
+    p("ar alloc init", [[[NSArray alloc] init] count] == 0 ? @"0" : @"?");
+    p("ar isEqual nil", [a isEqual:nil] ? @"1" : @"0");
+    p("ar isEqual string", [a isEqual:@"z,a,m"] ? @"1" : @"0");
+    p("ar isEqual copy", [acopy isEqual:a] ? @"1" : @"0");
+    p("ar hash equal", [a hash] == [acopy hash] ? @"1" : @"0");
+    p("ar copy identity", [a copy] == a ? @"1" : @"0");
+    p("ar mutableCopy identity", [a mutableCopy] == a ? @"0" : @"1");
+    p("ar mutableCopy eq", [[a mutableCopy] isEqualToArray:a] ? @"1" : @"0");
+    p("ar subscript", a[1]);
+    @try {
+        [a objectAtIndex:9];
+    } @catch (id e) {
+        p("ar objectAt bounds", [NSString stringWithFormat:@"%@", [e name]]);
+    }
+    @try {
+        id x = a[9];
+        (void)x;
+    } @catch (id e) {
+        p("ar subscript bounds", [NSString stringWithFormat:@"%@", [e name]]);
+    }
+    p("ar contains nil", [a containsObject:nil] ? @"1" : @"0");
+    NSMutableArray *am = [NSMutableArray arrayWithCapacity:2];
+    p("ar m cap count", [am count] == 0 ? @"0" : @"?");
+    p("ar m alloc init", [[[NSMutableArray alloc] init] count] == 0 ? @"0" : @"?");
+    [am addObjectsFromArray:a];
+    p("ar m addFromArray", plainJoin(am, @","));
+    @try {
+        [am addObject:nil];
+    } @catch (id e) {
+        p("ar m add nil", [NSString stringWithFormat:@"%@", [e name]]);
     }
 
     printf("PORT_BEHAVIOR_END\n");
