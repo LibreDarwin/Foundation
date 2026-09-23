@@ -175,8 +175,9 @@ Numeric.subproj/NSDecimal.m \
             Date.subproj/NSDate.m \
             Date.subproj/NSCalendar.m \
             Date.subproj/NSDateComponents.m \
-            Date.subproj/NSDateFormatter.m \
-            Date.subproj/NSTimeZone.m \
+Date.subproj/NSDateFormatter.m \
+             Date.subproj/NSISO8601DateFormatter.m \
+             Date.subproj/NSTimeZone.m \
             Locale.subproj/NSLocale.m \
             String.subproj/NSScanner.m \
             Runtime.subproj/NSError.m \
@@ -204,7 +205,7 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	    build/release/gate/*.o -framework CoreFoundation
 	@build/release/port_behavior > build/release/port_behavior.out
 	@diff Tests/port_behavior.golden build/release/port_behavior.out \
-	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 982 probes)"
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 1010 probes)"
 
 verify: pairing-sweep behavior-gate
 

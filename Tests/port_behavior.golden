@@ -262,6 +262,34 @@ df parse offset plus0100                   | 1234564290
 df literal quoted                          | 2009.02.13 at 23:31
 df weekdayname long                        | Friday, February 13, 2009
 df yy parse                                | 1234483200
+iso default opts                           | 1907
+iso default tz gmt                         | 0
+iso internet dflt                          | 2009-02-13T23:31:30Z
+iso full date                              | 2009-02-13
+iso year month                             | 200902
+iso year month day                         | 20090213
+iso year doy                               | 2009044
+iso year week day                          | 2009W0705
+iso year week                              | 2009W07
+iso time only                              | 
+iso time tz                                | 233130Z
+iso time colon tz                          | 23:31:30Z
+iso frac full                              | 2009-02-13T23:31:30.000Z
+iso space                                  | 2009-02-13 23:31:30Z
+iso fulltime                               | 23:31:30Z
+iso parse frac unmasked nil                | 1
+iso tokyo                                  | 2009-02-14T08:31:30+09:00
+iso tz getter                              | 32400
+iso tz reset                               | 2009-02-13T23:31:30Z
+iso parse z                                | 1234567890
+iso parse noz nil                          | 1
+iso parse offset                           | 1234549890
+iso parse lower nil                        | 1
+iso parse frac half                        | 1234567890.500
+iso parse frac kv                          | 1234567890.750
+iso parse fulldate                         | 1234483200
+iso parse fd extra                         | 1234483200
+iso class tokyo                            | 2009-02-14T08:31:30+09:00
 sc int first                               | 123 ok=1 loc=5
 sc atEnd between                           | 0
 sc int second                              | 45 ok=1 loc=8

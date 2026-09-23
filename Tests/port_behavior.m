@@ -623,6 +623,54 @@ int main(void) {
     p("df yy parse", [NSString stringWithFormat:@"%.0f",
                       [dfYy dateFromString:@"09-02-13"].timeIntervalSince1970]);
 
+    /* ---------- NSISO8601DateFormatter ---------- */
+    NSISO8601DateFormatter *isoF = [[NSISO8601DateFormatter alloc] init];
+    p("iso default opts", [NSString stringWithFormat:@"%lu", (unsigned long)isoF.formatOptions]);
+    p("iso default tz gmt", [NSString stringWithFormat:@"%ld", (long)[isoF.timeZone secondsFromGMT]]);
+    p("iso internet dflt", [isoF stringFromDate:fmtBase]);
+    isoF.formatOptions = NSISO8601DateFormatWithFullDate;
+    p("iso full date", [isoF stringFromDate:fmtBase]);
+    isoF.formatOptions = NSISO8601DateFormatWithYear | NSISO8601DateFormatWithMonth;
+    p("iso year month", [isoF stringFromDate:fmtBase]);
+    isoF.formatOptions = NSISO8601DateFormatWithYear | NSISO8601DateFormatWithMonth | NSISO8601DateFormatWithDay;
+    p("iso year month day", [isoF stringFromDate:fmtBase]);
+    isoF.formatOptions = NSISO8601DateFormatWithYear | NSISO8601DateFormatWithDay;
+    p("iso year doy", [isoF stringFromDate:fmtBase]);
+    isoF.formatOptions = NSISO8601DateFormatWithYear | NSISO8601DateFormatWithWeekOfYear | NSISO8601DateFormatWithDay;
+    p("iso year week day", [isoF stringFromDate:fmtBase]);
+    isoF.formatOptions = NSISO8601DateFormatWithYear | NSISO8601DateFormatWithWeekOfYear;
+    p("iso year week", [isoF stringFromDate:fmtBase]);
+    isoF.formatOptions = NSISO8601DateFormatWithTime;
+    p("iso time only", [isoF stringFromDate:fmtBase]);
+    isoF.formatOptions = NSISO8601DateFormatWithTime | NSISO8601DateFormatWithTimeZone;
+    p("iso time tz", [isoF stringFromDate:fmtBase]);
+    isoF.formatOptions = NSISO8601DateFormatWithTime | NSISO8601DateFormatWithColonSeparatorInTime | NSISO8601DateFormatWithTimeZone;
+    p("iso time colon tz", [isoF stringFromDate:fmtBase]);
+    isoF.formatOptions = NSISO8601DateFormatWithFullDate | NSISO8601DateFormatWithFullTime | NSISO8601DateFormatWithFractionalSeconds;
+    p("iso frac full", [isoF stringFromDate:fmtBase]);
+    isoF.formatOptions = NSISO8601DateFormatWithInternetDateTime | NSISO8601DateFormatWithSpaceBetweenDateAndTime;
+    p("iso space", [isoF stringFromDate:fmtBase]);
+    isoF.formatOptions = NSISO8601DateFormatWithFullTime;
+    p("iso fulltime", [isoF stringFromDate:fmtBase]);
+    isoF.formatOptions = NSISO8601DateFormatWithInternetDateTime;
+    p("iso parse frac unmasked nil", [NSString stringWithFormat:@"%d", [isoF dateFromString:@"2009-02-13T23:31:30.5Z"] == nil]);
+    [isoF setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:32400]];
+    p("iso tokyo", [isoF stringFromDate:fmtBase]);
+    p("iso tz getter", [NSString stringWithFormat:@"%ld", (long)[isoF.timeZone secondsFromGMT]]);
+    [isoF setTimeZone:nil];
+    p("iso tz reset", [isoF stringFromDate:fmtBase]);
+    p("iso parse z", [NSString stringWithFormat:@"%.0f", [isoF dateFromString:@"2009-02-13T23:31:30Z"].timeIntervalSince1970]);
+    p("iso parse noz nil", [NSString stringWithFormat:@"%d", [isoF dateFromString:@"2009-02-13T23:31:30"] == nil]);
+    p("iso parse offset", [NSString stringWithFormat:@"%.0f", [isoF dateFromString:@"2009-02-13T23:31:30+05:00"].timeIntervalSince1970]);
+    p("iso parse lower nil", [NSString stringWithFormat:@"%d", [isoF dateFromString:@"2009-02-13t23:31:30z"] == nil]);
+    isoF.formatOptions = NSISO8601DateFormatWithInternetDateTime | NSISO8601DateFormatWithFractionalSeconds;
+    p("iso parse frac half", [NSString stringWithFormat:@"%.3f", [isoF dateFromString:@"2009-02-13T23:31:30.5Z"].timeIntervalSince1970]);
+    p("iso parse frac kv", [NSString stringWithFormat:@"%.3f", [isoF dateFromString:@"2009-02-13T23:31:30.750000Z"].timeIntervalSince1970]);
+    isoF.formatOptions = NSISO8601DateFormatWithFullDate;
+    p("iso parse fulldate", [NSString stringWithFormat:@"%.0f", [isoF dateFromString:@"2009-02-13"].timeIntervalSince1970]);
+    p("iso parse fd extra", [NSString stringWithFormat:@"%.0f", [isoF dateFromString:@"2009-02-13T23:31:30"].timeIntervalSince1970]);
+    p("iso class tokyo", [NSISO8601DateFormatter stringFromDate:fmtBase timeZone:[NSTimeZone timeZoneForSecondsFromGMT:32400] formatOptions:NSISO8601DateFormatWithInternetDateTime]);
+
     /* ---------- NSScanner ---------- */
     NSScanner *sc = [NSScanner scannerWithString:@"  123 45"];
     int scVal = 0;
