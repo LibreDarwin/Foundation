@@ -45,6 +45,10 @@
     #define NS_CONSUMES_SELF __attribute__((ns_consumes_self))
 #endif
 
+#ifndef NS_NOESCAPE
+    #define NS_NOESCAPE __attribute__((noescape))
+#endif
+
 /* Format-attribute macros: NSString.text-style format checking. */
 #ifndef NS_FORMAT_FUNCTION
     #define NS_FORMAT_FUNCTION(F, A) __attribute__((format(__NSString__, F, A)))
@@ -231,6 +235,11 @@ typedef NSComparisonResult (^NSComparator)(id _Nonnull obj1, id _Nonnull obj2);
 typedef NS_OPTIONS(NSUInteger, NSSortOptions) {
     NSSortConcurrent = (1UL << 0),
     NSSortStable = (1UL << 4),
+};
+
+typedef NS_OPTIONS(NSUInteger, NSEnumerationOptions) {
+    NSEnumerationConcurrent = (1UL << 0),
+    NSEnumerationReverse = (1UL << 1),
 };
 
 enum { NSNotFound = NSIntegerMax };

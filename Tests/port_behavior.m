@@ -202,6 +202,44 @@ static void calCheckUnit(NSCalendar *cal, const char *label, NSDate *base,
     p_cal(label, cal, got, expected);
 }
 
+/* ---------------- NSIndexSet probes (validated against Apple in /tmp/ix_*) ---------------- */
+
+static NSString *ixSetDesc(NSIndexSet *s) {
+    NSMutableArray *a = [NSMutableArray array];
+    [s enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
+        [a addObject:[NSString stringWithFormat:@"%lu", (unsigned long)idx]];
+    }];
+    return a.count ? joinWith(a, @",") : @"<empty>";
+}
+
+static NSString *ixSetDescRange(NSIndexSet *s, NSRange r, NSEnumerationOptions opts) {
+    NSMutableArray *a = [NSMutableArray array];
+    [s enumerateIndexesInRange:r options:opts usingBlock:^(NSUInteger idx, BOOL *stop) {
+        [a addObject:[NSString stringWithFormat:@"%lu", (unsigned long)idx]];
+    }];
+    return a.count ? joinWith(a, @",") : @"<empty>";
+}
+
+static NSString *ixGetIx(NSIndexSet *s, NSRange window, NSUInteger bufSize) {
+    NSUInteger buf[128];
+    NSUInteger count = [s getIndexes:buf maxCount:bufSize inIndexRange:&window];
+    NSMutableString *out = [NSMutableString stringWithCapacity:0];
+    [out appendFormat:@"count=%lu range=", (unsigned long)count];
+    [out appendString:fmtRange(window)];
+    [out appendString:@" idx="];
+    for (NSUInteger i = 0; i < count && i < 128; i++) {
+        if (i > 0) [out appendString:@","];
+        [out appendFormat:@"%lu", (unsigned long)buf[i]];
+    }
+    return out;
+}
+
+static NSString *ixDescInfo(NSIndexSet *s) {
+    NSString *d = s.description;
+    NSRange r = [d rangeOfString:@">"];
+    return r.location == NSNotFound ? d : [d substringFromIndex:r.location];
+}
+
 int main(void) {
     /* Line-buffer stdout so a crash reveals the exact failing probe. */
     setvbuf(stdout, NULL, _IOLBF, 0);
@@ -2424,6 +2462,288 @@ int main(void) {
     p("obs dup def", [NSString stringWithFormat:@"%lu", (unsigned long)[obsDup indexOfObject:@3 inSortedRange:obsDupFull options:0 usingComparator:numCmp]]);
     p("obs dup last", [NSString stringWithFormat:@"%lu", (unsigned long)[obsDup indexOfObject:@3 inSortedRange:obsDupFull options:NSBinarySearchingLastEqual usingComparator:numCmp]]);
     p("obs dup in-range", [NSString stringWithFormat:@"%lu", (unsigned long)[obsDup indexOfObject:@5 inSortedRange:NSMakeRange(1, 2) options:0 usingComparator:numCmp]]);
+
+    /* ---------------- NSIndexSet: construction + basics ---------------- */
+    NSIndexSet *e = [NSIndexSet indexSet];
+    p("empty count", [NSString stringWithFormat:@"%lu", (unsigned long)e.count]);
+    p("empty first", [NSString stringWithFormat:@"%lu", (unsigned long)e.firstIndex]);
+    p("empty last", [NSString stringWithFormat:@"%lu", (unsigned long)e.lastIndex]);
+    p("empty contains 0", [NSString stringWithFormat:@"%d", [e containsIndex:0]]);
+    p("empty gti 0", [NSString stringWithFormat:@"%lu", (unsigned long)[e indexGreaterThanIndex:0]]);
+    p("empty desc", ixDescInfo(e));
+    NSIndexSet *one = [NSIndexSet indexSetWithIndex:5];
+    p("one count", [NSString stringWithFormat:@"%lu", (unsigned long)one.count]);
+    p("one first", [NSString stringWithFormat:@"%lu", (unsigned long)one.firstIndex]);
+    p("one last", [NSString stringWithFormat:@"%lu", (unsigned long)one.lastIndex]);
+    p("one contains 4", [NSString stringWithFormat:@"%d", [one containsIndex:4]]);
+    p("one contains 5", [NSString stringWithFormat:@"%d", [one containsIndex:5]]);
+    p("one contains 6", [NSString stringWithFormat:@"%d", [one containsIndex:6]]);
+    p("one gti 4", [NSString stringWithFormat:@"%lu", (unsigned long)[one indexGreaterThanIndex:4]]);
+    p("one gti 5", [NSString stringWithFormat:@"%lu", (unsigned long)[one indexGreaterThanIndex:5]]);
+    p("one gte 5", [NSString stringWithFormat:@"%lu", (unsigned long)[one indexGreaterThanOrEqualToIndex:5]]);
+    p("one lti 5", [NSString stringWithFormat:@"%lu", (unsigned long)[one indexLessThanIndex:5]]);
+    p("one lti 6", [NSString stringWithFormat:@"%lu", (unsigned long)[one indexLessThanIndex:6]]);
+    p("one lte 5", [NSString stringWithFormat:@"%lu", (unsigned long)[one indexLessThanOrEqualToIndex:5]]);
+    p("one lte 6", [NSString stringWithFormat:@"%lu", (unsigned long)[one indexLessThanOrEqualToIndex:6]]);
+    p("one lte 4", [NSString stringWithFormat:@"%lu", (unsigned long)[one indexLessThanOrEqualToIndex:4]]);
+    p("one countOf (4,3)", [NSString stringWithFormat:@"%lu", (unsigned long)[one countOfIndexesInRange:NSMakeRange(4, 3)]]);
+    p("one desc", ixDescInfo(one));
+    NSMutableIndexSet *A = [NSMutableIndexSet indexSetWithIndexesInRange:NSMakeRange(2, 5)];
+    [A addIndexesInRange:NSMakeRange(10, 3)];
+    p("A count", [NSString stringWithFormat:@"%lu", (unsigned long)A.count]);
+    p("A first", [NSString stringWithFormat:@"%lu", (unsigned long)A.firstIndex]);
+    p("A last", [NSString stringWithFormat:@"%lu", (unsigned long)A.lastIndex]);
+    p("A desc after add", ixDescInfo(A));
+    NSMutableIndexSet *adj = [NSMutableIndexSet indexSet];
+    [adj addIndexesInRange:NSMakeRange(2, 2)];
+    [adj addIndexesInRange:NSMakeRange(4, 2)];
+    p("adj count", [NSString stringWithFormat:@"%lu", (unsigned long)adj.count]);
+    p("adj desc", ixDescInfo(adj));
+    p("adj contains 3", [NSString stringWithFormat:@"%d", [adj containsIndex:3]]);
+    p("adj contains 4", [NSString stringWithFormat:@"%d", [adj containsIndex:4]]);
+    NSMutableIndexSet *adj2 = [NSMutableIndexSet indexSet];
+    [adj2 addIndex:2]; [adj2 addIndex:3]; [adj2 addIndex:4]; [adj2 addIndex:5];
+    p("adj2 count", [NSString stringWithFormat:@"%lu", (unsigned long)adj2.count]);
+    p("adj2 desc", ixDescInfo(adj2));
+    NSMutableIndexSet *ov = [NSMutableIndexSet indexSet];
+    [ov addIndexesInRange:NSMakeRange(2, 5)];
+    [ov addIndexesInRange:NSMakeRange(4, 4)];
+    p("ov count", [NSString stringWithFormat:@"%lu", (unsigned long)ov.count]);
+    p("ov desc", ixDescInfo(ov));
+    p("A gti 3", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexGreaterThanIndex:3]]);
+    p("A gti 6", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexGreaterThanIndex:6]]);
+    p("A gti 7", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexGreaterThanIndex:7]]);
+    p("A gti 12", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexGreaterThanIndex:12]]);
+    p("A gti 1", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexGreaterThanIndex:1]]);
+    p("A gte 7", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexGreaterThanOrEqualToIndex:7]]);
+    p("A gte 6", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexGreaterThanOrEqualToIndex:6]]);
+    p("A gte 1", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexGreaterThanOrEqualToIndex:1]]);
+    p("A lti 2", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexLessThanIndex:2]]);
+    p("A lti 6", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexLessThanIndex:6]]);
+    p("A lti 7", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexLessThanIndex:7]]);
+    p("A lti 13", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexLessThanIndex:13]]);
+    p("A lte 6", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexLessThanOrEqualToIndex:6]]);
+    p("A lte 7", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexLessThanOrEqualToIndex:7]]);
+    p("A lte 9", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexLessThanOrEqualToIndex:9]]);
+    p("A lte 1", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexLessThanOrEqualToIndex:1]]);
+    p("A containsRange (2,5)", [NSString stringWithFormat:@"%d", [A containsIndexesInRange:NSMakeRange(2, 5)]]);
+    p("A containsRange (2,6)", [NSString stringWithFormat:@"%d", [A containsIndexesInRange:NSMakeRange(2, 6)]]);
+    p("A containsRange (0,1)", [NSString stringWithFormat:@"%d", [A containsIndexesInRange:NSMakeRange(0, 1)]]);
+    p("A containsRange (12,1)", [NSString stringWithFormat:@"%d", [A containsIndexesInRange:NSMakeRange(12, 1)]]);
+    p("A containsRange (13,1)", [NSString stringWithFormat:@"%d", [A containsIndexesInRange:NSMakeRange(13, 1)]]);
+    p("A containsRange (2,0)", [NSString stringWithFormat:@"%d", [A containsIndexesInRange:NSMakeRange(2, 0)]]);
+    p("A containsRange (7,0)", [NSString stringWithFormat:@"%d", [A containsIndexesInRange:NSMakeRange(7, 0)]]);
+    p("A containsRange (1,0)", [NSString stringWithFormat:@"%d", [A containsIndexesInRange:NSMakeRange(1, 0)]]);
+    p("A containsRange (0,5)", [NSString stringWithFormat:@"%d", [A containsIndexesInRange:NSMakeRange(0, 5)]]);
+    p("A containsRange (7,2)", [NSString stringWithFormat:@"%d", [A containsIndexesInRange:NSMakeRange(7, 2)]]);
+    NSIndexSet *A2 = [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(2, 3)];
+    NSIndexSet *A3 = [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(3, 5)];
+    NSIndexSet *AE = [NSIndexSet indexSet];
+    p("A contains A2", [NSString stringWithFormat:@"%d", [A containsIndexes:A2]]);
+    p("A contains A3", [NSString stringWithFormat:@"%d", [A containsIndexes:A3]]);
+    p("A contains e", [NSString stringWithFormat:@"%d", [A containsIndexes:AE]]);
+    p("A contains self", [NSString stringWithFormat:@"%d", [A containsIndexes:A]]);
+    p("A intersects (7,1)", [NSString stringWithFormat:@"%d", [A intersectsIndexesInRange:NSMakeRange(7, 1)]]);
+    p("A intersects (6,1)", [NSString stringWithFormat:@"%d", [A intersectsIndexesInRange:NSMakeRange(6, 1)]]);
+    p("A intersects (7,3)", [NSString stringWithFormat:@"%d", [A intersectsIndexesInRange:NSMakeRange(7, 3)]]);
+    p("A intersects (6,5)", [NSString stringWithFormat:@"%d", [A intersectsIndexesInRange:NSMakeRange(6, 5)]]);
+    p("A intersects (0,2)", [NSString stringWithFormat:@"%d", [A intersectsIndexesInRange:NSMakeRange(0, 2)]]);
+    p("A intersects (13,1)", [NSString stringWithFormat:@"%d", [A intersectsIndexesInRange:NSMakeRange(13, 1)]]);
+    p("A intersects (6,0)", [NSString stringWithFormat:@"%d", [A intersectsIndexesInRange:NSMakeRange(6, 0)]]);
+    p("A countOf (2,5)", [NSString stringWithFormat:@"%lu", (unsigned long)[A countOfIndexesInRange:NSMakeRange(2, 5)]]);
+    p("A countOf (2,6)", [NSString stringWithFormat:@"%lu", (unsigned long)[A countOfIndexesInRange:NSMakeRange(2, 6)]]);
+    p("A countOf (7,3)", [NSString stringWithFormat:@"%lu", (unsigned long)[A countOfIndexesInRange:NSMakeRange(7, 3)]]);
+    p("A countOf (6,5)", [NSString stringWithFormat:@"%lu", (unsigned long)[A countOfIndexesInRange:NSMakeRange(6, 5)]]);
+    p("A countOf (0,20)", [NSString stringWithFormat:@"%lu", (unsigned long)[A countOfIndexesInRange:NSMakeRange(0, 20)]]);
+    NSMutableIndexSet *evens = [NSMutableIndexSet indexSet];
+    for (NSUInteger i = 0; i <= 50; i++) [evens addIndex:i * 2];
+    p("evens getIx (20,80) buf10", ixGetIx(evens, NSMakeRange(20, 80), 10));
+    p("evens getIx (20,80) buf100", ixGetIx(evens, NSMakeRange(20, 80), 100));
+    p("evens getIx (2,0) buf10", ixGetIx(evens, NSMakeRange(2, 0), 10));
+    p("evens getIx (0,2) buf10", ixGetIx(evens, NSMakeRange(0, 2), 10));
+    p("evens getIx (98,10) buf10", ixGetIx(evens, NSMakeRange(98, 10), 10));
+    p("A getIx (0,20) buf100", ixGetIx(A, NSMakeRange(0, 20), 100));
+    p("A getIx (2,5) buf100", ixGetIx(A, NSMakeRange(2, 5), 100));
+    p("A getIx (50,10) buf10", ixGetIx(A, NSMakeRange(50, 10), 10));
+    {
+        NSUInteger buf[128];
+        NSUInteger r = [A getIndexes:buf maxCount:128 inIndexRange:NULL];
+        NSMutableString *out = [NSMutableString stringWithCapacity:0];
+        [out appendFormat:@"count=%lu", (unsigned long)r];
+        [out appendString:@" idx="];
+        for (NSUInteger i = 0; i < r; i++) { if (i > 0) [out appendString:@","]; [out appendFormat:@"%lu", (unsigned long)buf[i]]; }
+        p("A getIx NULL range", out);
+    }
+    p("empty getIx (5,5) buf10", ixGetIx(e, NSMakeRange(5, 5), 10));
+    p("one getIx (0,10) buf10", ixGetIx(one, NSMakeRange(0, 10), 10));
+    p("A enum fwd", ixSetDesc(A));
+    p("A enum rev", ixSetDescRange(A, NSMakeRange(0, NSIntegerMax - 1), NSEnumerationReverse));
+    p("A enum range (3,4) fwd", ixSetDescRange(A, NSMakeRange(3, 4), 0));
+    p("A enum range (3,4) rev", ixSetDescRange(A, NSMakeRange(3, 4), NSEnumerationReverse));
+    p("A enum range (5,0)", ixSetDescRange(A, NSMakeRange(5, 0), 0));
+    p("A enum range (20,5)", ixSetDescRange(A, NSMakeRange(20, 5), 0));
+    {
+        NSMutableArray *a = [NSMutableArray array];
+        [A enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
+            [a addObject:[NSString stringWithFormat:@"%lu", (unsigned long)idx]];
+            if (a.count == 3) *stop = YES;
+        }];
+        p("A enum stop3", joinWith(a, @","));
+    }
+    {
+        NSMutableArray *a = [NSMutableArray array];
+        [A enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger idx, BOOL *stop) {
+            [a addObject:[NSString stringWithFormat:@"%lu", (unsigned long)idx]];
+            if (a.count == 3) *stop = YES;
+        }];
+        p("A enum rev stop3", joinWith(a, @","));
+    }
+    p("e enum fwd", ixSetDesc(e));
+    p("A ipt i>10", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexPassingTest:^BOOL(NSUInteger idx, BOOL *stop) {
+        return idx > 10;
+    }]]);
+    p("A ipt i<0", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexPassingTest:^BOOL(NSUInteger idx, BOOL *stop) { (void)idx; return NO; }]]);
+    {
+        __block BOOL saw11 = NO;
+        NSUInteger r = [A indexWithOptions:NSEnumerationReverse passingTest:^BOOL(NSUInteger idx, BOOL *stop) {
+            if (idx == 11) { saw11 = YES; }
+            return idx > 10;
+        }];
+        p("A iwo rev i>10", [NSString stringWithFormat:@"%lu (saw11=%d)", (unsigned long)r, saw11]);
+    }
+    p("A iir (0,5) i>2", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexInRange:NSMakeRange(0, 5) options:0 passingTest:^BOOL(NSUInteger idx, BOOL *stop) { (void)stop; return idx > 2; }]]);
+    {
+        NSUInteger r = [A indexPassingTest:^BOOL(NSUInteger idx, BOOL *stop) {
+            *stop = YES;
+            return NO;
+        }];
+        p("A ipt stop-nomatch", [NSString stringWithFormat:@"%lu", (unsigned long)r]);
+    }
+    p("A ixpt odd", ixSetDesc([A indexesPassingTest:^BOOL(NSUInteger idx, BOOL *stop) { (void)stop; return idx % 2 == 1; }]));
+    p("A ixpt odd count", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexesPassingTest:^BOOL(NSUInteger idx, BOOL *stop) { (void)stop; return idx % 2 == 1; }].count]);
+    p("A ixir (20,5)", [NSString stringWithFormat:@"%lu", (unsigned long)[A indexesInRange:NSMakeRange(20, 5) options:0 passingTest:^BOOL(NSUInteger idx, BOOL *stop) { (void)stop; return YES; }].count]);
+    p("A ixir (6,5) rev i>7", ixSetDesc([A indexesInRange:NSMakeRange(6, 5) options:NSEnumerationReverse passingTest:^BOOL(NSUInteger idx, BOOL *stop) { (void)stop; return idx > 7; }]));
+    id ixcp = [A copy];
+    p("acopy class mut", [NSString stringWithFormat:@"%d", [ixcp isKindOfClass:[NSMutableIndexSet class]]]);
+    p("acopy class imm", [NSString stringWithFormat:@"%d", [ixcp isKindOfClass:[NSIndexSet class]]]);
+    p("acopy eq A", [NSString stringWithFormat:@"%d", [ixcp isEqualToIndexSet:A]]);
+    id amcopy = [A mutableCopy];
+    p("amcopy class mut", [NSString stringWithFormat:@"%d", [amcopy isKindOfClass:[NSMutableIndexSet class]]]);
+    [amcopy addIndex:99];
+    p("A unchanged after mutcopy", [NSString stringWithFormat:@"%d", [A containsIndex:99]]);
+    id ocopy = [one copy];
+    p("ocopy self-copy", [NSString stringWithFormat:@"%d", ocopy == one]);
+    NSMutableIndexSet *Bm = [NSMutableIndexSet indexSetWithIndexesInRange:NSMakeRange(2, 5)];
+    [Bm addIndexesInRange:NSMakeRange(10, 3)];
+    NSIndexSet *B = [Bm copy];
+    p("B eq A", [NSString stringWithFormat:@"%d", [B isEqualToIndexSet:A]]);
+    p("A eq B", [NSString stringWithFormat:@"%d", [A isEqual:B]]);
+    p("B hashEQ A", [NSString stringWithFormat:@"%d", [B hash] == [A hash]]);
+    p("A isEqual NSNumber", [NSString stringWithFormat:@"%d", [A isEqual:@5]]);
+    p("A isEqual nil", [NSString stringWithFormat:@"%d", [A isEqual:nil]]);
+    NSIndexSet *e2 = [NSIndexSet indexSet];
+    p("empty eq", [NSString stringWithFormat:@"%d", [e isEqualToIndexSet:e2]]);
+    p("A addIndexesInRange overlap", ixSetDesc(ov));
+    NSMutableIndexSet *mAdd = [NSMutableIndexSet indexSet];
+    [mAdd addIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(2, 3)]];
+    [mAdd addIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(8, 2)]];
+    p("mAdd count", [NSString stringWithFormat:@"%lu", (unsigned long)mAdd.count]);
+    p("mAdd desc", ixDescInfo(mAdd));
+    NSMutableIndexSet *rm = [A mutableCopy];
+    [rm removeIndexesInRange:NSMakeRange(3, 2)];
+    p("rm remove (3,2)", ixSetDesc(rm));
+    p("rm remove (3,2) count", [NSString stringWithFormat:@"%lu", (unsigned long)rm.count]);
+    [rm removeIndexesInRange:NSMakeRange(10, 3)];
+    p("rm remove (10,3)", ixSetDesc(rm));
+    NSMutableIndexSet *rm2 = [NSMutableIndexSet indexSet];
+    [rm2 addIndexesInRange:NSMakeRange(2, 10)];
+    [rm2 removeIndexesInRange:NSMakeRange(4, 3)];
+    p("rm2 remove middle", ixSetDesc(rm2));
+    p("rm2 remove middle count", [NSString stringWithFormat:@"%lu", (unsigned long)rm2.count]);
+    [rm2 removeIndex:2];
+    p("rm2 removeIndex 2", ixSetDesc(rm2));
+    NSMutableIndexSet *rm3 = [A mutableCopy];
+    [rm3 removeIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(10, 2)]];
+    p("rm3 removeIndexes", ixSetDesc(rm3));
+    [rm3 removeAllIndexes];
+    p("rm3 removeAll count", [NSString stringWithFormat:@"%lu", (unsigned long)rm3.count]);
+    p("rm3 removeAll first", [NSString stringWithFormat:@"%lu", (unsigned long)rm3.firstIndex]);
+    [rm3 addIndexesInRange:NSMakeRange(5, 1)];
+    p("rm3 reuse after removeAll", [NSString stringWithFormat:@"%lu", (unsigned long)[rm3 indexGreaterThanOrEqualToIndex:5]]);
+    NSMutableIndexSet *sp1 = [NSMutableIndexSet indexSet];
+    [sp1 addIndexesInRange:NSMakeRange(2, 5)];
+    [sp1 shiftIndexesStartingAtIndex:5 by:2];
+    p("sp1 shift(5,2) on (2,5)", ixSetDesc(sp1));
+    p("sp1 count", [NSString stringWithFormat:@"%lu", (unsigned long)sp1.count]);
+    NSMutableIndexSet *sp2 = [NSMutableIndexSet indexSet];
+    [sp2 addIndexesInRange:NSMakeRange(2, 5)];
+    [sp2 shiftIndexesStartingAtIndex:3 by:2];
+    p("sp2 shift(3,2) on (2,5)", ixSetDesc(sp2));
+    NSMutableIndexSet *sp3 = [A mutableCopy];
+    [sp3 shiftIndexesStartingAtIndex:11 by:5];
+    p("sp3 shift(11,5) on A", ixSetDesc(sp3));
+    NSMutableIndexSet *sp4 = [A mutableCopy];
+    [sp4 shiftIndexesStartingAtIndex:13 by:5];
+    p("sp4 shift(13,5) on A", ixSetDesc(sp4));
+    NSMutableIndexSet *sp5 = [A mutableCopy];
+    [sp5 shiftIndexesStartingAtIndex:0 by:0];
+    p("sp5 shift(0,0) on A eq", [NSString stringWithFormat:@"%d", [sp5 isEqualToIndexSet:A]]);
+    NSMutableIndexSet *sp6 = [NSMutableIndexSet indexSetWithIndexesInRange:NSMakeRange(5, 1)];
+    [sp6 shiftIndexesStartingAtIndex:5 by:3];
+    p("sp6 shift(5,3) on (5,1)", ixSetDesc(sp6));
+    NSMutableIndexSet *sp7 = [NSMutableIndexSet indexSetWithIndexesInRange:NSMakeRange(5, 5)];
+    [sp7 shiftIndexesStartingAtIndex:6 by:3];
+    p("sp7 shift(6,3) on (5,5)", ixSetDesc(sp7));
+    NSMutableIndexSet *sp8 = [NSMutableIndexSet indexSetWithIndexesInRange:NSMakeRange(5, 5)];
+    [sp8 shiftIndexesStartingAtIndex:5 by:1];
+    p("sp8 shift(5,1) on (5,5)", ixSetDesc(sp8));
+    NSMutableIndexSet *sp9 = [NSMutableIndexSet indexSetWithIndexesInRange:NSMakeRange(2, 3)];
+    [sp9 shiftIndexesStartingAtIndex:4 by:2];
+    p("sp9 shift(4,2) on (2,3)", ixSetDesc(sp9));
+    NSMutableIndexSet *sn1 = [A mutableCopy];
+    [sn1 shiftIndexesStartingAtIndex:11 by:-2];
+    p("sn1 shift(11,-2) on A", ixSetDesc(sn1));
+    NSMutableIndexSet *sn2 = [A mutableCopy];
+    [sn2 shiftIndexesStartingAtIndex:11 by:-12];
+    p("sn2 shift(11,-12) on A", ixSetDesc(sn2));
+    NSMutableIndexSet *sn3 = [NSMutableIndexSet indexSet];
+    [sn3 addIndexesInRange:NSMakeRange(3, 5)];
+    [sn3 shiftIndexesStartingAtIndex:5 by:-2];
+    p("sn3 shift(5,-2) on (3,5)", ixSetDesc(sn3));
+    NSMutableIndexSet *sn4 = [NSMutableIndexSet indexSet];
+    [sn4 addIndexesInRange:NSMakeRange(5, 5)];
+    [sn4 shiftIndexesStartingAtIndex:6 by:-3];
+    p("sn4 shift(6,-3) on (5,5)", ixSetDesc(sn4));
+    NSMutableIndexSet *sn5 = [NSMutableIndexSet indexSet];
+    [sn5 addIndexesInRange:NSMakeRange(5, 3)];
+    [sn5 shiftIndexesStartingAtIndex:6 by:-3];
+    p("sn5 shift(6,-3) on (5,3)", ixSetDesc(sn5));
+    NSMutableIndexSet *sn6 = [NSMutableIndexSet indexSet];
+    [sn6 addIndexesInRange:NSMakeRange(2, 3)];
+    [sn6 shiftIndexesStartingAtIndex:4 by:-3];
+    p("sn6 shift(4,-3) on (2,3)", ixSetDesc(sn6));
+    NSMutableIndexSet *sn7 = [NSMutableIndexSet indexSet];
+    [sn7 addIndexesInRange:NSMakeRange(10, 3)];
+    [sn7 addIndexesInRange:NSMakeRange(20, 3)];
+    [sn7 shiftIndexesStartingAtIndex:5 by:-10];
+    p("sn7 shift(5,-10) on {10-12,20-22}", ixSetDesc(sn7));
+    NSMutableIndexSet *sn8 = [NSMutableIndexSet indexSet];
+    [sn8 addIndexesInRange:NSMakeRange(2, 2)];
+    [sn8 addIndexesInRange:NSMakeRange(8, 2)];
+    [sn8 shiftIndexesStartingAtIndex:8 by:-3];
+    p("sn8 shift(8,-3) on {2-3,8-9}", ixSetDesc(sn8));
+    p("sn8 count", [NSString stringWithFormat:@"%lu", (unsigned long)sn8.count]);
+    NSMutableIndexSet *sn9 = [NSMutableIndexSet indexSet];
+    [sn9 addIndexesInRange:NSMakeRange(4, 2)];
+    [sn9 shiftIndexesStartingAtIndex:4 by:-4];
+    p("sn9 shift(4,-4) on (4,2)", ixSetDesc(sn9));
+    NSMutableIndexSet *sn10 = [NSMutableIndexSet indexSet];
+    [sn10 addIndexesInRange:NSMakeRange(0, 2)];
+    [sn10 shiftIndexesStartingAtIndex:0 by:-2];
+    p("sn10 shift(0,-2) on (0,2)", ixSetDesc(sn10));
+    NSMutableIndexSet *sn11 = [A mutableCopy];
+    [sn11 shiftIndexesStartingAtIndex:7 by:-2];
+    p("sn11 shift(7,-2) on A (gap)", ixSetDesc(sn11));
 
     printf("PORT_BEHAVIOR_END\n");
     return 0;

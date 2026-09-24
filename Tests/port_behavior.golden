@@ -1097,4 +1097,156 @@ obs ins above                              | 5
 obs dup def                                | 1
 obs dup last                               | 1
 obs dup in-range                           | 2
+empty count                                | 0
+empty first                                | 9223372036854775807
+empty last                                 | 9223372036854775807
+empty contains 0                           | 0
+empty gti 0                                | 9223372036854775807
+empty desc                                 | >(no indexes)
+one count                                  | 1
+one first                                  | 5
+one last                                   | 5
+one contains 4                             | 0
+one contains 5                             | 1
+one contains 6                             | 0
+one gti 4                                  | 5
+one gti 5                                  | 9223372036854775807
+one gte 5                                  | 5
+one lti 5                                  | 9223372036854775807
+one lti 6                                  | 5
+one lte 5                                  | 5
+one lte 6                                  | 5
+one lte 4                                  | 9223372036854775807
+one countOf (4,3)                          | 1
+one desc                                   | >[number of indexes: 1 (in 1 ranges), indexes: (5)]
+A count                                    | 8
+A first                                    | 2
+A last                                     | 12
+A desc after add                           | >[number of indexes: 8 (in 2 ranges), indexes: (2-6 10-12)]
+adj count                                  | 4
+adj desc                                   | >[number of indexes: 4 (in 1 ranges), indexes: (2-5)]
+adj contains 3                             | 1
+adj contains 4                             | 1
+adj2 count                                 | 4
+adj2 desc                                  | >[number of indexes: 4 (in 1 ranges), indexes: (2-5)]
+ov count                                   | 6
+ov desc                                    | >[number of indexes: 6 (in 1 ranges), indexes: (2-7)]
+A gti 3                                    | 4
+A gti 6                                    | 10
+A gti 7                                    | 10
+A gti 12                                   | 9223372036854775807
+A gti 1                                    | 2
+A gte 7                                    | 10
+A gte 6                                    | 6
+A gte 1                                    | 2
+A lti 2                                    | 9223372036854775807
+A lti 6                                    | 5
+A lti 7                                    | 6
+A lti 13                                   | 12
+A lte 6                                    | 6
+A lte 7                                    | 6
+A lte 9                                    | 6
+A lte 1                                    | 9223372036854775807
+A containsRange (2,5)                      | 1
+A containsRange (2,6)                      | 0
+A containsRange (0,1)                      | 0
+A containsRange (12,1)                     | 1
+A containsRange (13,1)                     | 0
+A containsRange (2,0)                      | 0
+A containsRange (7,0)                      | 0
+A containsRange (1,0)                      | 0
+A containsRange (0,5)                      | 0
+A containsRange (7,2)                      | 0
+A contains A2                              | 1
+A contains A3                              | 0
+A contains e                               | 1
+A contains self                            | 1
+A intersects (7,1)                         | 0
+A intersects (6,1)                         | 1
+A intersects (7,3)                         | 0
+A intersects (6,5)                         | 1
+A intersects (0,2)                         | 0
+A intersects (13,1)                        | 0
+A intersects (6,0)                         | 0
+A countOf (2,5)                            | 5
+A countOf (2,6)                            | 5
+A countOf (7,3)                            | 0
+A countOf (6,5)                            | 2
+A countOf (0,20)                           | 8
+evens getIx (20,80) buf10                  | count=10 range={39,61} idx=20,22,24,26,28,30,32,34,36,38
+evens getIx (20,80) buf100                 | count=40 range={99,1} idx=20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,72,74,76,78,80,82,84,86,88,90,92,94,96,98
+evens getIx (2,0) buf10                    | count=0 range={2,0} idx=
+evens getIx (0,2) buf10                    | count=1 range={1,1} idx=0
+evens getIx (98,10) buf10                  | count=2 range={101,7} idx=98,100
+A getIx (0,20) buf100                      | count=8 range={13,7} idx=2,3,4,5,6,10,11,12
+A getIx (2,5) buf100                       | count=5 range={7,0} idx=2,3,4,5,6
+A getIx (50,10) buf10                      | count=0 range={50,10} idx=
+A getIx NULL range                         | count=8 idx=2,3,4,5,6,10,11,12
+empty getIx (5,5) buf10                    | count=0 range={5,5} idx=
+one getIx (0,10) buf10                     | count=1 range={6,4} idx=5
+A enum fwd                                 | 2,3,4,5,6,10,11,12
+A enum rev                                 | 12,11,10,6,5,4,3,2
+A enum range (3,4) fwd                     | 3,4,5,6
+A enum range (3,4) rev                     | 6,5,4,3
+A enum range (5,0)                         | <empty>
+A enum range (20,5)                        | <empty>
+A enum stop3                               | 2,3,4
+A enum rev stop3                           | 12,11,10
+e enum fwd                                 | <empty>
+A ipt i>10                                 | 11
+A ipt i<0                                  | 9223372036854775807
+A iwo rev i>10                             | 12 (saw11=0)
+A iir (0,5) i>2                            | 3
+A ipt stop-nomatch                         | 9223372036854775807
+A ixpt odd                                 | 3,5,11
+A ixpt odd count                           | 3
+A ixir (20,5)                              | 0
+A ixir (6,5) rev i>7                       | 10
+acopy class mut                            | 0
+acopy class imm                            | 1
+acopy eq A                                 | 1
+amcopy class mut                           | 1
+A unchanged after mutcopy                  | 0
+ocopy self-copy                            | 1
+B eq A                                     | 1
+A eq B                                     | 1
+B hashEQ A                                 | 1
+A isEqual NSNumber                         | 0
+A isEqual nil                              | 0
+empty eq                                   | 1
+A addIndexesInRange overlap                | 2,3,4,5,6,7
+mAdd count                                 | 5
+mAdd desc                                  | >[number of indexes: 5 (in 2 ranges), indexes: (2-4 8-9)]
+rm remove (3,2)                            | 2,5,6,10,11,12
+rm remove (3,2) count                      | 6
+rm remove (10,3)                           | 2,5,6
+rm2 remove middle                          | 2,3,7,8,9,10,11
+rm2 remove middle count                    | 7
+rm2 removeIndex 2                          | 3,7,8,9,10,11
+rm3 removeIndexes                          | 2,3,4,5,6,12
+rm3 removeAll count                        | 0
+rm3 removeAll first                        | 9223372036854775807
+rm3 reuse after removeAll                  | 5
+sp1 shift(5,2) on (2,5)                    | 2,3,4,7,8
+sp1 count                                  | 5
+sp2 shift(3,2) on (2,5)                    | 2,5,6,7,8
+sp3 shift(11,5) on A                       | 2,3,4,5,6,10,16,17
+sp4 shift(13,5) on A                       | 2,3,4,5,6,10,11,12
+sp5 shift(0,0) on A eq                     | 1
+sp6 shift(5,3) on (5,1)                    | 8
+sp7 shift(6,3) on (5,5)                    | 5,9,10,11,12
+sp8 shift(5,1) on (5,5)                    | 6,7,8,9,10
+sp9 shift(4,2) on (2,3)                    | 2,3,6
+sn1 shift(11,-2) on A                      | 2,3,4,5,6,9,10
+sn2 shift(11,-12) on A                     | 0
+sn3 shift(5,-2) on (3,5)                   | 3,4,5
+sn4 shift(6,-3) on (5,5)                   | 3,4,5,6
+sn5 shift(6,-3) on (5,3)                   | 3,4
+sn6 shift(4,-3) on (2,3)                   | 1
+sn7 shift(5,-10) on {10-12,20-22}          | 0,1,2,10,11,12
+sn8 shift(8,-3) on {2-3,8-9}               | 2,3,5,6
+sn8 count                                  | 4
+sn9 shift(4,-4) on (4,2)                   | 0,1
+sn10 shift(0,-2) on (0,2)                  | <empty>
+sn11 shift(7,-2) on A (gap)                | 2,3,4,8,9,10
 PORT_BEHAVIOR_END
