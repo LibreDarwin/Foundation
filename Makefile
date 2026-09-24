@@ -168,7 +168,9 @@ GATE_SRCS = String.subproj/NSString.m \
              Collections.subproj/NSOrderedSet.m \
             Collections.subproj/NSDictionary.m \
             Collections.subproj/NSMapTable.m \
-Collections.subproj/NSData.m \
+            Collections.subproj/NSHashTable.m \
+            Collections.subproj/NSPointerFunctions.m \
+ Collections.subproj/NSData.m \
             Sorting.subproj/NSSortDescriptor.m \
             Runtime.subproj/NSKeyValueCoding.m \
 Numeric.subproj/NSDecimal.m \
@@ -176,8 +178,9 @@ Numeric.subproj/NSDecimal.m \
              Numeric.subproj/NSNumber.m \
              Numeric.subproj/NSNumberFormatter.m \
             Date.subproj/NSDate.m \
-            Date.subproj/NSCalendar.m \
-            Date.subproj/NSDateComponents.m \
+             Date.subproj/NSCalendar.m \
+             Date.subproj/NSCalendarSearchCore.c \
+             Date.subproj/NSDateComponents.m \
 Date.subproj/NSDateFormatter.m \
              Date.subproj/NSISO8601DateFormatter.m \
              Date.subproj/NSTimeZone.m \
@@ -198,11 +201,12 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	@rm -rf build/release/gate && mkdir -p build/release/gate
 	@for src in ${GATE_SRCS}; do FLAGS=; \
 	    case "$${src}" in \
-	      Collections.subproj/NSData.m|Collections.subproj/NSMapTable.m|Runtime.subproj/NSException.m|Runtime.subproj/NSValue.m) FLAGS=-fno-objc-arc ;; \
+	      Collections.subproj/NSData.m|Collections.subproj/NSMapTable.m|Collections.subproj/NSHashTable.m|Collections.subproj/NSPointerFunctions.m|Runtime.subproj/NSException.m|Runtime.subproj/NSValue.m) FLAGS=-fno-objc-arc ;; \
+	      Date.subproj/NSCalendarSearchCore.c) FLAGS=-x\ objective-c ;; \
 	    esac; \
 	    ${CC} ${CFLAGS} $${FLAGS} -c $${src} -o build/release/gate/$${src##*/}.o || exit 1; \
 	 done
-	@${CC} ${CFLAGS} -c Tests/port_behavior.m \
+	@${CC} ${CFLAGS} -DPORT_GATE -c Tests/port_behavior.m \
 	    -o build/release/gate/port_behavior.o
 	@${CC} -isysroot ${BEHAVIOR_LINK_SDK} -o build/release/port_behavior \
 	    build/release/gate/*.o -framework CoreFoundation
@@ -240,6 +244,8 @@ build/gen/Foundation/Foundation.h: pairing-instrument pairing-sweep
 #  (see CF_PRIV above).
 # =====================================================================
 MRC_SOURCES = ./Collections.subproj/NSMapTable.m \
+              ./Collections.subproj/NSHashTable.m \
+              ./Collections.subproj/NSPointerFunctions.m \
               ./Collections.subproj/NSData.m \
               ./FileManager.subproj/NSFileHandle.m \
               ./FileManager.subproj/NSFileManager.m \

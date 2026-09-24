@@ -189,6 +189,33 @@ extern void _CFRuntimeBridgeClasses(CFTypeID typeID, const char *className);
     #endif
 #endif
 
+/* NULLability audit regions.  Apple's headers bracket their interfaces
+ * with NS_HEADER_AUDIT_BEGIN/END, which expand to assume_nonnull pragmas.
+ * Ported headers that mirror Apple's shape use them, so provide them here. */
+#ifndef NS_ASSUME_NONNULL_BEGIN
+    #define NS_ASSUME_NONNULL_BEGIN _Pragma("clang assume_nonnull begin")
+#endif
+#ifndef NS_ASSUME_NONNULL_END
+    #define NS_ASSUME_NONNULL_END _Pragma("clang assume_nonnull end")
+#endif
+#ifndef NS_HEADER_AUDIT_BEGIN
+    #define NS_HEADER_AUDIT_BEGIN(...) NS_ASSUME_NONNULL_BEGIN
+#endif
+#ifndef NS_HEADER_AUDIT_END
+    #define NS_HEADER_AUDIT_END(...) NS_ASSUME_NONNULL_END
+#endif
+
+/* API availability annotations, no-op'd to match the file's stance. */
+#ifndef API_AVAILABLE
+    #define API_AVAILABLE(...)
+#endif
+#ifndef API_DEPRECATED
+    #define API_DEPRECATED(...)
+#endif
+#ifndef API_UNAVAILABLE
+    #define API_UNAVAILABLE(...)
+#endif
+
 #ifndef FOUNDATION_EXTERN
     #define FOUNDATION_EXTERN FOUNDATION_EXPORT
 #endif

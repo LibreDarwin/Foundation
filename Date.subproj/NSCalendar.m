@@ -443,6 +443,10 @@ NSDate *NSCalendarDateFromComponents(NSCalendar *calendar, NSDateComponents *com
     return NSCalendarMakeDate(NSCalendarBacking(calendar), components);
 }
 
+CFCalendarRef NSCalendarGetBackingCalendar(NSCalendar *calendar) {
+    return NSCalendarBacking(calendar);
+}
+
 BOOL NSCalendarDateComponentsAreValid(NSCalendar *calendar, NSDateComponents *components) {
     if (calendar == nil || components == nil) return NO;
     CFCalendarRef cfCalendar = NSCalendarBacking(calendar);

@@ -122,15 +122,83 @@ static void p_cal(const char *label, NSCalendar *cal, NSDate *got, NSString *exp
     p(label, [NSString stringWithFormat:@"%s%s", gots.UTF8String, ok ? "" : "  <<< DIFF"]);
 }
 
+#ifdef PORT_GATE
+static NSCalendarSearchRequest undefinedSearchRequest(void) {
+    NSCalendarSearchRequest r;
+    r.era = r.year = r.quarter = r.month = r.weekOfMonth = r.weekOfYear =
+    r.yearForWeekOfYear = r.day = r.weekday = r.weekdayOrdinal = r.hour =
+    r.minute = r.second = r.nanosecond = NSDateComponentUndefined;
+    return r;
+}
+
+static NSCalendarSearchRequest searchRequestFromComponents(NSDateComponents *comps) {
+    NSCalendarSearchRequest r;
+    r.era = comps.era;
+    r.year = comps.year;
+    r.quarter = comps.quarter;
+    r.month = comps.month;
+    r.weekOfMonth = comps.weekOfMonth;
+    r.weekOfYear = comps.weekOfYear;
+    r.yearForWeekOfYear = comps.yearForWeekOfYear;
+    r.day = comps.day;
+    r.weekday = comps.weekday;
+    r.weekdayOrdinal = comps.weekdayOrdinal;
+    r.hour = comps.hour;
+    r.minute = comps.minute;
+    r.second = comps.second;
+    r.nanosecond = comps.nanosecond;
+    return r;
+}
+#endif
+
 static void calCheck(NSCalendar *cal, const char *label, NSDate *base,
                      NSDateComponents *comps, NSCalendarOptions opts, NSString *expected) {
+#ifdef PORT_GATE
+    CFAbsoluteTime out;
+    NSDate *got = nil;
+    if (NSCalendarSearchNextDateAfterDate(NSCalendarGetBackingCalendar(cal),
+                                          base.timeIntervalSinceReferenceDate,
+                                          searchRequestFromComponents(comps),
+                                          opts, &out)) {
+        got = [NSDate dateWithTimeIntervalSinceReferenceDate:out];
+    }
+#else
     NSDate *got = [cal nextDateAfterDate:base matchingComponents:comps options:opts];
+#endif
     p_cal(label, cal, got, expected);
 }
 
 static void calCheckUnit(NSCalendar *cal, const char *label, NSDate *base,
                          NSCalendarUnit unit, NSInteger value, NSCalendarOptions opts, NSString *expected) {
+#ifdef PORT_GATE
+    NSCalendarSearchRequest req = undefinedSearchRequest();
+    switch (unit) {
+        case NSCalendarUnitEra: req.era = value; break;
+        case NSCalendarUnitYear: req.year = value; break;
+        case NSCalendarUnitQuarter: req.quarter = value; break;
+        case NSCalendarUnitMonth: req.month = value; break;
+        case NSCalendarUnitWeekOfMonth: req.weekOfMonth = value; break;
+        case NSCalendarUnitWeekOfYear: req.weekOfYear = value; break;
+        case NSCalendarUnitYearForWeekOfYear: req.yearForWeekOfYear = value; break;
+        case NSCalendarUnitDay: req.day = value; break;
+        case NSCalendarUnitWeekday: req.weekday = value; break;
+        case NSCalendarUnitWeekdayOrdinal: req.weekdayOrdinal = value; break;
+        case NSCalendarUnitHour: req.hour = value; break;
+        case NSCalendarUnitMinute: req.minute = value; break;
+        case NSCalendarUnitSecond: req.second = value; break;
+        case NSCalendarUnitNanosecond: req.nanosecond = value; break;
+        default: break;
+    }
+    CFAbsoluteTime out;
+    NSDate *got = nil;
+    if (NSCalendarSearchNextDateAfterDate(NSCalendarGetBackingCalendar(cal),
+                                          base.timeIntervalSinceReferenceDate,
+                                          req, opts, &out)) {
+        got = [NSDate dateWithTimeIntervalSinceReferenceDate:out];
+    }
+#else
     NSDate *got = [cal nextDateAfterDate:base matchingUnit:unit value:value options:opts];
+#endif
     p_cal(label, cal, got, expected);
 }
 
