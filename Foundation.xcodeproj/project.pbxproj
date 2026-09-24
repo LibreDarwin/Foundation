@@ -1,0 +1,476 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		9B1E90B44118A88D66A9B5A5 /* Collections.subproj/NSArray.m in Sources */ = {isa = PBXBuildFile; fileRef = 27BE0D79956BD5A30EFD9DFC /* Collections.subproj/NSArray.m */; };
+		D655B921A8F2F023E8DE6929 /* Collections.subproj/NSData.m in Sources */ = {isa = PBXBuildFile; fileRef = 08BE57E2B5D59A7B6D386611 /* Collections.subproj/NSData.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		C3E4580BB1F65B7F27AC24F7 /* Collections.subproj/NSDictionary.m in Sources */ = {isa = PBXBuildFile; fileRef = 461172C1CEDFD6F75F43E331 /* Collections.subproj/NSDictionary.m */; };
+		CA336FB86E7D7FE25F1AE396 /* Collections.subproj/NSEnumerator.m in Sources */ = {isa = PBXBuildFile; fileRef = 3ECE4359CB2F523890B09843 /* Collections.subproj/NSEnumerator.m */; };
+		CE1229667BD0DE63630831B9 /* Collections.subproj/NSEnumerator_array.m in Sources */ = {isa = PBXBuildFile; fileRef = F88722F89828AEBCF57AAF0E /* Collections.subproj/NSEnumerator_array.m */; };
+		D1756E75DEFCADC640BA83D7 /* Collections.subproj/NSHashTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 4AD4625CA382AE8A057D07FA /* Collections.subproj/NSHashTable.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		86ADD6E3BA5AD61102F1A0F6 /* Collections.subproj/NSMapTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EDA3B8B4620B4CA8D455C30 /* Collections.subproj/NSMapTable.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		CA0E858B8F548856CAACBA9B /* Collections.subproj/NSOrderedSet.m in Sources */ = {isa = PBXBuildFile; fileRef = D78285491D83710379449060 /* Collections.subproj/NSOrderedSet.m */; };
+		4687F95733156FA0D27A44F1 /* Collections.subproj/NSPointerFunctions.m in Sources */ = {isa = PBXBuildFile; fileRef = 6B6F580482A65B7F9A032575 /* Collections.subproj/NSPointerFunctions.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		A0B616910FBB95825B965061 /* Collections.subproj/NSSet.m in Sources */ = {isa = PBXBuildFile; fileRef = 9F07A8C41CC1C23B3B127542 /* Collections.subproj/NSSet.m */; };
+		C209B1196FEF24C22DBECEE2 /* Date.subproj/NSCalendar.m in Sources */ = {isa = PBXBuildFile; fileRef = A9B8D866BCA53F02D07FCA2B /* Date.subproj/NSCalendar.m */; };
+		BA42DB5FEDD59DD656FBA82B /* Date.subproj/NSDate.m in Sources */ = {isa = PBXBuildFile; fileRef = 74A08F4F0C36A564A27F551A /* Date.subproj/NSDate.m */; };
+		2D97EAD4A4070D661F4525E7 /* Date.subproj/NSDateComponents.m in Sources */ = {isa = PBXBuildFile; fileRef = B443410340599ED9F8B4D1A7 /* Date.subproj/NSDateComponents.m */; };
+		B89DD242653A31E8E4E71EA4 /* Date.subproj/NSDateFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = A50F11204C5E6986FDFDE7F7 /* Date.subproj/NSDateFormatter.m */; };
+		AA67EE6069F0D5F5FD4B9A59 /* Date.subproj/NSISO8601DateFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 462E6143ABDF9AC51D56585A /* Date.subproj/NSISO8601DateFormatter.m */; };
+		71A15F22A32617A943A4AD34 /* Date.subproj/NSTimeZone.m in Sources */ = {isa = PBXBuildFile; fileRef = 672CC657F91374C41B0421D1 /* Date.subproj/NSTimeZone.m */; };
+		C03F7CD48C1D830EE6C18EEE /* FileManager.subproj/NSFileHandle.m in Sources */ = {isa = PBXBuildFile; fileRef = 38D13E0FD6D35BFB1006412D /* FileManager.subproj/NSFileHandle.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		F2A6B19A2FC2895E20C3FC64 /* FileManager.subproj/NSFileManager.m in Sources */ = {isa = PBXBuildFile; fileRef = E148A198ABFD594FF0ACCB12 /* FileManager.subproj/NSFileManager.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		AF99A0FF3978557812572972 /* FileManager.subproj/NSPathUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 51743FE7FE226E35679D47AB /* FileManager.subproj/NSPathUtilities.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		397828BF6B1267D0069909CD /* FileManager.subproj/NSPipe.m in Sources */ = {isa = PBXBuildFile; fileRef = D3B8B15854C86942D8CA07F2 /* FileManager.subproj/NSPipe.m */; };
+		E5C022E63F6958CF69AAD57D /* FileManager.subproj/NSTask.m in Sources */ = {isa = PBXBuildFile; fileRef = 368EF80883EE7E8BC2ACE3D2 /* FileManager.subproj/NSTask.m */; };
+		A6AF7169E3BF6296F28CF097 /* Locale.subproj/NSLocale.m in Sources */ = {isa = PBXBuildFile; fileRef = ABB97F09F43ED1E038F0957F /* Locale.subproj/NSLocale.m */; };
+		5C77888F78B2D291DFA23CEC /* Lock.subproj/NSCondition.m in Sources */ = {isa = PBXBuildFile; fileRef = 0277C84CA580ACC5EB2A04C4 /* Lock.subproj/NSCondition.m */; };
+		4906CD4C6E66473E9F7C89D9 /* Lock.subproj/NSConditionLock.m in Sources */ = {isa = PBXBuildFile; fileRef = 1CD2C42138105F4BA8EDA001 /* Lock.subproj/NSConditionLock.m */; };
+		D03BD34C959C42746FEB8BEE /* Lock.subproj/NSLock.m in Sources */ = {isa = PBXBuildFile; fileRef = FD2A1E145D7594586DDAFE20 /* Lock.subproj/NSLock.m */; };
+		DFAB9A659015B5453681FC47 /* Lock.subproj/NSRecursiveLock.m in Sources */ = {isa = PBXBuildFile; fileRef = FB33486951C8A98F2720CD61 /* Lock.subproj/NSRecursiveLock.m */; };
+		F8CDC8EA775A7015A3AB7CFC /* Notification.subproj/NSNotification.m in Sources */ = {isa = PBXBuildFile; fileRef = 7837BDAA59A3740E700D59BF /* Notification.subproj/NSNotification.m */; };
+		4E24CB1E7ED3C10E3D3CE477 /* Notification.subproj/NSNotificationCenter.m in Sources */ = {isa = PBXBuildFile; fileRef = E7785709385AF3B93C6CE662 /* Notification.subproj/NSNotificationCenter.m */; };
+		3DC1813EAFD2AB68BD05785A /* Numeric.subproj/NSDecimal.m in Sources */ = {isa = PBXBuildFile; fileRef = 29FF4592934705CD4DF971C5 /* Numeric.subproj/NSDecimal.m */; };
+		549185E3265A5741D8A6F720 /* Numeric.subproj/NSDecimalNumber.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4AE57DF87210AD4D752A7C /* Numeric.subproj/NSDecimalNumber.m */; };
+		10C8FD372CFA9346269B6E5F /* Numeric.subproj/NSNumber.m in Sources */ = {isa = PBXBuildFile; fileRef = A491D2EB350202A3AF96798A /* Numeric.subproj/NSNumber.m */; };
+		FDB6882ECEADA094F6EB0421 /* Numeric.subproj/NSNumberFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 95C4061E9403C74177E7ECB0 /* Numeric.subproj/NSNumberFormatter.m */; };
+		1ED7476E9F4D38349058A23E /* RunLoop.subproj/NSRunLoop.m in Sources */ = {isa = PBXBuildFile; fileRef = F2AB46CD397DA2DDBB793D68 /* RunLoop.subproj/NSRunLoop.m */; };
+		6DFD9EB2A2C227F2C3F7E411 /* RunLoop.subproj/NSTimer.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E86CC7506DAB0A09731A44A /* RunLoop.subproj/NSTimer.m */; };
+		29A7E8E0F872D9268C7B2368 /* Runtime.subproj/NSBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = 07447952F68FA49175A84DA1 /* Runtime.subproj/NSBundle.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		EA513DE887945C6FD8E5B415 /* Runtime.subproj/NSDebug.m in Sources */ = {isa = PBXBuildFile; fileRef = 7CF427E5A1FF884358A865B9 /* Runtime.subproj/NSDebug.m */; };
+		FD7F2CB194F941B2D90796F9 /* Runtime.subproj/NSError.m in Sources */ = {isa = PBXBuildFile; fileRef = A49F3975B15721140B95CE7B /* Runtime.subproj/NSError.m */; };
+		5895BB2ECC821F01FAB45CD8 /* Runtime.subproj/NSException.m in Sources */ = {isa = PBXBuildFile; fileRef = 48F02C13F72ED0CB305435D0 /* Runtime.subproj/NSException.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		8BF90D520A50EFE255101C18 /* Runtime.subproj/NSGeometry.m in Sources */ = {isa = PBXBuildFile; fileRef = BF2FA7A8505CDECBE36B65E1 /* Runtime.subproj/NSGeometry.m */; };
+		8E906C75A5205AE59CC535F3 /* Runtime.subproj/NSJSONSerialization.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A4B797D0334295C17D5DACB /* Runtime.subproj/NSJSONSerialization.m */; };
+		357C5FC9D0C7BD0D541025FF /* Runtime.subproj/NSKeyValueCoding.m in Sources */ = {isa = PBXBuildFile; fileRef = 6E6CCE71A1726C8F4BEF7B4D /* Runtime.subproj/NSKeyValueCoding.m */; };
+		65E22ADD91420C4B78D79800 /* Runtime.subproj/NSLog.m in Sources */ = {isa = PBXBuildFile; fileRef = 6B1F0ABACE882120316D90F1 /* Runtime.subproj/NSLog.m */; };
+		1CB6F8331AB64F8C76D41D59 /* Runtime.subproj/NSNull.m in Sources */ = {isa = PBXBuildFile; fileRef = E414B3B15E6387F61FE0D9F8 /* Runtime.subproj/NSNull.m */; };
+		308076393842E9766D98D800 /* Runtime.subproj/NSObjCRuntime.m in Sources */ = {isa = PBXBuildFile; fileRef = 0059C2F35AE8B9251290B02E /* Runtime.subproj/NSObjCRuntime.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		FF060930BA9AB747493D2252 /* Runtime.subproj/NSProcessInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = ACEB3155D72D99F49F45D4C9 /* Runtime.subproj/NSProcessInfo.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		AE1F9E12910C991E224EC3AB /* Runtime.subproj/NSPropertyList.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B556609E276A9AE2DA58D04 /* Runtime.subproj/NSPropertyList.m */; };
+		739E6CDD1B3C25601C6C8514 /* Runtime.subproj/NSRange.m in Sources */ = {isa = PBXBuildFile; fileRef = D761E15C000E532A6D58016E /* Runtime.subproj/NSRange.m */; };
+		3CA31790F3601B5A606791A9 /* Runtime.subproj/NSUserDefaults.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E7BC2D775B97145B9000141 /* Runtime.subproj/NSUserDefaults.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		F31802ADFFBA2F7EF105D108 /* Runtime.subproj/NSValue.m in Sources */ = {isa = PBXBuildFile; fileRef = F7B847F112E59005525323F1 /* Runtime.subproj/NSValue.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		4744083B112A14AB1D886066 /* Runtime.subproj/NSZone.m in Sources */ = {isa = PBXBuildFile; fileRef = BBE651918A1CB0F3B8630C22 /* Runtime.subproj/NSZone.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		6E2E7398081A83671D47074A /* Serialization.subproj/NSCoder.m in Sources */ = {isa = PBXBuildFile; fileRef = C8550A20E5BF46B196BF17AE /* Serialization.subproj/NSCoder.m */; };
+		93F1413ED432D94266157DAB /* Sorting.subproj/NSSortDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = CDE8224445E1861B245EF90D /* Sorting.subproj/NSSortDescriptor.m */; };
+		B1033F1AAAFDC7AD4FE286FF /* Stream.subproj/NSStream.m in Sources */ = {isa = PBXBuildFile; fileRef = 35DD917D050BAF238B747D0D /* Stream.subproj/NSStream.m */; };
+		B19585A0C19B611A58AE0B57 /* String.subproj/NSCFString.m in Sources */ = {isa = PBXBuildFile; fileRef = CEE64D496D76AF52CDC3972A /* String.subproj/NSCFString.m */; };
+		C4FF184689279D96A23F8E17 /* String.subproj/NSCharacterSet.m in Sources */ = {isa = PBXBuildFile; fileRef = E51BA621FCC8422FFF82688E /* String.subproj/NSCharacterSet.m */; };
+		89AA223502D77B3E58F19B3D /* String.subproj/NSScanner.m in Sources */ = {isa = PBXBuildFile; fileRef = 271103993389B12DEFA08672 /* String.subproj/NSScanner.m */; };
+		3D3EDE4E19612D9889675808 /* String.subproj/NSString.m in Sources */ = {isa = PBXBuildFile; fileRef = 031F2A2700816F35322E1482 /* String.subproj/NSString.m */; };
+		8F5FB139C72338EF41566DDA /* Thread.subproj/NSThread.m in Sources */ = {isa = PBXBuildFile; fileRef = EE79D13FA4BE13D56F4B5F68 /* Thread.subproj/NSThread.m */; };
+		5BC39902416EB257968B8497 /* URL.subproj/NSURL.m in Sources */ = {isa = PBXBuildFile; fileRef = EB427A3670E54EE5375DFD51 /* URL.subproj/NSURL.m */; };
+		081AA637F7A7C840D11D3A2E /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E18A122D5A2AD703C145E408 /* CoreFoundation.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		E18A122D5A2AD703C145E408 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		27BE0D79956BD5A30EFD9DFC /* Collections.subproj/NSArray.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSArray.m"; path = "Collections.subproj/NSArray.m"; sourceTree = "<group>"; };
+		08BE57E2B5D59A7B6D386611 /* Collections.subproj/NSData.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSData.m"; path = "Collections.subproj/NSData.m"; sourceTree = "<group>"; };
+		461172C1CEDFD6F75F43E331 /* Collections.subproj/NSDictionary.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDictionary.m"; path = "Collections.subproj/NSDictionary.m"; sourceTree = "<group>"; };
+		3ECE4359CB2F523890B09843 /* Collections.subproj/NSEnumerator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSEnumerator.m"; path = "Collections.subproj/NSEnumerator.m"; sourceTree = "<group>"; };
+		F88722F89828AEBCF57AAF0E /* Collections.subproj/NSEnumerator_array.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSEnumerator_array.m"; path = "Collections.subproj/NSEnumerator_array.m"; sourceTree = "<group>"; };
+		4AD4625CA382AE8A057D07FA /* Collections.subproj/NSHashTable.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSHashTable.m"; path = "Collections.subproj/NSHashTable.m"; sourceTree = "<group>"; };
+		3EDA3B8B4620B4CA8D455C30 /* Collections.subproj/NSMapTable.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSMapTable.m"; path = "Collections.subproj/NSMapTable.m"; sourceTree = "<group>"; };
+		D78285491D83710379449060 /* Collections.subproj/NSOrderedSet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSOrderedSet.m"; path = "Collections.subproj/NSOrderedSet.m"; sourceTree = "<group>"; };
+		6B6F580482A65B7F9A032575 /* Collections.subproj/NSPointerFunctions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPointerFunctions.m"; path = "Collections.subproj/NSPointerFunctions.m"; sourceTree = "<group>"; };
+		9F07A8C41CC1C23B3B127542 /* Collections.subproj/NSSet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSSet.m"; path = "Collections.subproj/NSSet.m"; sourceTree = "<group>"; };
+		A9B8D866BCA53F02D07FCA2B /* Date.subproj/NSCalendar.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCalendar.m"; path = "Date.subproj/NSCalendar.m"; sourceTree = "<group>"; };
+		74A08F4F0C36A564A27F551A /* Date.subproj/NSDate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDate.m"; path = "Date.subproj/NSDate.m"; sourceTree = "<group>"; };
+		B443410340599ED9F8B4D1A7 /* Date.subproj/NSDateComponents.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDateComponents.m"; path = "Date.subproj/NSDateComponents.m"; sourceTree = "<group>"; };
+		A50F11204C5E6986FDFDE7F7 /* Date.subproj/NSDateFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDateFormatter.m"; path = "Date.subproj/NSDateFormatter.m"; sourceTree = "<group>"; };
+		462E6143ABDF9AC51D56585A /* Date.subproj/NSISO8601DateFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSISO8601DateFormatter.m"; path = "Date.subproj/NSISO8601DateFormatter.m"; sourceTree = "<group>"; };
+		672CC657F91374C41B0421D1 /* Date.subproj/NSTimeZone.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSTimeZone.m"; path = "Date.subproj/NSTimeZone.m"; sourceTree = "<group>"; };
+		38D13E0FD6D35BFB1006412D /* FileManager.subproj/NSFileHandle.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSFileHandle.m"; path = "FileManager.subproj/NSFileHandle.m"; sourceTree = "<group>"; };
+		E148A198ABFD594FF0ACCB12 /* FileManager.subproj/NSFileManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSFileManager.m"; path = "FileManager.subproj/NSFileManager.m"; sourceTree = "<group>"; };
+		51743FE7FE226E35679D47AB /* FileManager.subproj/NSPathUtilities.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPathUtilities.m"; path = "FileManager.subproj/NSPathUtilities.m"; sourceTree = "<group>"; };
+		D3B8B15854C86942D8CA07F2 /* FileManager.subproj/NSPipe.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPipe.m"; path = "FileManager.subproj/NSPipe.m"; sourceTree = "<group>"; };
+		368EF80883EE7E8BC2ACE3D2 /* FileManager.subproj/NSTask.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSTask.m"; path = "FileManager.subproj/NSTask.m"; sourceTree = "<group>"; };
+		ABB97F09F43ED1E038F0957F /* Locale.subproj/NSLocale.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSLocale.m"; path = "Locale.subproj/NSLocale.m"; sourceTree = "<group>"; };
+		0277C84CA580ACC5EB2A04C4 /* Lock.subproj/NSCondition.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCondition.m"; path = "Lock.subproj/NSCondition.m"; sourceTree = "<group>"; };
+		1CD2C42138105F4BA8EDA001 /* Lock.subproj/NSConditionLock.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSConditionLock.m"; path = "Lock.subproj/NSConditionLock.m"; sourceTree = "<group>"; };
+		FD2A1E145D7594586DDAFE20 /* Lock.subproj/NSLock.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSLock.m"; path = "Lock.subproj/NSLock.m"; sourceTree = "<group>"; };
+		FB33486951C8A98F2720CD61 /* Lock.subproj/NSRecursiveLock.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSRecursiveLock.m"; path = "Lock.subproj/NSRecursiveLock.m"; sourceTree = "<group>"; };
+		7837BDAA59A3740E700D59BF /* Notification.subproj/NSNotification.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSNotification.m"; path = "Notification.subproj/NSNotification.m"; sourceTree = "<group>"; };
+		E7785709385AF3B93C6CE662 /* Notification.subproj/NSNotificationCenter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSNotificationCenter.m"; path = "Notification.subproj/NSNotificationCenter.m"; sourceTree = "<group>"; };
+		29FF4592934705CD4DF971C5 /* Numeric.subproj/NSDecimal.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDecimal.m"; path = "Numeric.subproj/NSDecimal.m"; sourceTree = "<group>"; };
+		3C4AE57DF87210AD4D752A7C /* Numeric.subproj/NSDecimalNumber.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDecimalNumber.m"; path = "Numeric.subproj/NSDecimalNumber.m"; sourceTree = "<group>"; };
+		A491D2EB350202A3AF96798A /* Numeric.subproj/NSNumber.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSNumber.m"; path = "Numeric.subproj/NSNumber.m"; sourceTree = "<group>"; };
+		95C4061E9403C74177E7ECB0 /* Numeric.subproj/NSNumberFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSNumberFormatter.m"; path = "Numeric.subproj/NSNumberFormatter.m"; sourceTree = "<group>"; };
+		F2AB46CD397DA2DDBB793D68 /* RunLoop.subproj/NSRunLoop.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSRunLoop.m"; path = "RunLoop.subproj/NSRunLoop.m"; sourceTree = "<group>"; };
+		5E86CC7506DAB0A09731A44A /* RunLoop.subproj/NSTimer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSTimer.m"; path = "RunLoop.subproj/NSTimer.m"; sourceTree = "<group>"; };
+		07447952F68FA49175A84DA1 /* Runtime.subproj/NSBundle.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSBundle.m"; path = "Runtime.subproj/NSBundle.m"; sourceTree = "<group>"; };
+		7CF427E5A1FF884358A865B9 /* Runtime.subproj/NSDebug.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDebug.m"; path = "Runtime.subproj/NSDebug.m"; sourceTree = "<group>"; };
+		A49F3975B15721140B95CE7B /* Runtime.subproj/NSError.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSError.m"; path = "Runtime.subproj/NSError.m"; sourceTree = "<group>"; };
+		48F02C13F72ED0CB305435D0 /* Runtime.subproj/NSException.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSException.m"; path = "Runtime.subproj/NSException.m"; sourceTree = "<group>"; };
+		BF2FA7A8505CDECBE36B65E1 /* Runtime.subproj/NSGeometry.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSGeometry.m"; path = "Runtime.subproj/NSGeometry.m"; sourceTree = "<group>"; };
+		1A4B797D0334295C17D5DACB /* Runtime.subproj/NSJSONSerialization.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSJSONSerialization.m"; path = "Runtime.subproj/NSJSONSerialization.m"; sourceTree = "<group>"; };
+		6E6CCE71A1726C8F4BEF7B4D /* Runtime.subproj/NSKeyValueCoding.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSKeyValueCoding.m"; path = "Runtime.subproj/NSKeyValueCoding.m"; sourceTree = "<group>"; };
+		6B1F0ABACE882120316D90F1 /* Runtime.subproj/NSLog.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSLog.m"; path = "Runtime.subproj/NSLog.m"; sourceTree = "<group>"; };
+		E414B3B15E6387F61FE0D9F8 /* Runtime.subproj/NSNull.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSNull.m"; path = "Runtime.subproj/NSNull.m"; sourceTree = "<group>"; };
+		0059C2F35AE8B9251290B02E /* Runtime.subproj/NSObjCRuntime.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSObjCRuntime.m"; path = "Runtime.subproj/NSObjCRuntime.m"; sourceTree = "<group>"; };
+		ACEB3155D72D99F49F45D4C9 /* Runtime.subproj/NSProcessInfo.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSProcessInfo.m"; path = "Runtime.subproj/NSProcessInfo.m"; sourceTree = "<group>"; };
+		7B556609E276A9AE2DA58D04 /* Runtime.subproj/NSPropertyList.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPropertyList.m"; path = "Runtime.subproj/NSPropertyList.m"; sourceTree = "<group>"; };
+		D761E15C000E532A6D58016E /* Runtime.subproj/NSRange.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSRange.m"; path = "Runtime.subproj/NSRange.m"; sourceTree = "<group>"; };
+		7E7BC2D775B97145B9000141 /* Runtime.subproj/NSUserDefaults.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSUserDefaults.m"; path = "Runtime.subproj/NSUserDefaults.m"; sourceTree = "<group>"; };
+		F7B847F112E59005525323F1 /* Runtime.subproj/NSValue.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSValue.m"; path = "Runtime.subproj/NSValue.m"; sourceTree = "<group>"; };
+		BBE651918A1CB0F3B8630C22 /* Runtime.subproj/NSZone.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSZone.m"; path = "Runtime.subproj/NSZone.m"; sourceTree = "<group>"; };
+		C8550A20E5BF46B196BF17AE /* Serialization.subproj/NSCoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCoder.m"; path = "Serialization.subproj/NSCoder.m"; sourceTree = "<group>"; };
+		CDE8224445E1861B245EF90D /* Sorting.subproj/NSSortDescriptor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSSortDescriptor.m"; path = "Sorting.subproj/NSSortDescriptor.m"; sourceTree = "<group>"; };
+		35DD917D050BAF238B747D0D /* Stream.subproj/NSStream.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSStream.m"; path = "Stream.subproj/NSStream.m"; sourceTree = "<group>"; };
+		CEE64D496D76AF52CDC3972A /* String.subproj/NSCFString.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCFString.m"; path = "String.subproj/NSCFString.m"; sourceTree = "<group>"; };
+		E51BA621FCC8422FFF82688E /* String.subproj/NSCharacterSet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCharacterSet.m"; path = "String.subproj/NSCharacterSet.m"; sourceTree = "<group>"; };
+		271103993389B12DEFA08672 /* String.subproj/NSScanner.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSScanner.m"; path = "String.subproj/NSScanner.m"; sourceTree = "<group>"; };
+		031F2A2700816F35322E1482 /* String.subproj/NSString.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSString.m"; path = "String.subproj/NSString.m"; sourceTree = "<group>"; };
+		EE79D13FA4BE13D56F4B5F68 /* Thread.subproj/NSThread.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSThread.m"; path = "Thread.subproj/NSThread.m"; sourceTree = "<group>"; };
+		EB427A3670E54EE5375DFD51 /* URL.subproj/NSURL.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSURL.m"; path = "URL.subproj/NSURL.m"; sourceTree = "<group>"; };
+		5816D3EA598B7642519B3F78 /* Foundation.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Foundation.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CF5BDB0BEAFE176F9629192A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				081AA637F7A7C840D11D3A2E /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		ADCF10F76EBF2A74473E9DC4 = {
+			isa = PBXGroup;
+			children = (
+				9642F1047C1002A1EE72F0DB /* Sources */,
+				00C45FD35CB0F9C5F764F070 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		00C45FD35CB0F9C5F764F070 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5816D3EA598B7642519B3F78 /* Foundation.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9642F1047C1002A1EE72F0DB /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				27BE0D79956BD5A30EFD9DFC /* Collections.subproj/NSArray.m */,
+				08BE57E2B5D59A7B6D386611 /* Collections.subproj/NSData.m */,
+				461172C1CEDFD6F75F43E331 /* Collections.subproj/NSDictionary.m */,
+				3ECE4359CB2F523890B09843 /* Collections.subproj/NSEnumerator.m */,
+				F88722F89828AEBCF57AAF0E /* Collections.subproj/NSEnumerator_array.m */,
+				4AD4625CA382AE8A057D07FA /* Collections.subproj/NSHashTable.m */,
+				3EDA3B8B4620B4CA8D455C30 /* Collections.subproj/NSMapTable.m */,
+				D78285491D83710379449060 /* Collections.subproj/NSOrderedSet.m */,
+				6B6F580482A65B7F9A032575 /* Collections.subproj/NSPointerFunctions.m */,
+				9F07A8C41CC1C23B3B127542 /* Collections.subproj/NSSet.m */,
+				A9B8D866BCA53F02D07FCA2B /* Date.subproj/NSCalendar.m */,
+				74A08F4F0C36A564A27F551A /* Date.subproj/NSDate.m */,
+				B443410340599ED9F8B4D1A7 /* Date.subproj/NSDateComponents.m */,
+				A50F11204C5E6986FDFDE7F7 /* Date.subproj/NSDateFormatter.m */,
+				462E6143ABDF9AC51D56585A /* Date.subproj/NSISO8601DateFormatter.m */,
+				672CC657F91374C41B0421D1 /* Date.subproj/NSTimeZone.m */,
+				38D13E0FD6D35BFB1006412D /* FileManager.subproj/NSFileHandle.m */,
+				E148A198ABFD594FF0ACCB12 /* FileManager.subproj/NSFileManager.m */,
+				51743FE7FE226E35679D47AB /* FileManager.subproj/NSPathUtilities.m */,
+				D3B8B15854C86942D8CA07F2 /* FileManager.subproj/NSPipe.m */,
+				368EF80883EE7E8BC2ACE3D2 /* FileManager.subproj/NSTask.m */,
+				ABB97F09F43ED1E038F0957F /* Locale.subproj/NSLocale.m */,
+				0277C84CA580ACC5EB2A04C4 /* Lock.subproj/NSCondition.m */,
+				1CD2C42138105F4BA8EDA001 /* Lock.subproj/NSConditionLock.m */,
+				FD2A1E145D7594586DDAFE20 /* Lock.subproj/NSLock.m */,
+				FB33486951C8A98F2720CD61 /* Lock.subproj/NSRecursiveLock.m */,
+				7837BDAA59A3740E700D59BF /* Notification.subproj/NSNotification.m */,
+				E7785709385AF3B93C6CE662 /* Notification.subproj/NSNotificationCenter.m */,
+				29FF4592934705CD4DF971C5 /* Numeric.subproj/NSDecimal.m */,
+				3C4AE57DF87210AD4D752A7C /* Numeric.subproj/NSDecimalNumber.m */,
+				A491D2EB350202A3AF96798A /* Numeric.subproj/NSNumber.m */,
+				95C4061E9403C74177E7ECB0 /* Numeric.subproj/NSNumberFormatter.m */,
+				F2AB46CD397DA2DDBB793D68 /* RunLoop.subproj/NSRunLoop.m */,
+				5E86CC7506DAB0A09731A44A /* RunLoop.subproj/NSTimer.m */,
+				07447952F68FA49175A84DA1 /* Runtime.subproj/NSBundle.m */,
+				7CF427E5A1FF884358A865B9 /* Runtime.subproj/NSDebug.m */,
+				A49F3975B15721140B95CE7B /* Runtime.subproj/NSError.m */,
+				48F02C13F72ED0CB305435D0 /* Runtime.subproj/NSException.m */,
+				BF2FA7A8505CDECBE36B65E1 /* Runtime.subproj/NSGeometry.m */,
+				1A4B797D0334295C17D5DACB /* Runtime.subproj/NSJSONSerialization.m */,
+				6E6CCE71A1726C8F4BEF7B4D /* Runtime.subproj/NSKeyValueCoding.m */,
+				6B1F0ABACE882120316D90F1 /* Runtime.subproj/NSLog.m */,
+				E414B3B15E6387F61FE0D9F8 /* Runtime.subproj/NSNull.m */,
+				0059C2F35AE8B9251290B02E /* Runtime.subproj/NSObjCRuntime.m */,
+				ACEB3155D72D99F49F45D4C9 /* Runtime.subproj/NSProcessInfo.m */,
+				7B556609E276A9AE2DA58D04 /* Runtime.subproj/NSPropertyList.m */,
+				D761E15C000E532A6D58016E /* Runtime.subproj/NSRange.m */,
+				7E7BC2D775B97145B9000141 /* Runtime.subproj/NSUserDefaults.m */,
+				F7B847F112E59005525323F1 /* Runtime.subproj/NSValue.m */,
+				BBE651918A1CB0F3B8630C22 /* Runtime.subproj/NSZone.m */,
+				C8550A20E5BF46B196BF17AE /* Serialization.subproj/NSCoder.m */,
+				CDE8224445E1861B245EF90D /* Sorting.subproj/NSSortDescriptor.m */,
+				35DD917D050BAF238B747D0D /* Stream.subproj/NSStream.m */,
+				CEE64D496D76AF52CDC3972A /* String.subproj/NSCFString.m */,
+				E51BA621FCC8422FFF82688E /* String.subproj/NSCharacterSet.m */,
+				271103993389B12DEFA08672 /* String.subproj/NSScanner.m */,
+				031F2A2700816F35322E1482 /* String.subproj/NSString.m */,
+				EE79D13FA4BE13D56F4B5F68 /* Thread.subproj/NSThread.m */,
+				EB427A3670E54EE5375DFD51 /* URL.subproj/NSURL.m */,
+			);
+			name = Sources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		38C480DADE61F068F26A45D8 /* Foundation */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7ADE71700E9404B10E13B577 /* Build configuration list for PBXNativeTarget "Foundation" */;
+			buildPhases = (
+				02551020662CA189282F2043 /* Generate umbrella header */,
+				1CDF2F71A52B082132B04DFF /* Sources */,
+				CF5BDB0BEAFE176F9629192A /* Frameworks */,
+				C02F1309AF4906C92F1EAD44 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Foundation;
+			productName = Foundation;
+			productReference = 5816D3EA598B7642519B3F78 /* Foundation.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D1B9FE25DB41D5F80701F002 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1510;
+				TargetAttributes = {
+					38C480DADE61F068F26A45D8 = { CreatedOnToolsVersion = 15.0; };
+				};
+			};
+			buildConfigurationList = 12D04D787E90C9B967248BFD /* Build configuration list for PBXProject "Foundation" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base);
+			mainGroup = ADCF10F76EBF2A74473E9DC4;
+			productRefGroup = 00C45FD35CB0F9C5F764F070 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				38C480DADE61F068F26A45D8 /* Foundation */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C02F1309AF4906C92F1EAD44 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		02551020662CA189282F2043 /* Generate umbrella header */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate umbrella header";
+			outputPaths = (
+				"$(SRCROOT)/build/gen/Foundation/Foundation.h",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C \"$SRCROOT\" umbrella";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1CDF2F71A52B082132B04DFF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9B1E90B44118A88D66A9B5A5 /* Collections.subproj/NSArray.m in Sources */,
+				D655B921A8F2F023E8DE6929 /* Collections.subproj/NSData.m in Sources */,
+				C3E4580BB1F65B7F27AC24F7 /* Collections.subproj/NSDictionary.m in Sources */,
+				CA336FB86E7D7FE25F1AE396 /* Collections.subproj/NSEnumerator.m in Sources */,
+				CE1229667BD0DE63630831B9 /* Collections.subproj/NSEnumerator_array.m in Sources */,
+				D1756E75DEFCADC640BA83D7 /* Collections.subproj/NSHashTable.m in Sources */,
+				86ADD6E3BA5AD61102F1A0F6 /* Collections.subproj/NSMapTable.m in Sources */,
+				CA0E858B8F548856CAACBA9B /* Collections.subproj/NSOrderedSet.m in Sources */,
+				4687F95733156FA0D27A44F1 /* Collections.subproj/NSPointerFunctions.m in Sources */,
+				A0B616910FBB95825B965061 /* Collections.subproj/NSSet.m in Sources */,
+				C209B1196FEF24C22DBECEE2 /* Date.subproj/NSCalendar.m in Sources */,
+				BA42DB5FEDD59DD656FBA82B /* Date.subproj/NSDate.m in Sources */,
+				2D97EAD4A4070D661F4525E7 /* Date.subproj/NSDateComponents.m in Sources */,
+				B89DD242653A31E8E4E71EA4 /* Date.subproj/NSDateFormatter.m in Sources */,
+				AA67EE6069F0D5F5FD4B9A59 /* Date.subproj/NSISO8601DateFormatter.m in Sources */,
+				71A15F22A32617A943A4AD34 /* Date.subproj/NSTimeZone.m in Sources */,
+				C03F7CD48C1D830EE6C18EEE /* FileManager.subproj/NSFileHandle.m in Sources */,
+				F2A6B19A2FC2895E20C3FC64 /* FileManager.subproj/NSFileManager.m in Sources */,
+				AF99A0FF3978557812572972 /* FileManager.subproj/NSPathUtilities.m in Sources */,
+				397828BF6B1267D0069909CD /* FileManager.subproj/NSPipe.m in Sources */,
+				E5C022E63F6958CF69AAD57D /* FileManager.subproj/NSTask.m in Sources */,
+				A6AF7169E3BF6296F28CF097 /* Locale.subproj/NSLocale.m in Sources */,
+				5C77888F78B2D291DFA23CEC /* Lock.subproj/NSCondition.m in Sources */,
+				4906CD4C6E66473E9F7C89D9 /* Lock.subproj/NSConditionLock.m in Sources */,
+				D03BD34C959C42746FEB8BEE /* Lock.subproj/NSLock.m in Sources */,
+				DFAB9A659015B5453681FC47 /* Lock.subproj/NSRecursiveLock.m in Sources */,
+				F8CDC8EA775A7015A3AB7CFC /* Notification.subproj/NSNotification.m in Sources */,
+				4E24CB1E7ED3C10E3D3CE477 /* Notification.subproj/NSNotificationCenter.m in Sources */,
+				3DC1813EAFD2AB68BD05785A /* Numeric.subproj/NSDecimal.m in Sources */,
+				549185E3265A5741D8A6F720 /* Numeric.subproj/NSDecimalNumber.m in Sources */,
+				10C8FD372CFA9346269B6E5F /* Numeric.subproj/NSNumber.m in Sources */,
+				FDB6882ECEADA094F6EB0421 /* Numeric.subproj/NSNumberFormatter.m in Sources */,
+				1ED7476E9F4D38349058A23E /* RunLoop.subproj/NSRunLoop.m in Sources */,
+				6DFD9EB2A2C227F2C3F7E411 /* RunLoop.subproj/NSTimer.m in Sources */,
+				29A7E8E0F872D9268C7B2368 /* Runtime.subproj/NSBundle.m in Sources */,
+				EA513DE887945C6FD8E5B415 /* Runtime.subproj/NSDebug.m in Sources */,
+				FD7F2CB194F941B2D90796F9 /* Runtime.subproj/NSError.m in Sources */,
+				5895BB2ECC821F01FAB45CD8 /* Runtime.subproj/NSException.m in Sources */,
+				8BF90D520A50EFE255101C18 /* Runtime.subproj/NSGeometry.m in Sources */,
+				8E906C75A5205AE59CC535F3 /* Runtime.subproj/NSJSONSerialization.m in Sources */,
+				357C5FC9D0C7BD0D541025FF /* Runtime.subproj/NSKeyValueCoding.m in Sources */,
+				65E22ADD91420C4B78D79800 /* Runtime.subproj/NSLog.m in Sources */,
+				1CB6F8331AB64F8C76D41D59 /* Runtime.subproj/NSNull.m in Sources */,
+				308076393842E9766D98D800 /* Runtime.subproj/NSObjCRuntime.m in Sources */,
+				FF060930BA9AB747493D2252 /* Runtime.subproj/NSProcessInfo.m in Sources */,
+				AE1F9E12910C991E224EC3AB /* Runtime.subproj/NSPropertyList.m in Sources */,
+				739E6CDD1B3C25601C6C8514 /* Runtime.subproj/NSRange.m in Sources */,
+				3CA31790F3601B5A606791A9 /* Runtime.subproj/NSUserDefaults.m in Sources */,
+				F31802ADFFBA2F7EF105D108 /* Runtime.subproj/NSValue.m in Sources */,
+				4744083B112A14AB1D886066 /* Runtime.subproj/NSZone.m in Sources */,
+				6E2E7398081A83671D47074A /* Serialization.subproj/NSCoder.m in Sources */,
+				93F1413ED432D94266157DAB /* Sorting.subproj/NSSortDescriptor.m in Sources */,
+				B1033F1AAAFDC7AD4FE286FF /* Stream.subproj/NSStream.m in Sources */,
+				B19585A0C19B611A58AE0B57 /* String.subproj/NSCFString.m in Sources */,
+				C4FF184689279D96A23F8E17 /* String.subproj/NSCharacterSet.m in Sources */,
+				89AA223502D77B3E58F19B3D /* String.subproj/NSScanner.m in Sources */,
+				3D3EDE4E19612D9889675808 /* String.subproj/NSString.m in Sources */,
+				8F5FB139C72338EF41566DDA /* Thread.subproj/NSThread.m in Sources */,
+				5BC39902416EB257968B8497 /* URL.subproj/NSURL.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		855D4B0C75ECD556474FD8F5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = "12.0";
+				SDKROOT = "macosx";
+			};
+			name = Debug;
+		};
+		4E74312DBBD620AE1CB5D771 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = "12.0";
+				SDKROOT = "macosx";
+			};
+			name = Release;
+		};
+		112DB64EE5DD2663C7F9CA6C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = "NO";
+				CLANG_ENABLE_OBJC_ARC = "YES";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = "Automatic";
+				CURRENT_PROJECT_VERSION = "1";
+				DEFINES_MODULE = "YES";
+				DYLIB_COMPATIBILITY_VERSION = "1";
+				DYLIB_CURRENT_VERSION = "1";
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GCC_OPTIMIZATION_LEVEL = "0";
+				GCC_PREPROCESSOR_DEFINITIONS = ("$(inherited)", "NSBUILDINGFOUNDATION=1", "CF_SWIFT_SENDABLE=", "CF_SWIFT_NAME(x)=");
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/build/gen", "$(SRCROOT)/local/include", "$(SDKROOT)/System/Library/Frameworks/CoreFoundation.framework/Headers", "$(SDKROOT)/System/Library/Frameworks/CoreFoundation.framework/PrivateHeaders");
+				INFOPLIST_FILE = "Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks", "@loader_path/Frameworks");
+				MACH_O_TYPE = "mh_dylib";
+				MACOSX_DEPLOYMENT_TARGET = "12.0";
+				ONLY_ACTIVE_ARCH = "YES";
+				OTHER_LDFLAGS = ("$(inherited)", "-framework", "CoreFoundation");
+				PRODUCT_BUNDLE_IDENTIFIER = "org.libredarwin.Foundation";
+				PRODUCT_NAME = "Foundation";
+				SDKROOT = "macosx";
+				SKIP_INSTALL = "YES";
+				WRAPPER_EXTENSION = "framework";
+			};
+			name = Debug;
+		};
+		1DD7FB0A527F4C0E67C68D57 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = "NO";
+				CLANG_ENABLE_OBJC_ARC = "YES";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = "Automatic";
+				CURRENT_PROJECT_VERSION = "1";
+				DEFINES_MODULE = "YES";
+				DYLIB_COMPATIBILITY_VERSION = "1";
+				DYLIB_CURRENT_VERSION = "1";
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GCC_OPTIMIZATION_LEVEL = "s";
+				GCC_PREPROCESSOR_DEFINITIONS = ("$(inherited)", "NSBUILDINGFOUNDATION=1", "CF_SWIFT_SENDABLE=", "CF_SWIFT_NAME(x)=");
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/build/gen", "$(SRCROOT)/local/include", "$(SDKROOT)/System/Library/Frameworks/CoreFoundation.framework/Headers", "$(SDKROOT)/System/Library/Frameworks/CoreFoundation.framework/PrivateHeaders");
+				INFOPLIST_FILE = "Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks", "@loader_path/Frameworks");
+				MACH_O_TYPE = "mh_dylib";
+				MACOSX_DEPLOYMENT_TARGET = "12.0";
+				OTHER_LDFLAGS = ("$(inherited)", "-framework", "CoreFoundation");
+				PRODUCT_BUNDLE_IDENTIFIER = "org.libredarwin.Foundation";
+				PRODUCT_NAME = "Foundation";
+				SDKROOT = "macosx";
+				SKIP_INSTALL = "YES";
+				WRAPPER_EXTENSION = "framework";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		12D04D787E90C9B967248BFD /* Build configuration list for PBXProject "Foundation" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				855D4B0C75ECD556474FD8F5 /* Debug */,
+				4E74312DBBD620AE1CB5D771 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7ADE71700E9404B10E13B577 /* Build configuration list for PBXNativeTarget "Foundation" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				112DB64EE5DD2663C7F9CA6C /* Debug */,
+				1DD7FB0A527F4C0E67C68D57 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = D1B9FE25DB41D5F80701F002 /* Project object */;
+}

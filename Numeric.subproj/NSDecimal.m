@@ -221,6 +221,7 @@ static void decimal_subtract_digits(DecimalDigits *out, DecimalDigits left, Deci
     out->count = left.count;
     out->exponent = exponent;
     out->negative = left.negative;
+    out->nan = NO;
     int borrow = 0;
     for (int i = (int)left.count - 1; i >= 0; i--) {
         int ri = i - ((int)left.count - (int)right.count);
