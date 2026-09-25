@@ -49,6 +49,8 @@ typedef NS_OPTIONS(NSUInteger, NSBinarySearchingOptions) {
 
 - (void)addObject:(ObjectType)object;
 - (void)addObjectsFromArray:(NSArray<ObjectType> *)array;
+- (void)replaceObjectAtIndex:(NSUInteger)index withObject:(ObjectType)anObject;
+- (void)setObject:(ObjectType)obj atIndexedSubscript:(NSUInteger)idx;
 - (void)removeObjectAtIndex:(NSUInteger)index;
 - (void)removeAllObjects;
 - (void)sortUsingSelector:(SEL)comparator;

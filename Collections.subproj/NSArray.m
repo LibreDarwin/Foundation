@@ -213,6 +213,14 @@ static CFComparisonResult NSNSArrayDispatchDescriptors(const void *object1, cons
     CFArrayRemoveValueAtIndex(NSARRAY_CF(CFMutableArrayRef, self), (CFIndex)index);
 }
 
+- (void)replaceObjectAtIndex:(NSUInteger)index withObject:(id)anObject {
+    CFArraySetValueAtIndex(NSARRAY_CF(CFMutableArrayRef, self), (CFIndex)index, NSARRAY_CF(const void *, anObject));
+}
+
+- (void)setObject:(id)obj atIndexedSubscript:(NSUInteger)idx {
+    [self replaceObjectAtIndex:idx withObject:obj];
+}
+
 - (void)removeAllObjects {
     CFArrayRemoveAllValues(NSARRAY_CF(CFMutableArrayRef, self));
 }

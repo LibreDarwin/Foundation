@@ -20,6 +20,11 @@ enum {
     NSCoderValueNotFoundError = 4865,
     NSCoderInvalidValueError = 4866,
     NSCoderErrorMinimum = 4864,
+    NSCoderReadIncompatibleArchiveError = 4865,
+    NSCoderReadIncompatiblePointerError = 4866,
+    NSCoderReadInvalidArrayLengthError = 4867,
+    NSCoderReadUnknownTypeError = 4868,
+    NSCoderWriteInsufficientMemoryError = 4869,
     NSCoderErrorMaximum = 4991,
 };
 
