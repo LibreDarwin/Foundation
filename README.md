@@ -113,19 +113,15 @@ system binary's exports (the Swift counterpart of a `.tbd`).
 
 ## Current status and known issues
 
-- The repo is **red at the pairing sweep**: `NSKeyedArchiver.h` declares 11
-  selectors no `.m` matches, which blocks `build/gen/Foundation/Foundation.h`
-  and therefore plain `make` and `make verify`.
-  - 10 are `NSKeyedArchiverDelegate` / `NSKeyedUnarchiverDelegate` protocol
-    methods (archiverWillFinish/DidFinish, archiver:didEncodeObject:,
-    archiver:willEncodeObject:, archiver:willReplaceObject:withObject:,
-    unarchiverDidFinish/WillFinish, unarchiver:cannotDecodeObjectOfClassName:
-    originalClasses:, unarchiver:didDecodeObject:, unarchiver:willReplaceObject:
-    withObject:) — these are correctly implemented by conformers, not the
-    archiver, so they need sweep allowlist entries.
-  - `unarchiveTopLevelObjectWithData:error:` **is** implemented
-    (`Serialization.subproj/NSKeyedUnarchiver.m:329`) but the scanner cannot
-    match its annotated declaration.
+- **Tree is green**: `make all` (build + pairing sweep + behavior gate) passes for
+  both `release` and `debug` configurations. 896 selectors across 52 headers are
+  declared and implemented.
+- **Delegation protocols are handled**: the pairing sweep strips `@protocol`
+  bodies and forward declarations (delegate methods are implemented by
+  conformers, never by the framework itself) and allowlists
+  `unarchiveTopLevelObjectWithData:error:`, whose `NS_SWIFT_UNAVAILABLE` on the
+  `error:` parameter fools the flat selector matcher despite the implementation
+  at `Serialization.subproj/NSKeyedUnarchiver.m:329`.
 - `NSKeyedArchiver.m` / `NSKeyedUnarchiver.m` are **not yet in `GATE_SRCS`**, so
   keyed-archive behavior is not yet gate-pinned against Apple ground truth.
 - The framework deliberately ships **no `NSAutoreleasePool`**; until it does, the
@@ -136,8 +132,6 @@ system binary's exports (the Swift counterpart of a `.tbd`).
 ## What's left
 
 **Finish / gate the current slice**
-- Allowlist the 11 `NSKeyedArchiver.h` selectors in `Tests/pairing_sweep.py`
-  (ideally teach the sweep to skip `@protocol` blocks) so the tree goes green.
 - Add `NSKeyedArchiver.m`/`NSKeyedUnarchiver.m` to `GATE_SRCS`, extend
   `Tests/port_behavior.m` with keyed-archive probes, and re-capture the Apple
   ground truth into `Tests/port_behavior.golden`.

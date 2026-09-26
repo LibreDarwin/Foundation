@@ -6,6 +6,11 @@ For every header under the project that declares Objective-C methods
 implemented somewhere in the .m sources. Exits non-zero (FAIL) when any
 declared selector has no implementation.
 
+Methods declared inside @protocol bodies are exempt: they are implemented by
+conformers (delegate protocols such as NSKeyedArchiverDelegate are only ever
+*invoked* by the framework, never implemented by it), so protocol bodies and
+@protocol forward declarations are removed before scanning.
+
 Usage:  pairing_sweep.py [ROOT]
         ROOT defaults to the directory containing this script.
 """
@@ -45,12 +50,22 @@ ALLOWLIST = [
     # Variadic "...," after the last parameter makes the selector not the last
     # token before ';', confusing the declaration matcher.
     ('NSString.h', 'initWithFormat', 'String.subproj/NSString.m:95'),
+    # NS_SWIFT_UNAVAILABLE(...) attached to the final error: parameter leaves
+    # the attribute text (which contains "_(") between the selector words, so
+    # the matcher computes a mangled name with a trailing underscore.
+    ('NSKeyedArchiver.h', 'unarchiveTopLevelObjectWithDataerror_', 'Serialization.subproj/NSKeyedUnarchiver.m:329'),
 ]
 
 
 def selectors_header(src):
     out = set()
-    chunks = re.split(r'^@(?:interface|implementation|protocol)\b', src, flags=re.M)
+    # Delegate/protocol methods are implemented by conformers, never by the
+    # framework itself, so drop @protocol forward declarations ("@protocol A;",
+    # "@protocol A, B;") and full protocol bodies ("@protocol A ... @end")
+    # before splitting into @interface/@implementation chunks.
+    src = re.sub(r'@protocol\s+[A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*;', '', src)
+    src = re.sub(r'@protocol\b.*?@end', '', src, flags=re.S)
+    chunks = re.split(r'^@(?:interface|implementation)\b', src, flags=re.M)
     for c in chunks:
         flat = re.sub(r'-\s*\([^)]*\)(?:[^;\n{}]|\n)+?;?', lambda mo: mo.group(0).replace('\n', ' '), c)
         for k in ('-', '+'):
