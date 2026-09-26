@@ -92,6 +92,15 @@ static CFComparisonResult NSNSArrayDispatchDescriptors(const void *object1, cons
     return [self objectAtIndex:index];
 }
 
+- (id)lastObject {
+    CFArrayRef array = NSARRAY_CF(CFArrayRef, self);
+    CFIndex n = CFArrayGetCount(array);
+    if (n == 0) {
+        return nil;
+    }
+    return NSARRAY_BORROWED(CFArrayGetValueAtIndex(array, n - 1));
+}
+
 - (BOOL)containsObject:(id)object {
     CFArrayRef array = NSARRAY_CF(CFArrayRef, self);
     CFIndex n = CFArrayGetCount(array);
@@ -211,6 +220,12 @@ static CFComparisonResult NSNSArrayDispatchDescriptors(const void *object1, cons
 
 - (void)removeObjectAtIndex:(NSUInteger)index {
     CFArrayRemoveValueAtIndex(NSARRAY_CF(CFMutableArrayRef, self), (CFIndex)index);
+}
+
+/* An empty receiver raises (via the same CF bounds path as removeObjectAtIndex:)
+ * on index NSUIntegerMax, matching Apple's NSRangeException. */
+- (void)removeLastObject {
+    [self removeObjectAtIndex:[self count] - 1];
 }
 
 - (void)replaceObjectAtIndex:(NSUInteger)index withObject:(id)anObject {

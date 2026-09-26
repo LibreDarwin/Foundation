@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <objc/runtime.h>
 
 /* The archive is a property list.  Everything below reads through that
  * structure: $objects is an array of values and nodes, $top a dictionary of
