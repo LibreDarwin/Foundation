@@ -16,6 +16,11 @@
 
 @interface NSNull : NSObject <NSCopying, NSSecureCoding>
 
+/* CoreFoundation owns the null behind this Foundation type on a host that
+ * has Apple's Foundation loaded, so +class is overridden to report the
+ * runtime's class and isKindOfClass: agrees.  See NSString.h. */
++ (Class)class;
+
 + (NSNull *)null;
 
 - (id)copyWithZone:(NSZone *)zone;

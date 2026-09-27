@@ -15,6 +15,11 @@
 
 @interface NSData : NSObject
 
+/* CoreFoundation owns the data behind this Foundation type on a host that
+ * has Apple's Foundation loaded, so +class is overridden to report the
+ * runtime's class and isKindOfClass: agrees.  See NSString.h. */
++ (Class)class;
+
 + (instancetype)data;
 + (instancetype)dataWithBytes:(const void *)bytes length:(NSUInteger)length;
 + (instancetype)dataWithBytesNoCopy:(void *)bytes length:(NSUInteger)length;

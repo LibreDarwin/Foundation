@@ -14,6 +14,8 @@
 
 #import <Foundation/NSSet.h>
 #import <Foundation/NSNumber.h>
+#import <Foundation/NSCoder.h>
+#import <Foundation/NSArray.h>
 #include <CoreFoundation/CFSet.h>
 #include <CoreFoundation/CFDictionary.h>
 #include <CoreFoundation/ForFoundationOnly.h>
@@ -87,6 +89,14 @@ static void _NSSetAddValue(const void *value, void *context) {
 
 @implementation NSSet
 
+/* CoreFoundation owns every set this Foundation hands out, so -class names
+ * __NSCFSet and isKindOfClass: walks the CF chain.  Report CF's class so both
+ * agree; on a host with no colliding Foundation the lookup returns this class
+ * and the override is a no-op.  See NSString.m. */
++ (Class)class {
+    return objc_getClass("NSSet");
+}
+
 + (instancetype)set {
     return NSSET_ID(NSSet *, CFSetCreate(kCFAllocatorDefault, NULL, 0, &kCFTypeSetCallBacks));
 }
@@ -125,6 +135,45 @@ static void _NSSetAddValue(const void *value, void *context) {
 
 - (instancetype)init {
     return NSSET_ID(NSSet *, CFSetCreate(kCFAllocatorDefault, NULL, 0, &kCFTypeSetCallBacks));
+}
+
+/* A set carries no key of its own, so it is written as a plain list of its
+ * members.  The count is carried by the list itself rather than written
+ * separately, matching how an array records its own length. */
+- (void)encodeWithCoder:(NSCoder *)coder {
+    NSArray *objects = [self allObjects];
+    NSUInteger count = [objects count];
+    if ([coder allowsKeyedCoding]) {
+        [coder encodeObject:objects forKey:@"NS.objects"];
+    } else {
+        [coder encodeValueOfObjCType:@encode(NSUInteger) at:&count];
+        for (NSUInteger i = 0; i < count; i++) {
+            [coder encodeObject:[objects objectAtIndex:i]];
+        }
+    }
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder {
+    NSArray *objects = nil;
+    if ([coder allowsKeyedCoding]) {
+        objects = [coder decodeObjectForKey:@"NS.objects"];
+    } else {
+        NSUInteger count = 0;
+        [coder decodeValueOfObjCType:@encode(NSUInteger) at:&count];
+        NSMutableArray *decoded = [NSMutableArray arrayWithCapacity:count];
+        for (NSUInteger i = 0; i < count; i++) {
+            id object = [coder decodeObject];
+            if (object == nil) {
+                return nil;
+            }
+            [decoded addObject:object];
+        }
+        objects = decoded;
+    }
+    if (![objects isKindOfClass:[NSArray class]]) {
+        return nil;
+    }
+    return [self initWithArray:objects];
 }
 
 - (instancetype)initWithObjects:(const __unsafe_unretained id *)objects count:(NSUInteger)count {
@@ -306,6 +355,13 @@ static const void *NSSET_FastEnumerationObjectsKey = &NSSET_FastEnumerationObjec
 
 - (instancetype)initWithCapacity:(NSUInteger)capacity {
     return NSSET_ID(NSMutableSet *, CFSetCreateMutable(kCFAllocatorDefault, (CFIndex)capacity, &kCFTypeSetCallBacks));
+}
+
+/* WITHOUT this override, -init dispatches to -[NSSet init] and hands back an
+ * immutable CFSet, which fails loudly on first -addObject:.  Apple's
+ * [[NSMutableSet alloc] init] is an empty mutable set. */
+- (instancetype)init {
+    return [self initWithCapacity:0];
 }
 
 - (instancetype)initWithSet:(NSSet *)set {

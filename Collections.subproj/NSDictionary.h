@@ -17,12 +17,17 @@
 
 @interface NSDictionary<__covariant KeyType, __covariant ObjectType> : NSObject <NSCopying, NSMutableCopying, NSFastEnumeration>
 
+/* CoreFoundation owns every dictionary this Foundation hands out, so -class names * the __NSCF* cluster class and isKindOfClass: walks its chain.  +class is
+ * overridden to report CF's class so both agree.  See NSString.h. */
++ (Class)class;
+
 + (instancetype)dictionary;
 /* The compiler emits +dictionaryWithObjects:forKeys:count: for a @{...}
  * literal, so it is API rather than convenience. */
 + (instancetype)dictionaryWithObjects:(const ObjectType _Nonnull [_Nullable])objects
                               forKeys:(const KeyType _Nonnull [_Nullable])keys
                                 count:(NSUInteger)count;
++ (instancetype)dictionaryWithObjectsAndKeys:(ObjectType)firstObject, ... NS_REQUIRES_NIL_TERMINATION;
 
 /* The plist readers. -contentsOfURL: is what NSProcessInfo-free code uses to
  * read SystemVersion.plist and friends; both go through CFPropertyList. */

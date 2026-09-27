@@ -16,6 +16,10 @@
 @interface NSSet<__covariant ObjectType> : NSObject <NSCopying, NSMutableCopying, NSFastEnumeration> {
 }
 
+/* CoreFoundation owns every set this Foundation hands out, so -class names * the __NSCF* cluster class and isKindOfClass: walks its chain.  +class is
+ * overridden to report CF's class so both agree.  See NSString.h. */
++ (Class)class;
+
 + (instancetype)set;
 + (instancetype)setWithObject:(ObjectType)object;
 + (instancetype)setWithObjects:(const __unsafe_unretained ObjectType *)objects count:(NSUInteger)count;

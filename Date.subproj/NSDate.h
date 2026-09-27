@@ -18,6 +18,10 @@ FOUNDATION_EXPORT const NSTimeInterval NSTimeIntervalSince1970;
 
 @interface NSDate : NSObject <NSCopying, NSCoding, NSSecureCoding>
 
+/* CoreFoundation owns every date this Foundation hands out, so -class names * the __NSCF* cluster class and isKindOfClass: walks its chain.  +class is
+ * overridden to report CF's class so both agree.  See NSString.h. */
++ (Class)class;
+
 + (instancetype)date;
 + (instancetype)now;
 + (instancetype)distantFuture;

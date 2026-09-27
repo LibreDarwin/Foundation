@@ -193,7 +193,13 @@ GATE_SRCS = String.subproj/NSString.m \
             Runtime.subproj/NSException.m \
             Runtime.subproj/NSNull.m \
             Runtime.subproj/NSValue.m \
-            URL.subproj/NSURL.m
+            URL.subproj/NSURL.m \
+            Runtime.subproj/NSObjCRuntime.m \
+            Runtime.subproj/NSZone.m \
+            Runtime.subproj/NSPropertyList.m \
+            Serialization.subproj/NSCoder.m \
+            Serialization.subproj/NSKeyedArchiver.m \
+            Serialization.subproj/NSKeyedUnarchiver.m
 
 # Sources written for non-ARC (they cast raw CF objects without __bridge).
 # The bmake compile rules match with :M; the GNU rules use MRC_OBJ_PAT.
@@ -213,7 +219,7 @@ MRC_SOURCES = ./Collections.subproj/NSMapTable.m \
               ./Runtime.subproj/NSZone.m
 
 # The gate compiles a subset of GATE_SRCS with -fno-objc-arc as well.
-MRC_GATE_PAT = Collections.subproj/NSData.m|Collections.subproj/NSMapTable.m|Collections.subproj/NSHashTable.m|Collections.subproj/NSPointerFunctions.m|Runtime.subproj/NSException.m|Runtime.subproj/NSValue.m
+MRC_GATE_PAT = Collections.subproj/NSData.m|Collections.subproj/NSMapTable.m|Collections.subproj/NSHashTable.m|Collections.subproj/NSPointerFunctions.m|Runtime.subproj/NSException.m|Runtime.subproj/NSObjCRuntime.m|Runtime.subproj/NSValue.m|Runtime.subproj/NSZone.m
 
 # The gate executable links against Apple's CoreFoundation for its CF_* C
 # symbols only.  It must link with the Apple SDK sysroot, not ${RN}: the

@@ -9,6 +9,7 @@
 #import <Foundation/NSOrderedSet.h>
 #import <Foundation/NSSortDescriptor.h>
 #import <Foundation/NSCoder.h>
+#import <Foundation/NSString.h>
 #import <Foundation/NSException.h>
 #import <CoreFoundation/CFArray.h>
 
@@ -283,12 +284,42 @@ static NSMutableArray *NSOrderedSetCanonical(const id __unsafe_unretained *objec
 }
 
 - (void)encodeWithCoder:(NSCoder *)coder {
-    [coder encodeObject:_osArray forKey:@"NS.objects"];
+    if ([coder allowsKeyedCoding]) {
+        /* One numbered slot per member.  A set has no order of its own, so the
+         * member list is the whole record and nothing else needs writing. */
+        NSUInteger count = [_osArray count];
+        for (NSUInteger i = 0; i < count; i++) {
+            [coder encodeObject:[_osArray objectAtIndex:i]
+                         forKey:[NSString stringWithFormat:@"NS.object.%lu", (unsigned long)i]];
+        }
+    } else {
+        [coder encodeObject:_osArray];
+    }
 }
 
 - (instancetype)initWithCoder:(NSCoder *)coder {
-    NSArray *decoded = [coder decodeObjectForKey:@"NS.objects"];
-    return [self initWithArray:decoded];
+    if (![coder allowsKeyedCoding]) {
+        return [self initWithArray:[coder decodeObject]];
+    }
+
+    /* The slots are numbered, not listed, so the count has to be found by
+     * asking which numbered keys are present rather than read from a header. */
+    NSMutableArray *objects = [NSMutableArray array];
+    for (NSUInteger i = 0; ; i++) {
+        NSString *key = [NSString stringWithFormat:@"NS.object.%lu", (unsigned long)i];
+        if (![coder containsValueForKey:key]) {
+            break;
+        }
+        id object = [coder decodeObjectForKey:key];
+        if (object == nil) {
+            return nil;
+        }
+        [objects addObject:object];
+    }
+    if ([objects count] == 0 && ![coder containsValueForKey:@"NS.object.0"]) {
+        return nil;
+    }
+    return [self initWithArray:objects];
 }
 
 + (BOOL)supportsSecureCoding {

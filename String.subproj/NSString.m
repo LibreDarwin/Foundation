@@ -88,6 +88,17 @@ __NSStringRaiseNil(NSString *method)
 
 @implementation NSString
 
+/* Report CoreFoundation's class, not this one.  This @implementation exists
+ * only to host methods; every string the port hands out is a CFStringRef, so
+ * -class names __NSCFConstantString and isKindOfClass: walks the CF chain.
+ * Answering with the port's own class made both tests fail for every string
+ * and forced the CFGetTypeID workarounds used by NSCoder and
+ * NSKeyedArchiver.  On a host with no Foundation to collide with, the lookup
+ * returns this class and the override is a no-op. */
++ (Class)class {
+    return objc_getClass("NSString");
+}
+
 /* -(substringWithRange:) is an NSCFString cluster primitive, so the index-based
  * substring accessors and the replacing API derive from it and from
  * -(stringByReplacingOccurrencesOfString:withString:) rather than calling down

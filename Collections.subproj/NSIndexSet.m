@@ -16,6 +16,7 @@
 #import <Foundation/NSIndexSet.h>
 #import <Foundation/NSString.h>
 #import <Foundation/NSCoder.h>
+#import <Foundation/NSData.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -456,37 +457,122 @@ static void NSISEnumerate(NSIndexSet *self, NSRange *ranges, NSUInteger length,
     return result;
 }
 
+/*
+ * An index set is a run-length list, and Foundation stores that list two
+ * different ways depending on how long it is.  A single range is small enough
+ * to sit in two whole-number slots of its own; more than one is packed into a
+ * data blob of variable-length numbers, location and length alternating, which
+ * keeps a sparse set of huge indexes from costing eight bytes apiece.
+ */
+
+/* Least-significant group first, seven bits per byte, with the top bit set on
+ * every byte but the last to say another one follows. */
+static void _AppendIndexVarint(NSMutableData *data, uint64_t value) {
+    uint8_t byte = (uint8_t)(value & 0x7F);
+    value >>= 7;
+    while (value != 0) {
+        [data appendBytes:&byte length:1];
+        byte = (uint8_t)((value & 0x7F) | 0x80);
+        value >>= 7;
+    }
+    [data appendBytes:&byte length:1];
+}
+
+static BOOL _ReadIndexVarint(const uint8_t *bytes, NSUInteger available,
+                             NSUInteger *offset, uint64_t *out) {
+    uint64_t value = 0;
+    unsigned shift = 0;
+    while (*offset < available) {
+        uint8_t byte = bytes[(*offset)++];
+        if (shift > 63) {
+            return NO;
+        }
+        value |= ((uint64_t)(byte & 0x7F)) << shift;
+        if ((byte & 0x80) == 0) {
+            *out = value;
+            return YES;
+        }
+        shift += 7;
+    }
+    return NO;
+}
+
 - (void)encodeWithCoder:(NSCoder *)coder {
     if ([coder allowsKeyedCoding]) {
-        [coder encodeInteger:(NSInteger)_length forKey:@"NS.length"];
-        [coder encodeBytes:(const uint8_t *)_ranges length:_length * sizeof(NSRange) forKey:@"NS.ranges"];
+        if (_length == 1) {
+            [coder encodeInteger:(NSInteger)_ranges[0].location forKey:@"NSLocation"];
+            [coder encodeInteger:(NSInteger)_ranges[0].length forKey:@"NSLength"];
+            [coder encodeInteger:(NSInteger)_length forKey:@"NSRangeCount"];
+        } else {
+            NSMutableData *packed = [NSMutableData dataWithCapacity:_length * 4];
+            for (NSUInteger i = 0; i < _length; i++) {
+                _AppendIndexVarint(packed, _ranges[i].location);
+                _AppendIndexVarint(packed, _ranges[i].length);
+            }
+            [coder encodeInteger:(NSInteger)_length forKey:@"NSRangeCount"];
+            [coder encodeObject:packed forKey:@"NSRangeData"];
+        }
     } else {
         [coder encodeValueOfObjCType:@encode(NSUInteger) at:&_length];
-        [coder encodeBytes:(const uint8_t *)_ranges length:_length * sizeof(NSRange)];
+        for (NSUInteger i = 0; i < _length; i++) {
+            [coder encodeValueOfObjCType:@encode(NSUInteger) at:&_ranges[i].location];
+            [coder encodeValueOfObjCType:@encode(NSUInteger) at:&_ranges[i].length];
+        }
     }
 }
 
 - (instancetype)initWithCoder:(NSCoder *)coder {
     self = [super init];
-    if (self) {
-        NSUInteger returnedLength = 0;
-        const uint8_t *bytes = NULL;
-        if ([coder allowsKeyedCoding]) {
-            _length = (NSUInteger)[coder decodeIntegerForKey:@"NS.length"];
-            bytes = [coder decodeBytesForKey:@"NS.ranges" returnedLength:&returnedLength];
-        } else {
-            [coder decodeValueOfObjCType:@encode(NSUInteger) at:&_length size:sizeof(NSUInteger)];
-            bytes = [coder decodeBytesWithReturnedLength:&returnedLength];
+    if (self == nil) {
+        return nil;
+    }
+
+    if ([coder allowsKeyedCoding]) {
+        _length = (NSUInteger)[coder decodeIntegerForKey:@"NSRangeCount"];
+        if (_length == 0) {
+            return self;
         }
-        NSUInteger wanted = _length * sizeof(NSRange);
-        if (wanted > returnedLength) {
-            wanted = returnedLength;
-        }
-        _capacity = _length ? _length : 1;
+        _capacity = _length;
         _ranges = (NSRange *)calloc(_capacity, sizeof(NSRange));
-        if (bytes && wanted > 0) {
-            memcpy(_ranges, bytes, wanted);
+        if (_ranges == NULL) {
+            return nil;
         }
+        if (_length == 1) {
+            _ranges[0].location =
+                (NSUInteger)[coder decodeIntegerForKey:@"NSLocation"];
+            _ranges[0].length = (NSUInteger)[coder decodeIntegerForKey:@"NSLength"];
+            return self;
+        }
+        id packed = [coder decodeObjectForKey:@"NSRangeData"];
+        if (![packed isKindOfClass:[NSData class]]) {
+            return nil;
+        }
+        NSUInteger available = [(NSData *)packed length];
+        const uint8_t *bytes = (const uint8_t *)[(NSData *)packed bytes];
+        NSUInteger offset = 0;
+        for (NSUInteger i = 0; i < _length; i++) {
+            uint64_t location = 0, length = 0;
+            if (!_ReadIndexVarint(bytes, available, &offset, &location)
+                || !_ReadIndexVarint(bytes, available, &offset, &length)) {
+                return nil;
+            }
+            _ranges[i].location = (NSUInteger)location;
+            _ranges[i].length = (NSUInteger)length;
+        }
+        return self;
+    }
+
+    [coder decodeValueOfObjCType:@encode(NSUInteger) at:&_length size:sizeof(NSUInteger)];
+    _capacity = _length ? _length : 1;
+    _ranges = (NSRange *)calloc(_capacity, sizeof(NSRange));
+    if (_ranges == NULL) {
+        return nil;
+    }
+    for (NSUInteger i = 0; i < _length; i++) {
+        [coder decodeValueOfObjCType:@encode(NSUInteger) at:&_ranges[i].location
+                                size:sizeof(NSUInteger)];
+        [coder decodeValueOfObjCType:@encode(NSUInteger) at:&_ranges[i].length
+                                size:sizeof(NSUInteger)];
     }
     return self;
 }

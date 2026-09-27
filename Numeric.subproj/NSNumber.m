@@ -12,6 +12,7 @@
 #include <CoreFoundation/CFString.h>
 #include <CoreFoundation/CFNumber.h>
 #include <CoreFoundation/ForFoundationOnly.h>
+#include <objc/runtime.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -27,6 +28,14 @@ __NSNumberCreate(CFNumberType type, const void *value)
 /* CFNumber has no boolean storage of its own; kCFBooleanTrue/False are the
  * canonical bridged objects and are what a CFDictionary round-trips. */
 @implementation NSNumber
+
+/* CoreFoundation owns every number this Foundation hands out, so -class names
+ * __NSCFNumber and isKindOfClass: walks the CF chain.  Report CF's class so
+ * both agree; on a host with no colliding Foundation the lookup returns this
+ * class and the override is a no-op.  See NSString.m. */
++ (Class)class {
+    return objc_getClass("NSNumber");
+}
 
 + (instancetype)numberWithChar:(char)value {
     return __NSNumberCreate(kCFNumberCharType, &value);

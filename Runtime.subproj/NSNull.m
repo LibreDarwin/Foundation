@@ -11,6 +11,7 @@
 #import <Foundation/NSString.h>
 #include <CoreFoundation/CFBase.h>
 #include <CoreFoundation/CFString.h>
+#include <objc/runtime.h>
 
 @implementation NSNull
 
@@ -21,6 +22,15 @@
     return (__bridge NSNull *)kCFNull;
 }
 
+/* The singleton is a CFNull, so -class walks CoreFoundation's chain.  Report
+ * CF's class so isKindOfClass: agrees; see NSString.m. */
++ (Class)class {
+    return objc_getClass("NSNull");
+}
+
+/* -description is reached only on an instance that is not the kCFNull
+ * singleton; +null hands back the singleton itself, whose description comes
+ * from CoreFoundation and reads "<null>" on Apple too. */
 - (NSString *)description {
     return (NSString *)CFSTR("<null>");
 }

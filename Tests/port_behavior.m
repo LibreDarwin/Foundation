@@ -240,6 +240,109 @@ static NSString *ixDescInfo(NSIndexSet *s) {
     return r.location == NSNotFound ? d : [d substringFromIndex:r.location];
 }
 
+/* A custom NSCoding-only object (no NSSecureCoding): exercises the keyed
+ * archiver's handling of plain NSCoding classes, the $-prefix key mangling
+ * and the class-name substitution tables. */
+@interface PPlain : NSObject <NSCoding>
+@property (nonatomic, strong) NSString *v;
+@property (nonatomic, assign) NSInteger count;
++ (NSString *)probeDesc:(PPlain *)p;
+@end
+
+@implementation PPlain
++ (NSString *)probeDesc:(PPlain *)p {
+    return [NSString stringWithFormat:@"PPlain(v=%@,count=%lld)", p.v, (long long)p.count];
+}
+- (instancetype)initWithCoder:(NSCoder *)aDecoder {
+    self = [super init];
+    if (self) {
+        self.v = [aDecoder decodeObjectForKey:@"$core"];
+        self.count = [aDecoder decodeIntegerForKey:@"count"];
+    }
+    return self;
+}
+- (void)encodeWithCoder:(NSCoder *)aCoder {
+    [aCoder encodeObject:self.v forKey:@"$core"];
+    [aCoder encodeObject:self.v forKey:@"plain.k"];
+    [aCoder encodeInteger:self.count forKey:@"count"];
+}
+@end
+
+/* NSData has no base64 in the port, and it is the archive bytes themselves
+ * that must match Apple exactly, so render them as hex. */
+static NSString *hexDump(NSData *data) {
+    static const char d[16] = "0123456789abcdef";
+    NSMutableString *s = [NSMutableString string];
+    NSUInteger n = data.length;
+    const unsigned char *b = (const unsigned char *)data.bytes;
+    for (NSUInteger i = 0; i < n; i++) {
+        if (i && i % 20 == 0) [s appendString:@"\n"];
+        [s appendFormat:@"%c%c", d[b[i] >> 4], d[b[i] & 15]];
+    }
+    return s;
+}
+
+/* Deterministic printable form of a decoded object.  The archive hex pinned
+ * by kaRt carries the classes; this is only for human-diffable decoding. */
+static NSString *kaDesc(id obj) {
+    if (obj == nil || [obj isKindOfClass:[NSNull class]]) return @"null";
+    if ([obj isKindOfClass:[NSString class]]) return obj;
+    if ([obj isKindOfClass:[NSNumber class]]) return [obj stringValue];
+    if ([obj isKindOfClass:[NSData class]]) return [@"data:" stringByAppendingString:hexDump(obj)];
+    if ([obj isKindOfClass:[NSDate class]]) {
+        return [NSString stringWithFormat:@"date %.9f", [obj timeIntervalSinceReferenceDate]];
+    }
+    if ([obj isKindOfClass:[NSIndexSet class]]) return [NSString stringWithFormat:@"idx(%@)", ixSetDesc(obj)];
+    if ([obj isKindOfClass:[NSOrderedSet class]]) {
+        return [NSString stringWithFormat:@"oset(%@)", sortedJoin([obj array])];
+    }
+    if ([obj isKindOfClass:[PPlain class]]) return [PPlain probeDesc:obj];
+    if ([obj isKindOfClass:[NSArray class]]) {
+        NSMutableString *o = [NSMutableString string];
+        NSUInteger n = [obj count];
+        for (NSUInteger i = 0; i < n; i++) {
+            if (i) [o appendString:@","];
+            [o appendString:kaDesc([obj objectAtIndex:i])];
+        }
+        return [NSString stringWithFormat:@"[%@]", o];
+    }
+    if ([obj isKindOfClass:[NSDictionary class]]) {
+        NSMutableString *o = [NSMutableString string];
+        NSArray *ks = [[obj allKeys] sortedArrayUsingSelector:@selector(compare:)];
+        NSUInteger n = ks.count;
+        for (NSUInteger i = 0; i < n; i++) {
+            id k = [ks objectAtIndex:i];
+            if (i) [o appendString:@","];
+            [o appendFormat:@"%@=%@", k, kaDesc([obj objectForKey:k])];
+        }
+        return [NSString stringWithFormat:@"{%@}", o];
+    }
+    return [obj description];
+}
+
+/* Encode with the legacy archive/read pair and print the byte-exact archive
+ * hex plus the decoded value and round-trip equality. */
+static void kaRt(const char *label, id obj) {
+    NSData *arch = [NSKeyedArchiver archivedDataWithRootObject:obj];
+    id back = [NSKeyedUnarchiver unarchiveObjectWithData:arch];
+    BOOL eq;
+    if ([obj isKindOfClass:[PPlain class]]) {
+        PPlain *o = obj, *b = back;
+        eq = (b != nil) && [o.v isEqualToString:b.v] && o.count == b.count;
+    } else {
+        eq = [back isEqual:obj];
+    }
+    p(label, [NSString stringWithFormat:@"hex=%@ | eq=%d | %@",
+              hexDump(arch), eq ? 1 : 0, kaDesc(back)]);
+}
+
+/* Use the freshly appended archive bytes of a known graph so truncated/corrupt
+ * input stays dead simple. */
+static NSData *kaKnownArchive(void) {
+    NSArray *o = [NSArray arrayWithObjects:[NSNumber numberWithInt:42], @"x", nil];
+    return [NSKeyedArchiver archivedDataWithRootObject:o];
+}
+
 int main(void) {
     /* Line-buffer stdout so a crash reveals the exact failing probe. */
     setvbuf(stdout, NULL, _IOLBF, 0);
@@ -2744,6 +2847,123 @@ int main(void) {
     NSMutableIndexSet *sn11 = [A mutableCopy];
     [sn11 shiftIndexesStartingAtIndex:7 by:-2];
     p("sn11 shift(7,-2) on A (gap)", ixSetDesc(sn11));
+
+    /* ---------- NSKeyedArchiver / NSKeyedUnarchiver ---------- */
+    p("ka cname rootkey", NSKeyedArchiveRootObjectKey);
+
+    NSData *kaBytes = [NSData dataWithBytes:"\x00\x01\xff" "Az" length:6];
+    kaRt("ka rt string", @"Hello, keyed!");
+    kaRt("ka rt nsnumber", [NSNumber numberWithInt:42]);
+    kaRt("ka rt nsdate",
+         [NSDate dateWithTimeIntervalSinceReferenceDate:1234567.25]);
+    kaRt("ka rt nsdata", kaBytes);
+    kaRt("ka rt single-value range", [NSValue valueWithRange:NSMakeRange(3, 8)]);
+
+    NSArray *kaMix = [NSArray arrayWithObjects:
+        [NSNumber numberWithInt:42],
+        [NSNumber numberWithDouble:3.5],
+        [NSNumber numberWithLongLong:9007199254740993LL],
+        @"plain", @"", @"q\"q\nlNewline",
+        [NSNull null], kaBytes,
+        [NSDate dateWithTimeIntervalSinceReferenceDate:1234567.25],
+        [NSValue valueWithRange:NSMakeRange(3, 8)],
+        [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(5, 4)],
+        [NSOrderedSet orderedSetWithArray:[NSArray arrayWithObjects:@"x", @"y", nil]],
+        nil];
+    kaRt("ka rt mixed graph", kaMix);
+
+    NSDictionary *kaStruct = [NSDictionary dictionaryWithObjectsAndKeys:
+        [NSArray arrayWithObjects:@"x", @"y", nil], @"a",
+        [NSDictionary dictionaryWithObjectsAndKeys:
+            [NSNumber numberWithInt:1], @"b1",
+            [NSArray arrayWithObjects:[NSNumber numberWithInt:2], [NSNumber numberWithInt:3], nil], @"b2",
+            nil], @"b",
+        @"z", @"c", nil];
+    kaRt("ka rt nested dict", kaStruct);
+
+    PPlain *pp = [PPlain new];
+    pp.v = @"secret";
+    pp.count = 7;
+    kaRt("ka custom class", pp);
+
+    [NSKeyedArchiver setClassName:@"PPlainRenamed" forClass:[PPlain class]];
+    p("ka classNameForClass", [NSKeyedArchiver classNameForClass:[PPlain class]]);
+    p("ka setClassName nil", [NSKeyedArchiver classNameForClass:[PPlain class]]);
+    [NSKeyedUnarchiver setClass:[PPlain class] forClassName:@"PPlainRenamed"];
+    kaRt("ka renamed class rt", pp);
+    p("ka unarch classForClassName", [NSString stringWithFormat:@"%@", [NSKeyedUnarchiver classForClassName:@"PPlainRenamed"]]);
+    [NSKeyedUnarchiver setClass:nil forClassName:@"PPlainRenamed"];
+
+    [NSKeyedArchiver setClassName:@"NoSuchClassDefinedZz" forClass:[PPlain class]];
+    NSData *kaGhost = [NSKeyedArchiver archivedDataWithRootObject:pp];
+    [NSKeyedArchiver setClassName:nil forClass:[PPlain class]];
+    catchProbe("ka unknown class", ^id {
+        id back = [NSKeyedUnarchiver unarchiveObjectWithData:kaGhost];
+        return back == nil ? @"nil" : @"decoded";
+    });
+
+    catchProbe("ka secure refuse", ^id {
+        NSError *kaErr = nil;
+        NSData *bad = [NSKeyedArchiver archivedDataWithRootObject:pp
+                                           requiringSecureCoding:YES
+                                                           error:&kaErr];
+        if (bad.length) return (id)@"data";
+        return [NSString stringWithFormat:@"err %@/%ld", kaErr.domain, (long)kaErr.code];
+    });
+
+    NSError *kaErr = nil;
+    NSData *kaSecure = [NSKeyedArchiver archivedDataWithRootObject:[NSNumber numberWithInt:42]
+                                            requiringSecureCoding:YES
+                                                            error:&kaErr];
+    p("ka secure encode", kaErr ? @"err" : (kaSecure.length ? @"ok" : @"nil"));
+    NSNumber *kaSB = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSNumber class]
+                                                       fromData:kaSecure
+                                                          error:&kaErr];
+    p("ka secure decode", [kaSB isEqualToNumber:[NSNumber numberWithInt:42]] ? @"equal" : @"diff");
+
+    NSData *kaGood = [NSKeyedArchiver archivedDataWithRootObject:kaMix];
+    {
+        const unsigned char gg[8] = {'g', 'a', 'r', 'b', 0, 'a', 'g', 'e'};
+        NSData *kaGarbage = [NSData dataWithBytes:gg length:8];
+        NSError *kaTErr = nil;
+        id kaTop = [NSKeyedUnarchiver unarchiveTopLevelObjectWithData:kaGarbage error:&kaTErr];
+        p("ka top garbage", kaTErr
+              ? [NSString stringWithFormat:@"err %@/%ld", kaTErr.domain, (long)kaTErr.code]
+              : (kaTop ? @"obj" : @"nil"));
+    }
+    {
+        NSData *kaTrunc = [NSData dataWithBytes:kaGood.bytes length:kaGood.length / 2];
+        @try {
+            id b = [NSKeyedUnarchiver unarchiveObjectWithData:kaTrunc];
+            p("ka truncated", b ? @"decoded" : @"nil");
+        } @catch (NSException *e) {
+            p("ka truncated", [NSString stringWithFormat:@"raise %@", [e name]]);
+        }
+    }
+
+    NSMutableData *kaBuf = [NSMutableData data];
+    NSKeyedArchiver *kaMan = [[NSKeyedArchiver alloc] initForWritingWithMutableData:kaBuf];
+    [kaMan encodeObject:kaMix forKey:NSKeyedArchiveRootObjectKey];
+    [kaMan finishEncoding];
+    p("ka manual byte-eq", [kaBuf isEqualToData:kaGood] ? @"byte-eq" : @"byte-diff");
+
+    NSMutableData *kaSbuf = [NSMutableData data];
+    NSKeyedArchiver *kaS = [[NSKeyedArchiver alloc] initForWritingWithMutableData:kaSbuf];
+    [kaS encodeBool:YES forKey:@"b"];
+    [kaS encodeInt32:-77 forKey:@"i"];
+    [kaS encodeDouble:2.75 forKey:@"d"];
+    [kaS encodeObject:@"txt" forKey:@"s"];
+    [kaS finishEncoding];
+    NSError *kaDerr = nil;
+    NSKeyedUnarchiver *kaU = [[NSKeyedUnarchiver alloc] initForReadingFromData:kaSbuf
+                                                                         error:&kaDerr];
+    p("ka scalars open", kaDerr ? [NSString stringWithFormat:@"err %@/%ld", kaDerr.domain, (long)kaDerr.code] : @"ok");
+    p("ka scalars b", [NSString stringWithFormat:@"%d", [kaU decodeBoolForKey:@"b"]]);
+    p("ka scalars i", [NSString stringWithFormat:@"%d", [kaU decodeInt32ForKey:@"i"]]);
+    p("ka scalars d", [NSString stringWithFormat:@"%.3f", [kaU decodeDoubleForKey:@"d"]]);
+    p("ka scalars s", [kaU decodeObjectForKey:@"s"]);
+    p("ka scalars missing", [kaU decodeObjectForKey:@"nope"] ? @"non-nil" : @"nil");
+    [kaU finishDecoding];
 
     printf("PORT_BEHAVIOR_END\n");
     return 0;

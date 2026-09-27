@@ -7,9 +7,12 @@
  */
 
 #import <Foundation/NSDictionary.h>
+#import <Foundation/NSException.h>
 #import <Foundation/NSURL.h>
 #import <Foundation/NSError.h>
 #import <Foundation/NSString.h>
+#import <Foundation/NSCoder.h>
+#import <Foundation/NSArray.h>
 #include <CoreFoundation/CFDictionary.h>
 #include <CoreFoundation/CFPropertyList.h>
 #include <CoreFoundation/CFURL.h>
@@ -17,6 +20,7 @@
 #include <CoreFoundation/CFStream.h>
 #include <CoreFoundation/ForFoundationOnly.h>
 #include <objc/runtime.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -106,6 +110,14 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
 
 @implementation NSDictionary
 
+/* CoreFoundation owns every dictionary this Foundation hands out, so -class
+ * names __NSDictionaryI and isKindOfClass: walks the CF chain.  Report CF's
+ * class so both agree; on a host with no colliding Foundation the lookup
+ * returns this class and the override is a no-op.  See NSString.m. */
++ (Class)class {
+    return objc_getClass("NSDictionary");
+}
+
 + (instancetype)dictionary {
     return NSDICT_ID(CFDictionaryCreate(kCFAllocatorDefault, NULL, NULL, 0,
                                         &kCFTypeDictionaryKeyCallBacks,
@@ -119,10 +131,106 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
     return NSDICT_ID(NSNSDictionaryCreate(objects, keys, count));
 }
 
+/* The (value, key, ...) nil-terminated varargs spelling.  A nil key mid-list
+ * is the same programmer error Apple rejects with NSInvalidArgumentException. */
++ (instancetype)dictionaryWithObjectsAndKeys:(id)firstObject, ... {
+    const void **objectValues = NULL;
+    const void **keyValues = NULL;
+    NSUInteger capacity = 0, count = 0;
+    va_list args;
+    va_start(args, firstObject);
+    id value = firstObject;
+    while (value != nil) {
+        id key = va_arg(args, id);
+        if (key == nil) {
+            [NSException raise:NSInvalidArgumentException
+                        format:@"dictionaryWithObjectsAndKeys: second object of each key/value pair must be non-nil"];
+        }
+        if (count == capacity) {
+            capacity = capacity == 0 ? 8 : capacity * 2;
+            objectValues = realloc(objectValues, capacity * sizeof(*objectValues));
+            keyValues = realloc(keyValues, capacity * sizeof(*keyValues));
+        }
+        objectValues[count] = NSDICT_CF(const void *, value);
+        keyValues[count] = NSDICT_CF(const void *, key);
+        count++;
+        value = va_arg(args, id);
+    }
+    va_end(args);
+    CFDictionaryRef cf = CFDictionaryCreate(kCFAllocatorDefault, keyValues, objectValues,
+                                            (CFIndex)count,
+                                            &kCFTypeDictionaryKeyCallBacks,
+                                            &kCFTypeDictionaryValueCallBacks);
+    free(objectValues);
+    free(keyValues);
+    return NSDICT_ID(cf);
+}
+
 - (instancetype)init {
     return NSDICT_ID(CFDictionaryCreate(kCFAllocatorDefault, NULL, NULL, 0,
                                         &kCFTypeDictionaryKeyCallBacks,
                                         &kCFTypeDictionaryValueCallBacks));
+}
+
+/* A dictionary is written as two parallel lists, keys then objects, so the
+ * pairing survives the round trip without either side being walked twice.  The
+ * order the two lists are read back in is the order the archive holds them. */
+- (void)encodeWithCoder:(NSCoder *)coder {
+    NSArray *keys = [self allKeys];
+    NSUInteger count = [keys count];
+    NSMutableArray *objects = [NSMutableArray arrayWithCapacity:count];
+    for (NSUInteger i = 0; i < count; i++) {
+        id key = [keys objectAtIndex:i];
+        [objects addObject:[self objectForKey:key]];
+    }
+    if ([coder allowsKeyedCoding]) {
+        [coder encodeObject:keys forKey:@"NS.keys"];
+        [coder encodeObject:objects forKey:@"NS.objects"];
+    } else {
+        [coder encodeValueOfObjCType:@encode(NSUInteger) at:&count];
+        for (NSUInteger i = 0; i < count; i++) {
+            [coder encodeObject:[keys objectAtIndex:i]];
+            [coder encodeObject:[objects objectAtIndex:i]];
+        }
+    }
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder {
+    NSArray *keys = nil;
+    NSArray *objects = nil;
+    if ([coder allowsKeyedCoding]) {
+        keys = [coder decodeObjectForKey:@"NS.keys"];
+        objects = [coder decodeObjectForKey:@"NS.objects"];
+    } else {
+        NSUInteger count = 0;
+        [coder decodeValueOfObjCType:@encode(NSUInteger) at:&count];
+        NSMutableArray *readKeys = [NSMutableArray arrayWithCapacity:count];
+        NSMutableArray *readObjects = [NSMutableArray arrayWithCapacity:count];
+        for (NSUInteger i = 0; i < count; i++) {
+            id key = [coder decodeObject];
+            id object = [coder decodeObject];
+            if (key == nil || object == nil) {
+                return nil;
+            }
+            [readKeys addObject:key];
+            [readObjects addObject:object];
+        }
+        keys = readKeys;
+        objects = readObjects;
+    }
+    if (![keys isKindOfClass:[NSArray class]] || ![objects isKindOfClass:[NSArray class]]) {
+        return nil;
+    }
+    NSUInteger count = [keys count];
+    if (count != [objects count]) {
+        return nil;
+    }
+    NSMutableDictionary *decoded =
+        [NSMutableDictionary dictionaryWithCapacity:count];
+    for (NSUInteger i = 0; i < count; i++) {
+        [decoded setObject:[objects objectAtIndex:i] forKey:[keys objectAtIndex:i]];
+    }
+    return decoded;
 }
 
 - (void)enumerateKeysAndObjectsUsingBlock:(void (^)(id, id, BOOL *))block {

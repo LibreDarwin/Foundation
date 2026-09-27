@@ -9,10 +9,13 @@
 #import <Foundation/NSArray.h>
 #import "NSEnumerator_array.h"
 #import <Foundation/NSSortDescriptor.h>
+#import <Foundation/NSSet.h>
+#import <Foundation/NSCoder.h>
 #include <CoreFoundation/CFArray.h>
 #include <CoreFoundation/ForFoundationOnly.h>
 #include <objc/message.h>
 #include <objc/runtime.h>
+#include <stdarg.h>
 #include <stdlib.h>
 
 #if __has_feature(objc_arc)
@@ -64,6 +67,14 @@ static CFComparisonResult NSNSArrayDispatchDescriptors(const void *object1, cons
 
 @implementation NSArray
 
+/* CoreFoundation owns every array this Foundation hands out, so -class names
+ * __NSSingleObjectArrayI and friends and isKindOfClass: walks the CF chain.
+ * Report CF's class so both agree; on a host with no colliding Foundation the
+ * lookup returns this class and the override is a no-op.  See NSString.m. */
++ (Class)class {
+    return objc_getClass("NSArray");
+}
+
 + (instancetype)array {
     return NSARRAY_ID(CFArrayCreate(kCFAllocatorDefault, NULL, 0, &kCFTypeArrayCallBacks));
 }
@@ -76,8 +87,86 @@ static CFComparisonResult NSNSArrayDispatchDescriptors(const void *object1, cons
     return NSARRAY_ID(CFArrayCreateCopy(kCFAllocatorDefault, NSARRAY_CF(CFArrayRef, array)));
 }
 
+/* The nil-terminated varargs spelling: walk the list, then delegate to the
+ * count: factory (same shape as the bytes the compiler emits for @[...]). */
++ (instancetype)arrayWithObjects:(id)firstObject, ... {
+    const void **values = NULL;
+    NSUInteger capacity = 0, count = 0;
+    va_list args;
+    va_start(args, firstObject);
+    for (id object = firstObject; object != nil; object = va_arg(args, id)) {
+        if (count == capacity) {
+            capacity = capacity == 0 ? 8 : capacity * 2;
+            values = realloc(values, capacity * sizeof(*values));
+        }
+        values[count++] = NSARRAY_CF(const void *, object);
+    }
+    va_end(args);
+    CFArrayRef cf = CFArrayCreate(kCFAllocatorDefault, values, (CFIndex)count,
+                                  &kCFTypeArrayCallBacks);
+    free(values);
+    return NSARRAY_ID(cf);
+}
+
 - (instancetype)init {
     return NSARRAY_ID(CFArrayCreate(kCFAllocatorDefault, NULL, 0, &kCFTypeArrayCallBacks));
+}
+
+- (instancetype)initWithArray:(NSArray *)array {
+    return NSARRAY_ID(CFArrayCreateCopy(kCFAllocatorDefault, NSARRAY_CF(CFArrayRef, array)));
+}
+
+/* An array is written as its elements alone: the count comes from the list,
+ * so there is nothing else to record, and every element is written as an
+ * object so a nested graph keeps its references shared rather than copied. */
+- (void)encodeWithCoder:(NSCoder *)coder {
+    if (getenv("PORT_KA_TRACE") != NULL) {
+        fprintf(stderr, "TRACE NSArray-encode self=%s\n", object_getClassName(self));
+    }
+    NSUInteger count = [self count];
+    NSMutableArray *objects = [NSMutableArray arrayWithCapacity:count];
+    for (NSUInteger i = 0; i < count; i++) {
+        [objects addObject:[self objectAtIndex:i]];
+    }
+    if ([coder allowsKeyedCoding]) {
+        [coder encodeObject:objects forKey:@"NS.objects"];
+    } else {
+        [coder encodeValueOfObjCType:@encode(NSUInteger) at:&count];
+        for (NSUInteger i = 0; i < count; i++) {
+            [coder encodeObject:[self objectAtIndex:i]];
+        }
+    }
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder {
+    if ([coder allowsKeyedCoding]) {
+        return [self initWithObjectsFromCoder:coder];
+    }
+    NSUInteger count = 0;
+    [coder decodeValueOfObjCType:@encode(NSUInteger) at:&count];
+    NSMutableArray *objects = [NSMutableArray arrayWithCapacity:count];
+    for (NSUInteger i = 0; i < count; i++) {
+        id object = [coder decodeObject];
+        if (object == nil) {
+            return nil;
+        }
+        [objects addObject:object];
+    }
+    return [self initWithArray:objects];
+}
+
+- (instancetype)initWithObjectsFromCoder:(NSCoder *)coder {
+    id objects = [coder decodeObjectForKey:@"NS.objects"];
+    if (objects == nil) {
+        return nil;
+    }
+    if ([objects isKindOfClass:[NSArray class]]) {
+        return [self initWithArray:objects];
+    }
+    if (![objects isKindOfClass:[NSSet class]]) {
+        return nil;
+    }
+    return [self initWithArray:[objects allObjects]];
 }
 
 - (NSUInteger)count {

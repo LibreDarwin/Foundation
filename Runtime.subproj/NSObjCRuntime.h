@@ -53,6 +53,10 @@
 #ifndef NS_FORMAT_FUNCTION
     #define NS_FORMAT_FUNCTION(F, A) __attribute__((format(__NSString__, F, A)))
 #endif
+
+#ifndef NS_REQUIRES_NIL_TERMINATION
+    #define NS_REQUIRES_NIL_TERMINATION __attribute__((sentinel(0, 1)))
+#endif
 #ifndef NS_FORMAT_ARGUMENT
     #define NS_FORMAT_ARGUMENT(A) __attribute__((format_arg(A)))
 #endif

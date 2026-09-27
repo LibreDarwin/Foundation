@@ -28,6 +28,7 @@
 #import <Foundation/NSData.h>
 #include <CoreFoundation/CFData.h>
 #include <CoreFoundation/ForFoundationOnly.h>
+#include <objc/runtime.h>
 #include <string.h>
 
 @interface NSCFData : NSMutableData
@@ -46,6 +47,14 @@ __NSDataAutorelease(CFTypeRef cf)
 }
 
 @implementation NSData
+
+/* CoreFoundation owns every data this Foundation hands out, so -class names
+ * the __NSCFData cluster class and isKindOfClass: walks its chain.  Report
+ * CF's class so both agree; on a host with no colliding Foundation the
+ * lookup returns this class and the override is a no-op.  See NSString.m. */
++ (Class)class {
+    return objc_getClass("NSData");
+}
 
 + (instancetype)data
 {

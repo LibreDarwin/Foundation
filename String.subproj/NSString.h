@@ -67,6 +67,11 @@ typedef NS_OPTIONS(NSUInteger, NSStringCompareOptions) {
 
 @interface NSString : NSObject
 
+/* Every string this Foundation hands out is a CFStringRef, so -class names
+ * __NSCFConstantString and isKindOfClass: walks CoreFoundation's chain.
+ * +class is overridden to report CF's class so both agree. */
++ (Class)class;
+
 + (instancetype)stringWithUTF8String:(const char *)utf8String;
 + (instancetype)stringWithCharacters:(const unichar *)characters length:(NSUInteger)length;
 + (instancetype)stringWithFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);

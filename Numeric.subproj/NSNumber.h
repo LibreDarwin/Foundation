@@ -19,6 +19,10 @@
  * static type of x. */
 @interface NSNumber : NSObject <NSCopying, NSCoding, NSSecureCoding>
 
+/* CoreFoundation owns every number this Foundation hands out, so -class names * the __NSCF* cluster class and isKindOfClass: walks its chain.  +class is
+ * overridden to report CF's class so both agree.  See NSString.h. */
++ (Class)class;
+
 + (instancetype)numberWithChar:(char)value;
 + (instancetype)numberWithUnsignedChar:(unsigned char)value;
 + (instancetype)numberWithShort:(short)value;

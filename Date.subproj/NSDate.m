@@ -13,6 +13,7 @@
 #import <Foundation/NSString.h>
 #include <CoreFoundation/CFDate.h>
 #include <CoreFoundation/ForFoundationOnly.h>
+#include <objc/runtime.h>
 #include <math.h>
 
 #if __has_feature(objc_arc)
@@ -29,6 +30,14 @@ const NSTimeInterval NSTimeIntervalSince1970 = 978307200.0;
  * reference-date interval passes through untouched. Only the 1970 accessors
  * need the offset. */
 @implementation NSDate
+
+/* CoreFoundation owns every date this Foundation hands out, so -class names
+ * __NSTaggedDate and isKindOfClass: walks the CF chain.  Report CF's class so
+ * both agree; on a host with no colliding Foundation the lookup returns this
+ * class and the override is a no-op.  See NSString.m. */
++ (Class)class {
+    return objc_getClass("NSDate");
+}
 
 + (instancetype)date {
     return [self dateWithTimeIntervalSinceReferenceDate:CFAbsoluteTimeGetCurrent()];

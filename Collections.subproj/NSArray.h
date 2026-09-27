@@ -23,9 +23,17 @@ typedef NS_OPTIONS(NSUInteger, NSBinarySearchingOptions) {
 
 @interface NSArray<__covariant ObjectType> : NSObject <NSCopying, NSMutableCopying, NSFastEnumeration>
 
+/* CoreFoundation owns every array this Foundation hands out, so -class names * the __NSCF* cluster class and isKindOfClass: walks its chain.  +class is
+ * overridden to report CF's class so both agree.  See NSString.h. */
++ (Class)class;
+
 + (instancetype)array;
 + (instancetype)arrayWithObjects:(const ObjectType _Nonnull [_Nullable])objects count:(NSUInteger)count;
 + (instancetype)arrayWithArray:(NSArray<ObjectType> *)array;
++ (instancetype)arrayWithObjects:(ObjectType)firstObject, ... NS_REQUIRES_NIL_TERMINATION;
+
+- (instancetype)init;
+- (instancetype)initWithArray:(NSArray<ObjectType> *)array;
 
 - (NSUInteger)count;
 - (id)objectAtIndex:(NSUInteger)index;
