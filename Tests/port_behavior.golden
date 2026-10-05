@@ -66,9 +66,37 @@ url file path                              | /tmp/my file.txt
 url bad -> nil                             | 0
 uu init string abs                         | https://x.example/pa?q=2
 uu init string nil                         | raise NSInvalidArgumentException
+uu space in path                           | https://x.example/has%20space
+uu quote encoded                           | a%22b
+uu percent escape kept                     | a%20b
+uu bad percent encoded                     | a%252zb
+uu trailing percent encoded                | a%252
+uu nonascii utf8 encoded                   | %E6%97%A5%E6%9C%AC
+uu astral utf8 encoded                     | %F0%9F%98%80
 uu absolute file                           | file:///tmp/my%20file.txt
 uu path http                               | /pa
 uu path root file                          | /
+uu ipv6 host                               | http://[::1]/
+uu ipv6 host port                          | http://[::1]:80/
+uu empty ipv6 host                         | //[]/
+uu ipv6 userinfo                           | //user:pw@[::1]:80/p
+uu ipv6 authority space                    | //[::1]/x%20y
+uu bracket in path encoded                 | http://[a]/b%5Bc%5D
+uu bracket no authority encoded            | %5B%3A%3A1%5D/x%20y
+uu open bracket -> nil                     | nil
+uu bracket trailing junk -> nil            | nil
+uu nested bracket -> nil                   | nil
+uu space in host -> nil                    | nil
+uu pipe in host -> nil                     | nil
+uu escaped host kept                       | http://a%20b/
+uu nonnumeric port -> nil                  | nil
+uu valid scheme                            | a.b+c-d
+uu path colon                              | a/b:c
+uu query colon                             | ?q=:
+uu bracket colon escaped                   | %5Ba%5D%3Ab
+uu digit scheme -> nil                     | nil
+uu dot scheme -> nil                       | nil
+uu space scheme -> nil                     | nil
 uu nsstring nil                            | 0
 uu file scheme init                        | 1
 uu http scheme init                        | 0

@@ -461,15 +461,45 @@ int main(void) {
     /* NSURL contract bundle (CFURL bridge, port NSURL is the bridged isa) */
     p("uu init string abs", [[[[NSURL alloc] initWithString:@"https://x.example/pa?q=2"] absoluteString] description]);
     catchProbe("uu init string nil", ^{ return [[[NSURL alloc] initWithString:nil] absoluteString]; });
-    /* Space-containing strings are dropped: Apple's private URL parser
-     * percent-encodes them ("has space" -> has%20space), the port delegates to
-     * strict CFURLCreateWithString which rejects them. Documented gap, not
-     * probed. */
+    /* Apple's parser percent-encodes illegal characters instead of rejecting
+     * the string, so "has space" -> "has%20space".  NSURLEncodeIllegalCharacters
+     * runs before CFURLCreateWithString to reproduce that. */
+    p("uu space in path", [NSURL URLWithString:@"https://x.example/has space"].absoluteString);
+    p("uu quote encoded", [NSURL URLWithString:@"a\"b"].absoluteString);
+    p("uu percent escape kept", [NSURL URLWithString:@"a%20b"].absoluteString);
+    p("uu bad percent encoded", [NSURL URLWithString:@"a%2zb"].absoluteString);
+    p("uu trailing percent encoded", [NSURL URLWithString:@"a%2"].absoluteString);
+    p("uu nonascii utf8 encoded", [NSURL URLWithString:@"日本"].absoluteString);
+    p("uu astral utf8 encoded", [NSURL URLWithString:@"😀"].absoluteString);
     p("uu absolute file", [[NSURL fileURLWithPath:@"/tmp/my file.txt"] absoluteString]);
     p("uu path http", [[NSURL URLWithString:@"https://x.example/pa?q=2"] path] == nil ? @"nil" : [[NSURL URLWithString:@"https://x.example/pa?q=2"] path]);
     p("uu path root file", [[NSURL fileURLWithPath:@"/"] path]);
-    /* "not a url" and the ftp-with-space case are also Apple-parser-only (see
-     * the space comment above) and are not probed. */
+    /* Brackets are literal only when they bracket an IPv6 literal host; a
+     * malformed host bracket invalidates the whole URL. */
+    p("uu ipv6 host", [NSURL URLWithString:@"http://[::1]/"].absoluteString);
+    p("uu ipv6 host port", [NSURL URLWithString:@"http://[::1]:80/"].absoluteString);
+    p("uu empty ipv6 host", [NSURL URLWithString:@"//[]/"].absoluteString);
+    p("uu ipv6 userinfo", [NSURL URLWithString:@"//user:pw@[::1]:80/p"].absoluteString);
+    p("uu ipv6 authority space", [NSURL URLWithString:@"//[::1]/x y"].absoluteString);
+    p("uu bracket in path encoded", [NSURL URLWithString:@"http://[a]/b[c]"].absoluteString);
+    p("uu bracket no authority encoded", [NSURL URLWithString:@"[::1]/x y"].absoluteString);
+    p("uu open bracket -> nil", [NSURL URLWithString:@"http://["] == nil ? @"nil" : @"not-nil");
+    p("uu bracket trailing junk -> nil", [NSURL URLWithString:@"http://[]x/"] == nil ? @"nil" : @"not-nil");
+    p("uu nested bracket -> nil", [NSURL URLWithString:@"//[a[b]/"] == nil ? @"nil" : @"not-nil");
+    /* An illegal raw character in an authority is fatal, unlike the path. */
+    p("uu space in host -> nil", [NSURL URLWithString:@"http://a b/"] == nil ? @"nil" : @"not-nil");
+    p("uu pipe in host -> nil", [NSURL URLWithString:@"//a|b/"] == nil ? @"nil" : @"not-nil");
+    p("uu escaped host kept", [NSURL URLWithString:@"http://a%20b/"].absoluteString);
+    p("uu nonnumeric port -> nil", [NSURL URLWithString:@"//a:b/"] == nil ? @"nil" : @"not-nil");
+    /* Only a leading segment that is a valid RFC 3986 scheme may keep its
+     * colon; otherwise the colon is escaped or the URL is invalid. */
+    p("uu valid scheme", [NSURL URLWithString:@"a.b+c-d:x"].scheme);
+    p("uu path colon", [NSURL URLWithString:@"a/b:c"].absoluteString);
+    p("uu query colon", [NSURL URLWithString:@"?q=:"].absoluteString);
+    p("uu bracket colon escaped", [NSURL URLWithString:@"[a]:b"].absoluteString);
+    p("uu digit scheme -> nil", [NSURL URLWithString:@"1:2"] == nil ? @"nil" : @"not-nil");
+    p("uu dot scheme -> nil", [NSURL URLWithString:@".a:b"] == nil ? @"nil" : @"not-nil");
+    p("uu space scheme -> nil", [NSURL URLWithString:@"a b:c"] == nil ? @"nil" : @"not-nil");
     catchProbe("uu nsstring nil", ^{ return [NSURL URLWithString:nil] != nil ? @"1" : @"0"; });
     p("uu file scheme init", [[[NSURL alloc] initWithString:@"file:///a/b"] isFileURL] ? @"1" : @"0");
     p("uu http scheme init", [[[NSURL alloc] initWithString:@"http://e/"] isFileURL] ? @"1" : @"0");

@@ -144,14 +144,20 @@ system binary's exports (the Swift counterpart of a `.tbd`).
 ## What's left
 
 **Finish / gate the current slice**
-- _Nothing outstanding from the last slice; the keyed-archive pair and
-  `NSAutoreleasePool` are both implemented and gate-pinned._
+- _The `NSURL` string parser slice is implemented and gate-pinned:_
+  `NSURLEncodeIllegalCharacters` reproduces Apple's pre-CFURL parsing —
+  percent-encoding of illegal characters, preservation of well-formed `%XX`
+  escapes, IPv6 bracket literals in the authority, and the scheme/authority
+  validation that makes `http://[`, `http://[]x/`, `//[a[b]/`, `http://a b/`
+  and `1:2` nil. 29 probes in `Tests/port_behavior.golden` pin this._
 
 **Deepen partial classes**
-- `NSURL`: components, query/relative URLs, file bookmarks, standardize,
-  resource-value accessors; `NSFileManager`/`NSFileHandle`/`NSPipe` (integration
-  props), `NSBundle`, `NSUserDefaults`, `NSProcessInfo`, `NSStream` (schemes,
-  sockets), fuller `NSDateFormatter`/`NSNumberFormatter` edge behavior.
+- `NSURL`: file bookmarks and resource-value accessors are still approximate
+  (`bookmarkDataWithOptions:` is a placeholder, `fileReferenceURL` returns nil,
+  `getResourceValue:forKey:error:` only forwards to CFURL). `NSFileManager`/
+  `NSFileHandle`/`NSPipe` (integration props), `NSBundle`, `NSUserDefaults`,
+  `NSProcessInfo`, `NSStream` (schemes, sockets), fuller `NSDateFormatter`/
+  `NSNumberFormatter` edge behavior.
 - `NSAttributedString`/`NSMutableAttributedString`: full attribute surface,
   `NSCoding`/copying, attachment handling, layout/document accessors.
 
