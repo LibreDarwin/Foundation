@@ -180,7 +180,7 @@ system binary's exports (the Swift counterpart of a `.tbd`).
   before this library loads, so the port class holds a `CFAttributedString` in an
   ivar rather than bridging to it. Attributes need no conversion because the
   port's `NSString`/`NSDictionary` are themselves toll-free with `CFString`/
-  `CFDictionary`. 38 probes pin the core immutable and mutable surface.
+  `CFDictionary`.
   Three CF behaviours needed working around and are commented in
   `String.subproj/NSAttributedString.m`: `CFAttributedStringReplaceString`
   segfaults on a NULL replacement (deletion passes `CFSTR("")` instead), and
