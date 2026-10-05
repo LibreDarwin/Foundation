@@ -11,7 +11,7 @@
 #import <Foundation/NSDictionary.h>
 #import <Foundation/NSNumber.h>
 #import <Foundation/NSString.h>
-#include <CoreFoundation/CFString.h>
+#include <string.h>
 #include <execinfo.h>
 #include <stdlib.h>
 
@@ -43,10 +43,16 @@ void NSSetUncaughtExceptionHandler(NSUncaughtExceptionHandler *handler) {
     int _returnAddressCount;
 }
 
+/* This file is built with -fno-objc-arc (it is listed in MRC_GATE_PAT in
+ * Common.mk), so the ownership of the three object ivars has to be spelled out
+ * by hand: acquired in -init... and released in -dealloc.  Without this the
+ * exception kept its name, reason and userInfo unretained and leaked the whole
+ * object on every raise. */
+
 + (instancetype)exceptionWithName:(NSExceptionName)name
                            reason:(NSString *)reason
                          userInfo:(NSDictionary *)userInfo {
-    return [[self alloc] initWithName:name reason:reason userInfo:userInfo];
+    return [[[self alloc] initWithName:name reason:reason userInfo:userInfo] autorelease];
 }
 
 + (void)raise:(NSExceptionName)name format:(NSString *)format, ... {
@@ -57,8 +63,9 @@ void NSSetUncaughtExceptionHandler(NSUncaughtExceptionHandler *handler) {
 }
 
 + (void)raise:(NSExceptionName)name format:(NSString *)format arguments:(va_list)args {
-    NSString *reason = (NSString *)CFStringCreateWithFormatAndArguments(
-        kCFAllocatorDefault, NULL, (CFStringRef)format, args);
+    /* -raise throws, so the reason cannot be released after the call; it is
+     * autoreleased instead and handed off to the enclosing pool. */
+    NSString *reason = [[[NSString alloc] initWithFormat:format arguments:args] autorelease];
     [[self exceptionWithName:name reason:reason userInfo:nil] raise];
 }
 
@@ -67,11 +74,18 @@ void NSSetUncaughtExceptionHandler(NSUncaughtExceptionHandler *handler) {
                     userInfo:(NSDictionary *)userInfo {
     self = [super init];
     if (self != nil) {
-        _name = name;
-        _reason = reason;
-        _userInfo = userInfo;
+        _name = [name retain];
+        _reason = [reason retain];
+        _userInfo = [userInfo retain];
     }
     return self;
+}
+
+- (void)dealloc {
+    [_name release];
+    [_reason release];
+    [_userInfo release];
+    [super dealloc];
 }
 
 - (void)raise {
@@ -112,9 +126,13 @@ void NSSetUncaughtExceptionHandler(NSUncaughtExceptionHandler *handler) {
     }
 
     for (int i = 0; i < _returnAddressCount; i++) {
-        [symbols addObject:(NSString *)CFStringCreateWithCString(kCFAllocatorDefault,
-                                                                 names[i],
-                                                                 kCFStringEncodingUTF8)];
+        /* Autoreleased: the array holds the only strong reference, and this is
+         * a non-new accessor, so the strings are handed to the enclosing pool
+         * rather than left at +1. */
+        NSString *symbol = [[[NSString alloc] initWithBytes:names[i]
+                                                    length:strlen(names[i])
+                                                  encoding:NSUTF8StringEncoding] autorelease];
+        [symbols addObject:symbol];
     }
     free(names);
     return symbols;
@@ -142,7 +160,11 @@ void NSSetUncaughtExceptionHandler(NSUncaughtExceptionHandler *handler) {
 
 - (id)copyWithZone:(NSZone *)zone {
     (void)zone;
-    return self;
+    /* NSException is immutable, so -copy legitimately returns the same object,
+     * but it must still hand back a +1 reference.  Returning bare `self` made
+     * every caller over-release; that stayed invisible only while this file had
+     * no -dealloc, and became a use-after-free as soon as one was added. */
+    return [self retain];
 }
 
 @end
@@ -151,14 +173,14 @@ void NSAssertionFailure(const char *function, const char *file, int line,
                         NSString *format, ...) {
     va_list args;
     va_start(args, format);
-    NSString *reason = (NSString *)CFStringCreateWithFormatAndArguments(
-        kCFAllocatorDefault, NULL, (CFStringRef)format, args);
+    NSString *reason = [[[NSString alloc] initWithFormat:format arguments:args] autorelease];
     va_end(args);
 
+    /* Both strings are autoreleased rather than left owned by a leaked +1,
+     * because -raise throws and never returns to release them. */
+    NSString *final = [[[NSString alloc] initWithFormat:@"%s (%s:%d): %@",
+                        function, file, line, reason] autorelease];
     [[NSException exceptionWithName:NSInternalInconsistencyException
-                             reason:(NSString *)CFStringCreateWithFormat(
-                                        kCFAllocatorDefault, NULL,
-                                        CFSTR("%s (%s:%d): %@"),
-                                        function, file, line, (CFStringRef)reason)
+                             reason:final
                            userInfo:nil] raise];
 }

@@ -712,6 +712,7 @@ ex isEqual diffUser                        | 1
 ex hash equal                              | 1
 ex copy identity                           | 0
 ex copy desc equal                         | 1
+ex copy survives original                  | 1
 ex userinfo snap                           | v2
 cs ws sp                                   | 1
 cs ws tab                                  | 1

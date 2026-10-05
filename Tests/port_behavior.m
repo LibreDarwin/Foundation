@@ -20,6 +20,18 @@ static void p(const char *label, NSString *value) {
 
 static void exHandler(NSException *e) { (void)e; }
 
+/* -copy has to hand back a +1 reference.  Returning the receiver is correct for
+ * an immutable exception, but a -copy that forgets to retain it is invisible to a
+ * caller that only ever holds the copy, so this lets the original go out of
+ * scope first: under ARC the local is released as this function returns, leaving
+ * a borrowed-receiver copy dangling for the caller's next message. */
+static NSException *exCopyOutlivingOriginal(void) {
+    NSException *tmp = [[NSException alloc] initWithName:NSGenericException
+                                                   reason:@"r"
+                                                 userInfo:nil];
+    return [tmp copy];
+}
+
 /* NSAutoreleasePool is ARC-unavailable, so its probes live in an MRC
  * translation unit of their own (Tests/port_behavior_pool.m). */
 void port_behavior_pool(void);
@@ -1773,6 +1785,12 @@ int main(void) {
                                                             userInfo:exUI] hash] ? @"1" : @"0");
     p("ex copy identity", [exE copy] != exE ? @"1" : @"0");
     p("ex copy desc equal", [[[exE copy] description] isEqualToString:[exE description]] ? @"1" : @"0");
+
+    /* Regression guard for the borrowed-receiver -copy: see
+     * exCopyOutlivingOriginal.  ARC inserts the release that makes an unretained
+     * -copy a use-after-free rather than a silent leak. */
+    p("ex copy survives original",
+      [exCopyOutlivingOriginal() name] != nil ? @"1" : @"0");
 
     NSMutableDictionary *exMut = [NSMutableDictionary dictionary];
     [exMut setObject:@"v1" forKey:@"k"];

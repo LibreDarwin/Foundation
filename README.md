@@ -55,7 +55,7 @@ headers.
   compiled **into** a test executable (not linked against the built dylib, since
   the dylib's toll-free classes would be shadowed by Apple's CoreFoundation on the
   host) and linked only against Apple's CoreFoundation. The executable runs
-  1,540 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
+  1,541 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
   its output is diffed byte-for-byte against Apple's real Foundation output,
   captured in `Tests/port_behavior.golden`. New probe coverage requires adding the
   touched sources to `GATE_SRCS` in `Common.mk` and re-capturing the Apple truth.
@@ -120,14 +120,28 @@ system binary's exports (the Swift counterpart of a `.tbd`).
 
 ## Current status and known issues
 
-- **Raising an `NSException` leaks** (~380 bytes per raise: 50,000 caught
-  `+[NSException raise:]` calls grow RSS by ~19 MB). This is pre-existing and
-  unrelated to any caller — it reproduces with a bare `raise:` on a bare object,
-  so it is a defect in the port's `NSException` implementation rather than a
-  consequence of a throwing caller. It matters mostly for the range and argument
-  checks that raise on out-of-bounds access, which is why the
-  `NSAttributedString` slice's memory behaviour was verified over its
-  non-throwing paths (flat over 200,000 iterations) separately from this.
+- **`NSException` ownership is now correct and raises no longer leak.**
+  `Runtime.subproj/NSException.m` is built with `-fno-objc-arc` (it is listed in
+  `MRC_GATE_PAT`), and it had no `-dealloc` while storing its three object ivars
+  without retaining them, returned an un-autoreleased instance from
+  `+exceptionWithName:reason:userInfo:`, and left the formatted reason strings
+  owned by a leaked `+1`. The file now retains its ivars, releases them in
+  `-dealloc`, and autoreleases the factory result and the strings it throws with.
+  50,000 caught `+[NSException raise:format:]` calls are now flat (previously ~19 MB).
+- **`-[NSException copyWithZone:]` returned `self` without retaining.** Returning
+  the receiver is correct for an immutable exception, but the `copy` family must
+  still return `+1`; callers that release the result over-released the original.
+  This stayed invisible only because the class had no `-dealloc`, and became a
+  release-only use-after-free (SIGSEGV at `-[NSException description]`) as soon as
+  one was added. It now returns `[self retain]`.
+- **Raising from `NSAttributedString`'s range check still leaks** (~100 bytes per
+  raise: 50,000 caught out-of-bounds `attributedSubstringFromRange:` calls grow RSS
+  by ~4.9 MB). This is *not* the exception machinery — creating the string and
+  throwing an unrelated `NSException` in the same scope is flat, and an in-range
+  `attributedSubstringFromRange:` is flat, so the leak is specific to the
+  `NSAttributedStringCheckRange` failure path in `String.subproj/NSAttributedString.m`.
+  It is pre-existing and orthogonal to the `NSException` fix above. `NSStringFromClass`
+  separately leaks ~12 bytes per call.
 - **Tree is green**: `make all` (build + pairing sweep + behavior gate) passes for
   both `release` and `debug` configurations. 970 selectors across 54 headers are
   declared and implemented.
