@@ -19,7 +19,10 @@ Implementation notes:
 - **Toll-free bridging.** Most collection, string, date, and locale classes are
   CF-toll-free or thin owning wrappers over CoreFoundation, exactly as Apple
   does. The vendored LibreDarwin CF headers live in `local/include/` (gitignored)
-  and take precedence so the LibreDarwin CF tree wins.
+  and take precedence so the LibreDarwin CF tree wins. Because that tree is
+  gitignored it has to be repopulated by hand on a fresh clone;
+  `CFAttributedString.h` is required by `String.subproj/NSAttributedString.m` and
+  is not otherwise present in it.
 - **License.** Mozilla Public License 2.0 (see `LICENSE`). Ports carry their
   provenance in the file header copyright line — PureDarwin Project, Cocotron,
   ravynOS, LibreDarwin, or original authors.
@@ -52,12 +55,12 @@ headers.
   compiled **into** a test executable (not linked against the built dylib, since
   the dylib's toll-free classes would be shadowed by Apple's CoreFoundation on the
   host) and linked only against Apple's CoreFoundation. The executable runs
-  ~1,350 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
+  1,540 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
   its output is diffed byte-for-byte against Apple's real Foundation output,
   captured in `Tests/port_behavior.golden`. New probe coverage requires adding the
   touched sources to `GATE_SRCS` in `Common.mk` and re-capturing the Apple truth.
 - **Pairing sweep** (`make pairing-sweep`, `Tests/pairing_sweep.py`). Every
-  selector declared in any header (54 headers, ~948 selectors) must be
+  selector declared in any header (54 headers, 970 selectors) must be
   implemented somewhere in the `.m` sources; 20 hand-verified selectors the
   mechanical scanner can't match are allowlisted.
 
@@ -98,6 +101,10 @@ pipeline, delegate hooks, `+unarchiveTopLevelObjectWithData:error:`).
 
 **Locale** — NSLocale (preferredLanguages, available/ISO lists, autoupdating).
 
+**Text** — NSAttributedString / NSMutableAttributedString (attributes, effective
+and longest-effective ranges, substrings, equality, block enumeration in both
+directions, and the mutable attribute/edit surface; see the notes below).
+
 **Lock / Notification / RunLoop / Thread / Sorting / Stream / URL** — NSLock,
 NSRecursiveLock, NSCondition, NSConditionLock; NSNotification,
 NSNotificationCenter; NSRunLoop, NSTimer; NSThread; NSSortDescriptor (key /
@@ -108,14 +115,21 @@ NSOutputStream (CF-backed); NSURL *(partial)*.
 String/Array/Dictionary ↔ Foundation bridging conformances, backed by the
 system binary's exports (the Swift counterpart of a `.tbd`).
 
-**Stubs (declaration-only, no implementation yet)** — `NSAttributedString.h`
-(just enough for CFAttributedString toll-free), `NSXPCConnection.h`
+**Stubs (declaration-only, no implementation yet)** — `NSXPCConnection.h`
 (NSXPCInterface/NSXPCConnection/NSXPCProxyCreating names so headers compile).
 
 ## Current status and known issues
 
+- **Raising an `NSException` leaks** (~380 bytes per raise: 50,000 caught
+  `+[NSException raise:]` calls grow RSS by ~19 MB). This is pre-existing and
+  unrelated to any caller — it reproduces with a bare `raise:` on a bare object,
+  so it is a defect in the port's `NSException` implementation rather than a
+  consequence of a throwing caller. It matters mostly for the range and argument
+  checks that raise on out-of-bounds access, which is why the
+  `NSAttributedString` slice's memory behaviour was verified over its
+  non-throwing paths (flat over 200,000 iterations) separately from this.
 - **Tree is green**: `make all` (build + pairing sweep + behavior gate) passes for
-  both `release` and `debug` configurations. 896 selectors across 52 headers are
+  both `release` and `debug` configurations. 970 selectors across 54 headers are
   declared and implemented.
 - **Delegation protocols are handled**: the pairing sweep strips `@protocol`
   bodies and forward declarations (delegate methods are implemented by
@@ -160,8 +174,30 @@ system binary's exports (the Swift counterpart of a `.tbd`).
   `object_getClass(url) == [NSURL class]` holds and the instance-method probes
   finally exercise port code. Because it is a plain object again, it supplies its
   own value identity: `isEqual:`/`hash` compare the backing `CFURL`, and `-copy`
-  returns the receiver, as Apple does for an immutable URL. The same trap applies
-  to any future `CFAttributedString`-backed class. 11 probes pin this.
+  returns the receiver, as Apple does for an immutable URL. 11 probes pin this.
+- _`NSAttributedString` is an owning wrapper, for the same reason:_ CoreFoundation
+  registers its own `NSAttributedString` against the `CFAttributedString` type
+  before this library loads, so the port class holds a `CFAttributedString` in an
+  ivar rather than bridging to it. Attributes need no conversion because the
+  port's `NSString`/`NSDictionary` are themselves toll-free with `CFString`/
+  `CFDictionary`. 38 probes pin the core immutable and mutable surface.
+  Three CF behaviours needed working around and are commented in
+  `String.subproj/NSAttributedString.m`: `CFAttributedStringReplaceString`
+  segfaults on a NULL replacement (deletion passes `CFSTR("")` instead), and
+  `CFAttributedStringGetMutableString` returns NULL for these backings, so
+  `-mutableString` is a proxy that forwards mutations to its owner the way
+  Apple's `NSMutableStringProxyForMutableAttributedString` does. Note that
+  CoreFoundation has no accessor for the shorter `-effectiveRange:`, so those
+  methods report the longest effective range, searched over the whole string so
+  a run can still extend backwards past the requested index. Like `NSURL`,
+  `-copy` returns the receiver when the receiver is immutable. 59 probes pin this,
+  covering the argument and range errors as well: Apple raises
+  `NSInvalidArgumentException` for a nil string, nil replacement, nil attributed
+  string, or nil attribute value, and `NSRangeException` for an out-of-bounds
+  range — several of which CoreFoundation would crash or hang on, so the port
+  validates before delegating. `-setAttributes:range:` is a *replacement*
+  (`clearOtherAttributes` must be set, or CF merges instead), while
+  `-addAttributes:range:` merges and `-setAttributes:nil` clears the range.
 
 **Deepen partial classes**
 - `NSURL`: file bookmarks and resource-value accessors are still approximate

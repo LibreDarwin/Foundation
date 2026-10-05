@@ -1445,6 +1445,65 @@ ka scalars i                               | -77
 ka scalars d                               | 2.750
 ka scalars s                               | txt
 ka scalars missing                         | nil
+as string                                  | hello world
+as length                                  | 11
+as attrs@0 count                           | 2
+as attrs@0 ak                              | F
+as attrs@0 bk                              | C
+as attr ak@0                               | F
+as attr ak@6                               | F
+as attr missing                            | (null)
+as effrange@1                              | 0/11
+as substring                               | world
+as equal self                              | 1
+as equal clone                             | 1
+as equal other                             | 1
+as bare attrs count                        | 0
+as bare equal                              | 1
+as empty length                            | 0
+as copy distinct                           | 0
+as isEqual copy                            | 1
+as mutableCopy distinct                    | 1
+as m length                                | 6
+as m ak@0                                  | F
+as m ak@5                                  | (null)
+as m ck@4                                  | 2
+as m ak@1 after rm                         | (null)
+as m string                                | ZZbcdef
+as m setattrs ak@1                         | F
+as m after append                          | ZZbcdeftail
+as m tail ak                               | T
+as m after insert                          | <ZZbcdeftail
+as m after delete                          | ZZbcdeftail
+as m copy string                           | ZZbcdeftail
+as m mutableCopy distinct                  | 1
+as m2 setAttributedString                  | hello world
+as m2 mutableString                        | hello world
+as m2 after begin/end                      | hello world!
+as setattrs drops ak                       | (null)
+as setattrs keeps bk                       | C
+as setattrs:nil ak                         | (null)
+as setattrs:nil count                      | 0
+as addattrs merge ak@0                     | F
+as addattrs merge bk@1                     | C
+as proxy replaceOcc count                  | 2
+as proxy owner after replaceOcc            | Z-bbb-Z
+as proxy owner after append                | Z-bbb-Z-end
+as proxy owner after delete                | -bbb-Z-end
+as exc addAttribute value:nil              | NSInvalidArgumentException
+as exc immutable init nil                  | NSInvalidArgumentException
+as exc mutable init nil                    | NSInvalidArgumentException
+as exc replaceCharacters nil               | NSInvalidArgumentException
+as exc append nil                          | NSInvalidArgumentException
+as exc setAttributedString nil             | NSInvalidArgumentException
+as exc substring oob                       | NSRangeException
+as exc addAttributes oob                   | NSRangeException
+as exc delete oob                          | NSRangeException
+as exc setAttributes oob                   | NSRangeException
+as exc insert oob                          | NSRangeException
+as enum runs                               | 2 1:0+4 2:4+4 
+as enum one attr                           | 2 1:0+4 2:4+4 
+as enum stop                               | 1
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1

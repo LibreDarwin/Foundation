@@ -64,6 +64,7 @@
 		17EF064EDFEB46D00B4A2FE5 /* Serialization.subproj/NSKeyedUnarchiver.m in Sources */ = {isa = PBXBuildFile; fileRef = 5D85486930CC059FF846BFFD /* Serialization.subproj/NSKeyedUnarchiver.m */; };
 		93F1413ED432D94266157DAB /* Sorting.subproj/NSSortDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = CDE8224445E1861B245EF90D /* Sorting.subproj/NSSortDescriptor.m */; };
 		B1033F1AAAFDC7AD4FE286FF /* Stream.subproj/NSStream.m in Sources */ = {isa = PBXBuildFile; fileRef = 35DD917D050BAF238B747D0D /* Stream.subproj/NSStream.m */; };
+		8949471AD63039D5F7918ADE /* String.subproj/NSAttributedString.m in Sources */ = {isa = PBXBuildFile; fileRef = 49FFA5E6D1C0C4F21687508C /* String.subproj/NSAttributedString.m */; };
 		B19585A0C19B611A58AE0B57 /* String.subproj/NSCFString.m in Sources */ = {isa = PBXBuildFile; fileRef = CEE64D496D76AF52CDC3972A /* String.subproj/NSCFString.m */; };
 		C4FF184689279D96A23F8E17 /* String.subproj/NSCharacterSet.m in Sources */ = {isa = PBXBuildFile; fileRef = E51BA621FCC8422FFF82688E /* String.subproj/NSCharacterSet.m */; };
 		89AA223502D77B3E58F19B3D /* String.subproj/NSScanner.m in Sources */ = {isa = PBXBuildFile; fileRef = 271103993389B12DEFA08672 /* String.subproj/NSScanner.m */; };
@@ -132,6 +133,7 @@
 		5D85486930CC059FF846BFFD /* Serialization.subproj/NSKeyedUnarchiver.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSKeyedUnarchiver.m"; path = "Serialization.subproj/NSKeyedUnarchiver.m"; sourceTree = "<group>"; };
 		CDE8224445E1861B245EF90D /* Sorting.subproj/NSSortDescriptor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSSortDescriptor.m"; path = "Sorting.subproj/NSSortDescriptor.m"; sourceTree = "<group>"; };
 		35DD917D050BAF238B747D0D /* Stream.subproj/NSStream.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSStream.m"; path = "Stream.subproj/NSStream.m"; sourceTree = "<group>"; };
+		49FFA5E6D1C0C4F21687508C /* String.subproj/NSAttributedString.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSAttributedString.m"; path = "String.subproj/NSAttributedString.m"; sourceTree = "<group>"; };
 		CEE64D496D76AF52CDC3972A /* String.subproj/NSCFString.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCFString.m"; path = "String.subproj/NSCFString.m"; sourceTree = "<group>"; };
 		E51BA621FCC8422FFF82688E /* String.subproj/NSCharacterSet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCharacterSet.m"; path = "String.subproj/NSCharacterSet.m"; sourceTree = "<group>"; };
 		271103993389B12DEFA08672 /* String.subproj/NSScanner.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSScanner.m"; path = "String.subproj/NSScanner.m"; sourceTree = "<group>"; };
@@ -229,6 +231,7 @@
 				5D85486930CC059FF846BFFD /* Serialization.subproj/NSKeyedUnarchiver.m */,
 				CDE8224445E1861B245EF90D /* Sorting.subproj/NSSortDescriptor.m */,
 				35DD917D050BAF238B747D0D /* Stream.subproj/NSStream.m */,
+				49FFA5E6D1C0C4F21687508C /* String.subproj/NSAttributedString.m */,
 				CEE64D496D76AF52CDC3972A /* String.subproj/NSCFString.m */,
 				E51BA621FCC8422FFF82688E /* String.subproj/NSCharacterSet.m */,
 				271103993389B12DEFA08672 /* String.subproj/NSScanner.m */,
@@ -377,6 +380,7 @@
 				17EF064EDFEB46D00B4A2FE5 /* Serialization.subproj/NSKeyedUnarchiver.m in Sources */,
 				93F1413ED432D94266157DAB /* Sorting.subproj/NSSortDescriptor.m in Sources */,
 				B1033F1AAAFDC7AD4FE286FF /* Stream.subproj/NSStream.m in Sources */,
+				8949471AD63039D5F7918ADE /* String.subproj/NSAttributedString.m in Sources */,
 				B19585A0C19B611A58AE0B57 /* String.subproj/NSCFString.m in Sources */,
 				C4FF184689279D96A23F8E17 /* String.subproj/NSCharacterSet.m in Sources */,
 				89AA223502D77B3E58F19B3D /* String.subproj/NSScanner.m in Sources */,

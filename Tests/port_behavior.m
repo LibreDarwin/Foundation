@@ -3020,6 +3020,167 @@ int main(void) {
     p("ka scalars missing", [kaU decodeObjectForKey:@"nope"] ? @"non-nil" : @"nil");
     [kaU finishDecoding];
 
+    /* ---------- NSAttributedString ---------- */
+    NSDictionary *asAttrs = @{@"ak": @"F", @"bk": @"C"};
+    NSAttributedString *asX = [[NSAttributedString alloc] initWithString:@"hello world"
+                                                             attributes:asAttrs];
+    p("as string", asX.string);
+    p("as length", [NSString stringWithFormat:@"%lu", (unsigned long)asX.length]);
+    NSDictionary *asAt0 = [asX attributesAtIndex:0 effectiveRange:NULL];
+    p("as attrs@0 count", [NSString stringWithFormat:@"%lu", (unsigned long)[asAt0 count]]);
+    p("as attrs@0 ak", [asAt0 objectForKey:@"ak"]);
+    p("as attrs@0 bk", [asAt0 objectForKey:@"bk"]);
+    p("as attr ak@0", [asX attribute:@"ak" atIndex:0 effectiveRange:NULL]);
+    p("as attr ak@6", [asX attribute:@"ak" atIndex:6 effectiveRange:NULL]);
+    p("as attr missing", [asX attribute:@"zzz" atIndex:0 effectiveRange:NULL]);
+    NSRange asEff; (void)[asX attributesAtIndex:1 effectiveRange:&asEff];
+    p("as effrange@1", [NSString stringWithFormat:@"%lu/%lu",
+                          (unsigned long)asEff.location, (unsigned long)asEff.length]);
+    p("as substring", [asX attributedSubstringFromRange:NSMakeRange(6, 5)].string);
+    p("as equal self", [asX isEqualToAttributedString:asX] ? @"1" : @"0");
+    p("as equal clone", [asX isEqualToAttributedString:[asX copy]] ? @"1" : @"0");
+    p("as equal other", [asX isEqualToAttributedString:
+        [[NSAttributedString alloc] initWithString:@"hello world" attributes:asAttrs]] ? @"1" : @"0");
+    NSAttributedString *asBare = [[NSAttributedString alloc] initWithString:@"plain"];
+    p("as bare attrs count", [NSString stringWithFormat:@"%lu",
+        (unsigned long)[[asBare attributesAtIndex:0 effectiveRange:NULL] count]]);
+    p("as bare equal", [asBare isEqualToAttributedString:
+        [[NSAttributedString alloc] initWithString:@"plain"]] ? @"1" : @"0");
+    NSAttributedString *asEmpty = [[NSAttributedString alloc] initWithString:@""
+                                                                 attributes:asAttrs];
+    p("as empty length", [NSString stringWithFormat:@"%lu", (unsigned long)asEmpty.length]);
+    /* -copy returns the receiver for an immutable attributed string, so the
+     * object identity check must not be confused with the CF-backed class. */
+    p("as copy distinct", [asX copy] == asX ? @"0" : @"1");
+    p("as isEqual copy", [asX isEqual:[asX copy]] ? @"1" : @"0");
+    p("as mutableCopy distinct", [asX mutableCopy] == asX ? @"0" : @"1");
+
+    NSMutableAttributedString *asM = [[NSMutableAttributedString alloc] initWithString:@"abcdef"];
+    [asM addAttribute:@"ak" value:@"F" range:NSMakeRange(0, 3)];
+    p("as m length", [NSString stringWithFormat:@"%lu", (unsigned long)asM.length]);
+    p("as m ak@0", [asM attribute:@"ak" atIndex:0 effectiveRange:NULL]);
+    p("as m ak@5", [asM attribute:@"ak" atIndex:5 effectiveRange:NULL]);
+    [asM addAttributes:@{@"ck": @"2"} range:NSMakeRange(3, 3)];
+    p("as m ck@4", [asM attribute:@"ck" atIndex:4 effectiveRange:NULL]);
+    [asM removeAttribute:@"ak" range:NSMakeRange(0, 2)];
+    p("as m ak@1 after rm", [asM attribute:@"ak" atIndex:1 effectiveRange:NULL]);
+    [asM replaceCharactersInRange:NSMakeRange(0, 1) withString:@"ZZ"];
+    p("as m string", asM.string);
+    [asM setAttributes:asAttrs range:NSMakeRange(0, 2)];
+    p("as m setattrs ak@1", [asM attribute:@"ak" atIndex:1 effectiveRange:NULL]);
+    [asM appendAttributedString:[[NSAttributedString alloc] initWithString:@"tail"
+                                                                attributes:@{@"ak": @"T"}]];
+    p("as m after append", asM.string);
+    p("as m tail ak", [asM attribute:@"ak" atIndex:(unsigned long)asM.length - 1 effectiveRange:NULL]);
+    [asM insertAttributedString:[[NSAttributedString alloc] initWithString:@"<"] atIndex:0];
+    p("as m after insert", asM.string);
+    [asM deleteCharactersInRange:NSMakeRange(0, 1)];
+    p("as m after delete", asM.string);
+    p("as m copy string", [[asM copy] string]);
+    p("as m mutableCopy distinct", [asM mutableCopy] == asM ? @"0" : @"1");
+    NSMutableAttributedString *asM2 = [[NSMutableAttributedString alloc] initWithString:@"xy"];
+    [asM2 setAttributedString:asX];
+    p("as m2 setAttributedString", asM2.string);
+    p("as m2 mutableString", asM2.mutableString);
+    [asM2 beginEditing];
+    [asM2 appendAttributedString:[[NSAttributedString alloc] initWithString:@"!"]];
+    [asM2 endEditing];
+    p("as m2 after begin/end", asM2.string);
+
+    /* -setAttributes:range: is a replacement, not a merge: an attribute already
+     * in the range but absent from the argument is removed. */
+    NSMutableAttributedString *asRep = [[NSMutableAttributedString alloc] initWithString:@"abcdef"
+                                                                             attributes:asAttrs];
+    [asRep setAttributes:@{@"bk": @"C"} range:NSMakeRange(0, 6)];
+    p("as setattrs drops ak", [asRep attribute:@"ak" atIndex:0 effectiveRange:NULL]);
+    p("as setattrs keeps bk", [asRep attribute:@"bk" atIndex:0 effectiveRange:NULL]);
+    /* A nil dictionary clears the range instead of raising. */
+    NSMutableAttributedString *asNil = [[NSMutableAttributedString alloc] initWithString:@"abcdef"
+                                                                              attributes:asAttrs];
+    [asNil setAttributes:nil range:NSMakeRange(0, 1)];
+    p("as setattrs:nil ak", [asNil attribute:@"ak" atIndex:0 effectiveRange:NULL]);
+    p("as setattrs:nil count", [NSString stringWithFormat:@"%lu",
+        (unsigned long)[[asNil attributesAtIndex:0 effectiveRange:NULL] count]]);
+    /* -addAttributes:range: is the merging counterpart. */
+    NSMutableAttributedString *asMerge = [[NSMutableAttributedString alloc] initWithString:@"abc"];
+    [asMerge setAttributes:@{@"ak": @"F"} range:NSMakeRange(0, 1)];
+    [asMerge addAttributes:@{@"bk": @"C"} range:NSMakeRange(1, 2)];
+    p("as addattrs merge ak@0", [asMerge attribute:@"ak" atIndex:0 effectiveRange:NULL]);
+    p("as addattrs merge bk@1", [asMerge attribute:@"bk" atIndex:1 effectiveRange:NULL]);
+
+    /* -mutableString is an aliased proxy: mutations through it must be visible
+     * on the owner, including via -replaceOccurrencesOfString:. */
+    NSMutableAttributedString *asProxy = [[NSMutableAttributedString alloc] initWithString:@"aa-bbb-aa"];
+    NSMutableString *asPS = asProxy.mutableString;
+    NSUInteger asReps = [asPS replaceOccurrencesOfString:@"aa" withString:@"Z" options:0 range:NSMakeRange(0, 9)];
+    p("as proxy replaceOcc count", [NSString stringWithFormat:@"%lu", (unsigned long)asReps]);
+    p("as proxy owner after replaceOcc", asProxy.string);
+    [asProxy.mutableString appendString:@"-end"];
+    p("as proxy owner after append", asProxy.string);
+    [asProxy.mutableString deleteCharactersInRange:NSMakeRange(0, 1)];
+    p("as proxy owner after delete", asProxy.string);
+
+    /* nil arguments and out-of-range checks.  Apple raises
+     * NSInvalidArgumentException for the former and NSRangeException for the
+     * latter; CoreFoundation itself crashes or hangs on several of them, so the
+     * port has to raise before reaching CF. */
+#define asExcept(label, expr) do { \
+        const char *asName = "no-exception"; \
+        @try { (void)(expr); } \
+        @catch (NSException *asE) { asName = [[asE name] UTF8String]; } \
+        p("as exc " label, [@(asName) description]); \
+    } while (0)
+    asExcept("addAttribute value:nil",
+             [[[NSMutableAttributedString alloc] initWithString:@"abc"] addAttribute:@"ak" value:nil range:NSMakeRange(0, 3)]);
+    asExcept("immutable init nil", [[NSAttributedString alloc] initWithString:nil]);
+    asExcept("mutable init nil", [[NSMutableAttributedString alloc] initWithString:nil]);
+    asExcept("replaceCharacters nil",
+             [[[NSMutableAttributedString alloc] initWithString:@"abc"] replaceCharactersInRange:NSMakeRange(0, 1) withString:nil]);
+    asExcept("append nil", [[[NSMutableAttributedString alloc] initWithString:@"abc"] appendAttributedString:nil]);
+    asExcept("setAttributedString nil",
+             [[[NSMutableAttributedString alloc] initWithString:@"abc"] setAttributedString:nil]);
+    asExcept("substring oob", [asX attributedSubstringFromRange:NSMakeRange(3, 99)]);
+    asExcept("addAttributes oob",
+             [[[NSMutableAttributedString alloc] initWithString:@"abc"] addAttributes:asAttrs range:NSMakeRange(0, 99)]);
+    asExcept("delete oob",
+             [[[NSMutableAttributedString alloc] initWithString:@"abc"] deleteCharactersInRange:NSMakeRange(0, 99)]);
+    asExcept("setAttributes oob",
+             [[[NSMutableAttributedString alloc] initWithString:@"abc"] setAttributes:asAttrs range:NSMakeRange(0, 99)]);
+    asExcept("insert oob",
+             [[[NSMutableAttributedString alloc] initWithString:@"abc"] insertAttributedString:asX atIndex:99]);
+#undef asExcept
+
+    NSMutableAttributedString *asEnum = [[NSMutableAttributedString alloc] initWithString:@"abcdefgh"];
+    [asEnum addAttribute:@"ak" value:@"1" range:NSMakeRange(0, 4)];
+    [asEnum addAttribute:@"ak" value:@"2" range:NSMakeRange(4, 4)];
+    __block int asRuns = 0; NSMutableString *asAcc = [NSMutableString string];
+    [asEnum enumerateAttributesInRange:NSMakeRange(0, (unsigned long)asEnum.length)
+                               options:0
+                            usingBlock:^(NSDictionary *at, NSRange r, BOOL *stop) {
+        asRuns++;
+        [asAcc appendFormat:@"%@:%lu+%lu ", [at objectForKey:@"ak"],
+         (unsigned long)r.location, (unsigned long)r.length];
+    }];
+    p("as enum runs", [NSString stringWithFormat:@"%d %@", asRuns, asAcc]);
+    __block int asAttrRuns = 0; [asAcc setString:@""];
+    [asEnum enumerateAttribute:@"ak" inRange:NSMakeRange(0, (unsigned long)asEnum.length)
+                             options:0
+                          usingBlock:^(id v, NSRange r, BOOL *stop) {
+        asAttrRuns++;
+        [asAcc appendFormat:@"%@:%lu+%lu ", v,
+         (unsigned long)r.location, (unsigned long)r.length];
+    }];
+    p("as enum one attr", [NSString stringWithFormat:@"%d %@", asAttrRuns, asAcc]);
+    /* Stopping early must end enumeration without visiting later runs. */
+    __block int asStopRuns = 0;
+    [asEnum enumerateAttributesInRange:NSMakeRange(0, (unsigned long)asEnum.length)
+                               options:0
+                            usingBlock:^(NSDictionary *at, NSRange r, BOOL *stop) {
+        asStopRuns++;
+        *stop = YES;
+    }];
+    p("as enum stop", [NSString stringWithFormat:@"%d", asStopRuns]);
+
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
     port_behavior_pool();
 

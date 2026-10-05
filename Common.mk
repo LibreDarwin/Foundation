@@ -174,6 +174,7 @@ pairing-sweep:
 #  probe touches must be added to GATE_SRCS.
 # =====================================================================
 GATE_SRCS = String.subproj/NSString.m \
+            String.subproj/NSAttributedString.m \
             String.subproj/NSCharacterSet.m \
             Collections.subproj/NSArray.m \
             Collections.subproj/NSEnumerator_array.m \
@@ -257,7 +258,7 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	    build/${CONFIG}/gate/*.o -framework CoreFoundation
 	@build/${CONFIG}/port_behavior > build/${CONFIG}/port_behavior.out
 	@diff Tests/port_behavior.golden build/${CONFIG}/port_behavior.out \
-	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 1354 probes)"
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 1540 probes)"
 
 verify: pairing-sweep behavior-gate
 
