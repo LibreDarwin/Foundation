@@ -87,7 +87,8 @@ init-swap), NSNumberFormatter (CFNumberFormatter-backed, all style/parse bridges
 **Runtime** — NSObject, NSValue, NSNull (toll-free with CFNull), NSError,
 NSException, NSZone, NSRange, NSGeometry, NSLog, NSProcessInfo, NSBundle,
 NSUserDefaults, NSPropertyList, NSJSONSerialization, NSKeyValueCoding,
-NSDebug, NSObjCRuntime; `FoundationErrors.h`, `Foundation.apinotes`.
+NSDebug, NSObjCRuntime, NSAutoreleasePool; `FoundationErrors.h`,
+`Foundation.apinotes`.
 
 **Serialization** — NSCoder, and the recently completed keyed-archive pair:
 NSKeyedArchiver + NSKeyedUnarchiver (codec categories, encoding/substitution
@@ -122,21 +123,29 @@ system binary's exports (the Swift counterpart of a `.tbd`).
   `unarchiveTopLevelObjectWithData:error:`, whose `NS_SWIFT_UNAVAILABLE` on the
   `error:` parameter fools the flat selector matcher despite the implementation
   at `Serialization.subproj/NSKeyedUnarchiver.m:329`.
-- `NSKeyedArchiver.m` / `NSKeyedUnarchiver.m` are **not yet in `GATE_SRCS`**, so
-  keyed-archive behavior is not yet gate-pinned against Apple ground truth.
-- The framework deliberately ships **no `NSAutoreleasePool`**; until it does, the
-  dylib keeps a single dependency on Apple's Foundation (the injected
-  `-framework Foundation` autolink for `_OBJC_CLASS_$_NSAutoreleasePool`) —
-  documented in `Common.mk`.
+- `NSKeyedArchiver.m` / `NSKeyedUnarchiver.m` are in `GATE_SRCS`, so keyed-archive
+  behavior is gate-pinned against Apple ground truth.
+- **`NSAutoreleasePool` now ships** (`Runtime.subproj/NSAutoreleasePool.m`), and
+  with it the last Apple-Foundation link dependency is gone. `otool -L` on the
+  built dylib lists only the install name, `CoreFoundation`, `libobjc` and
+  `libSystem`. The last symbol that bound to Apple's copy,
+  `_OBJC_CLASS_$_NSAutoreleasePool` (a `__objc_classrefs` entry from clang's
+  `@autoreleasepool` lowering), is now defined by the port itself. The actual
+  culprit was `-fobjc-arc` on the *link* line, which makes the driver autolink
+  Foundation; the `-fno-autolink` flag only removed the per-object options.
+  Both are documented in `Common.mk`.
+- The pool keeps the Apple 40-byte layout (`_token`, `_reserved3`, `_reserved2`,
+  `_reserved`) and delegates to `objc_autoreleasePoolPush`/`Pop`, so
+  `@autoreleasepool` in `NSThread`/`NSNotificationCenter` drains into it.
+  Instance `-addObject:` uses a side table, because
+  `objc_autoreleasePoolAddObject` is not exported. Debug selectors Apple keeps
+  out of the SDK live in the non-umbrella `NSAutoreleasePoolInternal.h`.
 
 ## What's left
 
 **Finish / gate the current slice**
-- Add `NSKeyedArchiver.m`/`NSKeyedUnarchiver.m` to `GATE_SRCS`, extend
-  `Tests/port_behavior.m` with keyed-archive probes, and re-capture the Apple
-  ground truth into `Tests/port_behavior.golden`.
-- Provide `NSAutoreleasePool` (with NSThread/NSRunLoop integration) to drop the
-  last Apple-Foundation link dependency and the autolink workaround.
+- _Nothing outstanding from the last slice; the keyed-archive pair and
+  `NSAutoreleasePool` are both implemented and gate-pinned._
 
 **Deepen partial classes**
 - `NSURL`: components, query/relative URLs, file bookmarks, standardize,
@@ -179,7 +188,7 @@ system binary's exports (the Swift counterpart of a `.tbd`).
   NSNetServices.
 - *Extensions/items*: NSExtensionContext, NSExtensionItem,
   NSExtensionRequestHandling, NSItemProvider.
-- *Obsolete/misc*: NSAutoreleasePool, NSGarbageCollector, NSClassDescription,
+- *Obsolete/misc*: NSGarbageCollector, NSClassDescription,
   NSObjectScripting, NSOrderedCollectionChange/Difference (used by the collection
   observers in the KVO slice).
 
@@ -195,7 +204,8 @@ Collections.subproj/   Date.subproj/  FileManager.subproj/  Locale.subproj/
 Lock.subproj/          Notification.subproj/  Numeric.subproj/  RunLoop.subproj/
 Runtime.subproj/       Serialization.subproj/  Sorting.subproj/  Stream.subproj/
 String.subproj/        Swift.subproj/  Thread.subproj/  URL.subproj/  XPC.subproj/
-Tests/                 # port_behavior.m, port_behavior.golden, pairing_sweep.py
+Tests/                 # port_behavior.m, port_behavior_pool.m (MRC),
+                       # port_behavior.golden, pairing_sweep.py
 Tools/                 # gen_xcodeproj.py (make xcodeproj)
 Common.mk  Makefile(bmake)  GNUmakefile(GNU make)  Info.plist  LICENSE
 local/                 # project rules (Foundation.md), vendored CF headers,

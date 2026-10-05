@@ -32,11 +32,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
  *   tree has no NSPlatform, so that role is played by a pthread-specific key
  *   here (positive key value = an NSThread object for that pthread).
  *
- * - There is no NSNotificationCenter in this Foundation build, so the three
- *   notification names are exported for API compatibility but never posted.
- *
- * - There is no NSAutoreleasePool in this build. The thread entry function
- *   wraps its work in @autoreleasepool instead, and -main is invoked via a
+  *
+ * - NSAutoreleasePool is a class this Foundation now owns, but it is
+ *   NS_AUTOMATED_REFCOUNT_UNAVAILABLE, so ARC code cannot spell it.  The
+ *   thread entry function wraps its work in @autoreleasepool, which lowers to
+ *   the same objc_autoreleasePoolPush/-Pop pair, and -main is invoked via a
  *   typed objc_msgSend trampoline (the ARC performSelector: warning applies
  *   to the selector-with-object family, not to direct messenger calls).
  *
@@ -121,8 +121,10 @@ static void *NSThreadMain(void *arg) {
         @try {
             [thread main];
         } @catch (NSException *exception) {
-            /* There is no NSLog in this Foundation build; the reference
-             * implementation logs and swallows, so we swallow. */
+            /* The reference implementation logs the exception and swallows
+             * it rather than letting it reach the thread's top level. */
+            NSLog(@"*** -[NSThread performSelector:onThread:withObject:waitUntilDone:] "
+                  @"uncaught exception in -[%@ main]: %@", [exception name], [exception reason]);
         }
     }
     thread->_executing = NO;

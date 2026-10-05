@@ -43,30 +43,29 @@ DYLIB  = ${FW}/Versions/A/Foundation
 # OPT_FLAGS is set by the including flavor file: release = -O2,
 # debug = -O0 -g -DDEBUG.  Used by the object rules and the behavior gate.
 
-# Public umbrella includes every subproject header EXCEPT NSCFTypeID.h, which
-# is internal-use-only: it includes the private <CoreFoundation/CFRuntime_Internal.h>,
-# so pulling it into Foundation.h would break a standalone
-# '#import <Foundation/Foundation.h>' for consumers without private CF headers.
-# The header still ships in the framework (explicit inclusion is an opt-in).
+# Public umbrella includes every subproject header EXCEPT NSCFTypeID.h and
+# NSAutoreleasePoolInternal.h, which are internal-use-only: the first includes
+# the private <CoreFoundation/CFRuntime_Internal.h>, and the second is the pool
+# debugging surface Apple keeps out of the SDK.  Both still ship in the
+# framework (explicit inclusion is an opt-in).
 
 # ---- compiler flags ----
-# Why the linked dylib ends up with an LC_LOAD_DYLIB for /System/.../Foundation.framework
-# even though we only link CoreFoundation: clang's implicit ObjC autolink
-# injects '-framework Foundation' into every ObjC (ARC) link, and exactly one
-# undefined symbol binds against it - _OBJC_CLASS_$_NSAutoreleasePool, a
-# vestigial __objc_classrefs entry that clang's '^@autoreleasepool' lowering
-# emits in Thread.subproj/NSThread.m even though its code was optimized away
-# (bound, never called).  Verified partition of the dylib's undefineds:
+# -fno-autolink: clang's implicit ObjC autolink bakes
+# '-framework Foundation' into each .o as an LC_LINKER_OPTION at compile time.
+# It is passed to the compiler for that reason.  Note this flag was NOT what
+# kept the dependency alive - see the LDFLAGS comment below.  What actually
+# removed the LC_LOAD_DYLIB was dropping -fobjc-arc from the link line; the
+# autolink options were already gone from every object beforehand.
+# The last symbol that bound against Apple Foundation was
+# _OBJC_CLASS_$_NSAutoreleasePool, a __objc_classrefs entry emitted by
+# clang's '^@autoreleasepool' lowering in Thread.subproj/NSThread.m and
+# Notification.subproj/NSNotificationCenter.m.  Runtime.subproj/
+# NSAutoreleasePool.m now provides that class, so the port is self-contained.
+# Verified partition of the dylib's undefineds before that class existed:
 # 190 CF_* -> CoreFoundation, 23 _objc_* -> libobjc, 2 NSObject class+metaclass
-# -> libobjc, 1 _OBJC_CLASS_$_NSAutoreleasePool -> Foundation ONLY
-# (libobjc.A.tbd and CF.tbd do not export it; Foundation.tbd does - the one
-# real Apple Foundation dependency), 151 libSystem/compiler-rt.  A direct 'ld'
-# link without '-framework Foundation' fails on exactly that one symbol.
-# This project deliberately ships no NSAutoreleasePool, so until the target
-# provides that class a direct 'ld' link removes the injected framework and
-# then fails on '^_OBJC_CLASS_$_NSAutoreleasePool'.  Keeping the autolink is
-# therefore the correct host-build accommodation; dropping Apple Foundation
-# requires the LibreDarwin Foundation to own that class symbol first.
+# -> libobjc, 1 _OBJC_CLASS_$_NSAutoreleasePool -> Foundation ONLY, 151
+# libSystem/compiler-rt.  'otool -L' is the check that the Foundation entry
+# stays gone.
 # Some subprojects include CoreFoundation's private headers
 # (ForFoundationOnly.h and friends).  Until the LibreDarwin CoreFoundation
 # build has been installed into the Internal SDK, the coherent LibreDarwin CF
@@ -74,14 +73,26 @@ DYLIB  = ${FW}/Versions/A/Foundation
 # the SDK's CF headers so the LibreDarwin tree wins the include; the -I for
 # the CoreFoundation PrivateHeaders dir is inert when that dir is absent.
 CFLAGS  = -fobjc-arc -fblocks -fobjc-runtime=macosx \
+          -fno-autolink \
           -isysroot ${RN} \
           -DNSBUILDINGFOUNDATION \
           -I local/include \
           -I${RN}/System/Library/Frameworks/CoreFoundation.framework/PrivateHeaders \
           -I${RN}/System/Library/Frameworks/CoreFoundation.framework/Headers \
           -I build/gen
-LDFLAGS = -dynamiclib -fobjc-arc -isysroot ${RN} \
+# -fobjc-arc must NOT appear here.  It is a codegen flag and already in
+# CFLAGS; repeating it on the link line is not a no-op.  Verified against
+# this tree's 63 objects with 'clang -dynamiclib -Wl,-t': the same link with
+# -fobjc-arc loads .../Foundation.framework/Foundation.tbd, and the same
+# link without it does not.  -fno-autolink on its own was not enough - it
+# suppresses the per-object LC_LINKER_OPTION entries, and the surviving
+# Foundation dependency was coming from the driver, not from any object.
+# -lobjc is explicit because -fobjc-arc had been supplying it implicitly;
+# without it the dylib would depend on libSystem re-exporting libobjc to
+# resolve its _objc_* undefineds.  CoreFoundation stays explicit too.
+LDFLAGS = -dynamiclib -fno-autolink -isysroot ${RN} \
           -F${RN}/System/Library/Frameworks -framework CoreFoundation \
+          -lobjc \
           -install_name @rpath/Foundation.framework/Versions/A/Foundation
 
 .PHONY: all build debug release verify umbrella pairing-instrument pairing-sweep behavior-gate config-check clean gitignore xcodeproj
@@ -195,6 +206,8 @@ GATE_SRCS = String.subproj/NSString.m \
             Runtime.subproj/NSValue.m \
             URL.subproj/NSURL.m \
             Runtime.subproj/NSObjCRuntime.m \
+            Runtime.subproj/NSAutoreleasePool.m \
+            Runtime.subproj/NSLog.m \
             Runtime.subproj/NSZone.m \
             Runtime.subproj/NSPropertyList.m \
             Serialization.subproj/NSCoder.m \
@@ -210,6 +223,7 @@ MRC_SOURCES = ./Collections.subproj/NSMapTable.m \
               ./FileManager.subproj/NSFileHandle.m \
               ./FileManager.subproj/NSFileManager.m \
               ./FileManager.subproj/NSPathUtilities.m \
+              ./Runtime.subproj/NSAutoreleasePool.m \
               ./Runtime.subproj/NSBundle.m \
               ./Runtime.subproj/NSException.m \
               ./Runtime.subproj/NSObjCRuntime.m \
@@ -219,7 +233,7 @@ MRC_SOURCES = ./Collections.subproj/NSMapTable.m \
               ./Runtime.subproj/NSZone.m
 
 # The gate compiles a subset of GATE_SRCS with -fno-objc-arc as well.
-MRC_GATE_PAT = Collections.subproj/NSData.m|Collections.subproj/NSMapTable.m|Collections.subproj/NSHashTable.m|Collections.subproj/NSPointerFunctions.m|Runtime.subproj/NSException.m|Runtime.subproj/NSObjCRuntime.m|Runtime.subproj/NSValue.m|Runtime.subproj/NSZone.m
+MRC_GATE_PAT = Collections.subproj/NSData.m|Collections.subproj/NSMapTable.m|Collections.subproj/NSHashTable.m|Collections.subproj/NSPointerFunctions.m|Runtime.subproj/NSAutoreleasePool.m|Runtime.subproj/NSException.m|Runtime.subproj/NSObjCRuntime.m|Runtime.subproj/NSValue.m|Runtime.subproj/NSZone.m
 
 # The gate executable links against Apple's CoreFoundation for its CF_* C
 # symbols only.  It must link with the Apple SDK sysroot, not ${RN}: the
@@ -237,6 +251,8 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	 done
 	@${CC} ${OPT_FLAGS} ${CFLAGS} -DPORT_GATE -c Tests/port_behavior.m \
 	    -o build/${CONFIG}/gate/port_behavior.o
+	@${CC} ${OPT_FLAGS} ${CFLAGS} -DPORT_GATE -fno-objc-arc -c Tests/port_behavior_pool.m \
+	    -o build/${CONFIG}/gate/port_behavior_pool.o
 	@${CC} -isysroot ${BEHAVIOR_LINK_SDK} -o build/${CONFIG}/port_behavior \
 	    build/${CONFIG}/gate/*.o -framework CoreFoundation
 	@build/${CONFIG}/port_behavior > build/${CONFIG}/port_behavior.out
@@ -247,9 +263,9 @@ verify: pairing-sweep behavior-gate
 
 # =====================================================================
 #  Umbrella header: copied from the subprojects' own headers and
-#  gathered into build/gen/Foundation/Foundation.h.  NSCFTypeID.h is
-#  copied along (explicit inclusion is an opt-in) but excluded from the
-#  umbrella's #include list.
+#  gathered into build/gen/Foundation/Foundation.h.  NSCFTypeID.h and
+#  NSAutoreleasePoolInternal.h are copied along (explicit inclusion is an
+#  opt-in) but excluded from the umbrella's #include list.
 # =====================================================================
 umbrella: build/gen/Foundation/Foundation.h
 
@@ -259,7 +275,7 @@ build/gen/Foundation/Foundation.h: pairing-instrument pairing-sweep
 	  for h in $$hdrs; do cp "$$h" build/gen/Foundation/; done; \
 	  { echo '// Foundation.h — generated from this project'"'"'s subproject headers'; \
 	    for h in $$hdrs; do case "$$h" in \
-	      */NSCFTypeID.h) ;; \
+	      */NSCFTypeID.h|*/NSAutoreleasePoolInternal.h) ;; \
 	      *) echo "#include <Foundation/$${h##*/}>";; \
 	    esac; done; } > $@
 

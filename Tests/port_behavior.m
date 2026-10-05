@@ -20,6 +20,10 @@ static void p(const char *label, NSString *value) {
 
 static void exHandler(NSException *e) { (void)e; }
 
+/* NSAutoreleasePool is ARC-unavailable, so its probes live in an MRC
+ * translation unit of their own (Tests/port_behavior_pool.m). */
+void port_behavior_pool(void);
+
 static NSString *csMember(NSCharacterSet *cs, unsigned int c) {
     return [NSString stringWithFormat:@"%d", [cs characterIsMember:(unichar)c]];
 }
@@ -2964,6 +2968,9 @@ int main(void) {
     p("ka scalars s", [kaU decodeObjectForKey:@"s"]);
     p("ka scalars missing", [kaU decodeObjectForKey:@"nope"] ? @"non-nil" : @"nil");
     [kaU finishDecoding];
+
+    /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
+    port_behavior_pool();
 
     printf("PORT_BEHAVIOR_END\n");
     return 0;

@@ -13,6 +13,7 @@
 		CA336FB86E7D7FE25F1AE396 /* Collections.subproj/NSEnumerator.m in Sources */ = {isa = PBXBuildFile; fileRef = 3ECE4359CB2F523890B09843 /* Collections.subproj/NSEnumerator.m */; };
 		CE1229667BD0DE63630831B9 /* Collections.subproj/NSEnumerator_array.m in Sources */ = {isa = PBXBuildFile; fileRef = F88722F89828AEBCF57AAF0E /* Collections.subproj/NSEnumerator_array.m */; };
 		D1756E75DEFCADC640BA83D7 /* Collections.subproj/NSHashTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 4AD4625CA382AE8A057D07FA /* Collections.subproj/NSHashTable.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		83D7C2CF0A6684F05A89ABF1 /* Collections.subproj/NSIndexSet.m in Sources */ = {isa = PBXBuildFile; fileRef = 0B80FCA92BA36CD0D6BC1CC0 /* Collections.subproj/NSIndexSet.m */; };
 		86ADD6E3BA5AD61102F1A0F6 /* Collections.subproj/NSMapTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EDA3B8B4620B4CA8D455C30 /* Collections.subproj/NSMapTable.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		CA0E858B8F548856CAACBA9B /* Collections.subproj/NSOrderedSet.m in Sources */ = {isa = PBXBuildFile; fileRef = D78285491D83710379449060 /* Collections.subproj/NSOrderedSet.m */; };
 		4687F95733156FA0D27A44F1 /* Collections.subproj/NSPointerFunctions.m in Sources */ = {isa = PBXBuildFile; fileRef = 6B6F580482A65B7F9A032575 /* Collections.subproj/NSPointerFunctions.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
@@ -41,6 +42,7 @@
 		FDB6882ECEADA094F6EB0421 /* Numeric.subproj/NSNumberFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 95C4061E9403C74177E7ECB0 /* Numeric.subproj/NSNumberFormatter.m */; };
 		1ED7476E9F4D38349058A23E /* RunLoop.subproj/NSRunLoop.m in Sources */ = {isa = PBXBuildFile; fileRef = F2AB46CD397DA2DDBB793D68 /* RunLoop.subproj/NSRunLoop.m */; };
 		6DFD9EB2A2C227F2C3F7E411 /* RunLoop.subproj/NSTimer.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E86CC7506DAB0A09731A44A /* RunLoop.subproj/NSTimer.m */; };
+		070337FF4EE8EC74EEF72709 /* Runtime.subproj/NSAutoreleasePool.m in Sources */ = {isa = PBXBuildFile; fileRef = B196A00B12ECF722AB38904E /* Runtime.subproj/NSAutoreleasePool.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		29A7E8E0F872D9268C7B2368 /* Runtime.subproj/NSBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = 07447952F68FA49175A84DA1 /* Runtime.subproj/NSBundle.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		EA513DE887945C6FD8E5B415 /* Runtime.subproj/NSDebug.m in Sources */ = {isa = PBXBuildFile; fileRef = 7CF427E5A1FF884358A865B9 /* Runtime.subproj/NSDebug.m */; };
 		FD7F2CB194F941B2D90796F9 /* Runtime.subproj/NSError.m in Sources */ = {isa = PBXBuildFile; fileRef = A49F3975B15721140B95CE7B /* Runtime.subproj/NSError.m */; };
@@ -58,6 +60,8 @@
 		F31802ADFFBA2F7EF105D108 /* Runtime.subproj/NSValue.m in Sources */ = {isa = PBXBuildFile; fileRef = F7B847F112E59005525323F1 /* Runtime.subproj/NSValue.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		4744083B112A14AB1D886066 /* Runtime.subproj/NSZone.m in Sources */ = {isa = PBXBuildFile; fileRef = BBE651918A1CB0F3B8630C22 /* Runtime.subproj/NSZone.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		6E2E7398081A83671D47074A /* Serialization.subproj/NSCoder.m in Sources */ = {isa = PBXBuildFile; fileRef = C8550A20E5BF46B196BF17AE /* Serialization.subproj/NSCoder.m */; };
+		84F4B8A3429797D55DB8C731 /* Serialization.subproj/NSKeyedArchiver.m in Sources */ = {isa = PBXBuildFile; fileRef = 9DDDE238F31081563BBADF40 /* Serialization.subproj/NSKeyedArchiver.m */; };
+		17EF064EDFEB46D00B4A2FE5 /* Serialization.subproj/NSKeyedUnarchiver.m in Sources */ = {isa = PBXBuildFile; fileRef = 5D85486930CC059FF846BFFD /* Serialization.subproj/NSKeyedUnarchiver.m */; };
 		93F1413ED432D94266157DAB /* Sorting.subproj/NSSortDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = CDE8224445E1861B245EF90D /* Sorting.subproj/NSSortDescriptor.m */; };
 		B1033F1AAAFDC7AD4FE286FF /* Stream.subproj/NSStream.m in Sources */ = {isa = PBXBuildFile; fileRef = 35DD917D050BAF238B747D0D /* Stream.subproj/NSStream.m */; };
 		B19585A0C19B611A58AE0B57 /* String.subproj/NSCFString.m in Sources */ = {isa = PBXBuildFile; fileRef = CEE64D496D76AF52CDC3972A /* String.subproj/NSCFString.m */; };
@@ -77,6 +81,7 @@
 		3ECE4359CB2F523890B09843 /* Collections.subproj/NSEnumerator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSEnumerator.m"; path = "Collections.subproj/NSEnumerator.m"; sourceTree = "<group>"; };
 		F88722F89828AEBCF57AAF0E /* Collections.subproj/NSEnumerator_array.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSEnumerator_array.m"; path = "Collections.subproj/NSEnumerator_array.m"; sourceTree = "<group>"; };
 		4AD4625CA382AE8A057D07FA /* Collections.subproj/NSHashTable.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSHashTable.m"; path = "Collections.subproj/NSHashTable.m"; sourceTree = "<group>"; };
+		0B80FCA92BA36CD0D6BC1CC0 /* Collections.subproj/NSIndexSet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSIndexSet.m"; path = "Collections.subproj/NSIndexSet.m"; sourceTree = "<group>"; };
 		3EDA3B8B4620B4CA8D455C30 /* Collections.subproj/NSMapTable.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSMapTable.m"; path = "Collections.subproj/NSMapTable.m"; sourceTree = "<group>"; };
 		D78285491D83710379449060 /* Collections.subproj/NSOrderedSet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSOrderedSet.m"; path = "Collections.subproj/NSOrderedSet.m"; sourceTree = "<group>"; };
 		6B6F580482A65B7F9A032575 /* Collections.subproj/NSPointerFunctions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPointerFunctions.m"; path = "Collections.subproj/NSPointerFunctions.m"; sourceTree = "<group>"; };
@@ -105,6 +110,7 @@
 		95C4061E9403C74177E7ECB0 /* Numeric.subproj/NSNumberFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSNumberFormatter.m"; path = "Numeric.subproj/NSNumberFormatter.m"; sourceTree = "<group>"; };
 		F2AB46CD397DA2DDBB793D68 /* RunLoop.subproj/NSRunLoop.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSRunLoop.m"; path = "RunLoop.subproj/NSRunLoop.m"; sourceTree = "<group>"; };
 		5E86CC7506DAB0A09731A44A /* RunLoop.subproj/NSTimer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSTimer.m"; path = "RunLoop.subproj/NSTimer.m"; sourceTree = "<group>"; };
+		B196A00B12ECF722AB38904E /* Runtime.subproj/NSAutoreleasePool.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSAutoreleasePool.m"; path = "Runtime.subproj/NSAutoreleasePool.m"; sourceTree = "<group>"; };
 		07447952F68FA49175A84DA1 /* Runtime.subproj/NSBundle.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSBundle.m"; path = "Runtime.subproj/NSBundle.m"; sourceTree = "<group>"; };
 		7CF427E5A1FF884358A865B9 /* Runtime.subproj/NSDebug.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDebug.m"; path = "Runtime.subproj/NSDebug.m"; sourceTree = "<group>"; };
 		A49F3975B15721140B95CE7B /* Runtime.subproj/NSError.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSError.m"; path = "Runtime.subproj/NSError.m"; sourceTree = "<group>"; };
@@ -122,6 +128,8 @@
 		F7B847F112E59005525323F1 /* Runtime.subproj/NSValue.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSValue.m"; path = "Runtime.subproj/NSValue.m"; sourceTree = "<group>"; };
 		BBE651918A1CB0F3B8630C22 /* Runtime.subproj/NSZone.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSZone.m"; path = "Runtime.subproj/NSZone.m"; sourceTree = "<group>"; };
 		C8550A20E5BF46B196BF17AE /* Serialization.subproj/NSCoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCoder.m"; path = "Serialization.subproj/NSCoder.m"; sourceTree = "<group>"; };
+		9DDDE238F31081563BBADF40 /* Serialization.subproj/NSKeyedArchiver.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSKeyedArchiver.m"; path = "Serialization.subproj/NSKeyedArchiver.m"; sourceTree = "<group>"; };
+		5D85486930CC059FF846BFFD /* Serialization.subproj/NSKeyedUnarchiver.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSKeyedUnarchiver.m"; path = "Serialization.subproj/NSKeyedUnarchiver.m"; sourceTree = "<group>"; };
 		CDE8224445E1861B245EF90D /* Sorting.subproj/NSSortDescriptor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSSortDescriptor.m"; path = "Sorting.subproj/NSSortDescriptor.m"; sourceTree = "<group>"; };
 		35DD917D050BAF238B747D0D /* Stream.subproj/NSStream.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSStream.m"; path = "Stream.subproj/NSStream.m"; sourceTree = "<group>"; };
 		CEE64D496D76AF52CDC3972A /* String.subproj/NSCFString.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCFString.m"; path = "String.subproj/NSCFString.m"; sourceTree = "<group>"; };
@@ -170,6 +178,7 @@
 				3ECE4359CB2F523890B09843 /* Collections.subproj/NSEnumerator.m */,
 				F88722F89828AEBCF57AAF0E /* Collections.subproj/NSEnumerator_array.m */,
 				4AD4625CA382AE8A057D07FA /* Collections.subproj/NSHashTable.m */,
+				0B80FCA92BA36CD0D6BC1CC0 /* Collections.subproj/NSIndexSet.m */,
 				3EDA3B8B4620B4CA8D455C30 /* Collections.subproj/NSMapTable.m */,
 				D78285491D83710379449060 /* Collections.subproj/NSOrderedSet.m */,
 				6B6F580482A65B7F9A032575 /* Collections.subproj/NSPointerFunctions.m */,
@@ -198,6 +207,7 @@
 				95C4061E9403C74177E7ECB0 /* Numeric.subproj/NSNumberFormatter.m */,
 				F2AB46CD397DA2DDBB793D68 /* RunLoop.subproj/NSRunLoop.m */,
 				5E86CC7506DAB0A09731A44A /* RunLoop.subproj/NSTimer.m */,
+				B196A00B12ECF722AB38904E /* Runtime.subproj/NSAutoreleasePool.m */,
 				07447952F68FA49175A84DA1 /* Runtime.subproj/NSBundle.m */,
 				7CF427E5A1FF884358A865B9 /* Runtime.subproj/NSDebug.m */,
 				A49F3975B15721140B95CE7B /* Runtime.subproj/NSError.m */,
@@ -215,6 +225,8 @@
 				F7B847F112E59005525323F1 /* Runtime.subproj/NSValue.m */,
 				BBE651918A1CB0F3B8630C22 /* Runtime.subproj/NSZone.m */,
 				C8550A20E5BF46B196BF17AE /* Serialization.subproj/NSCoder.m */,
+				9DDDE238F31081563BBADF40 /* Serialization.subproj/NSKeyedArchiver.m */,
+				5D85486930CC059FF846BFFD /* Serialization.subproj/NSKeyedUnarchiver.m */,
 				CDE8224445E1861B245EF90D /* Sorting.subproj/NSSortDescriptor.m */,
 				35DD917D050BAF238B747D0D /* Stream.subproj/NSStream.m */,
 				CEE64D496D76AF52CDC3972A /* String.subproj/NSCFString.m */,
@@ -314,6 +326,7 @@
 				CA336FB86E7D7FE25F1AE396 /* Collections.subproj/NSEnumerator.m in Sources */,
 				CE1229667BD0DE63630831B9 /* Collections.subproj/NSEnumerator_array.m in Sources */,
 				D1756E75DEFCADC640BA83D7 /* Collections.subproj/NSHashTable.m in Sources */,
+				83D7C2CF0A6684F05A89ABF1 /* Collections.subproj/NSIndexSet.m in Sources */,
 				86ADD6E3BA5AD61102F1A0F6 /* Collections.subproj/NSMapTable.m in Sources */,
 				CA0E858B8F548856CAACBA9B /* Collections.subproj/NSOrderedSet.m in Sources */,
 				4687F95733156FA0D27A44F1 /* Collections.subproj/NSPointerFunctions.m in Sources */,
@@ -342,6 +355,7 @@
 				FDB6882ECEADA094F6EB0421 /* Numeric.subproj/NSNumberFormatter.m in Sources */,
 				1ED7476E9F4D38349058A23E /* RunLoop.subproj/NSRunLoop.m in Sources */,
 				6DFD9EB2A2C227F2C3F7E411 /* RunLoop.subproj/NSTimer.m in Sources */,
+				070337FF4EE8EC74EEF72709 /* Runtime.subproj/NSAutoreleasePool.m in Sources */,
 				29A7E8E0F872D9268C7B2368 /* Runtime.subproj/NSBundle.m in Sources */,
 				EA513DE887945C6FD8E5B415 /* Runtime.subproj/NSDebug.m in Sources */,
 				FD7F2CB194F941B2D90796F9 /* Runtime.subproj/NSError.m in Sources */,
@@ -359,6 +373,8 @@
 				F31802ADFFBA2F7EF105D108 /* Runtime.subproj/NSValue.m in Sources */,
 				4744083B112A14AB1D886066 /* Runtime.subproj/NSZone.m in Sources */,
 				6E2E7398081A83671D47074A /* Serialization.subproj/NSCoder.m in Sources */,
+				84F4B8A3429797D55DB8C731 /* Serialization.subproj/NSKeyedArchiver.m in Sources */,
+				17EF064EDFEB46D00B4A2FE5 /* Serialization.subproj/NSKeyedUnarchiver.m in Sources */,
 				93F1413ED432D94266157DAB /* Sorting.subproj/NSSortDescriptor.m in Sources */,
 				B1033F1AAAFDC7AD4FE286FF /* Stream.subproj/NSStream.m in Sources */,
 				B19585A0C19B611A58AE0B57 /* String.subproj/NSCFString.m in Sources */,

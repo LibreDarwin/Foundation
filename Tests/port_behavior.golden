@@ -1406,4 +1406,37 @@ ka scalars i                               | -77
 ka scalars d                               | 2.750
 ka scalars s                               | txt
 ka scalars missing                         | nil
+arp/class                                  | NSAutoreleasePool
+arp/superclass                             | NSObject
+arp/retainCount                            | 1
+arp/isKindOfClass:NSObject                 | yes
+arp/-retain                                | NSInvalidArgumentException
+arp/-retain/reason                         | *** -[NSAutoreleasePool retain]: Cannot retain an autorelease pool
+arp/-retain/userInfo                       | nil
+arp/-autorelease                           | NSInvalidArgumentException
+arp/-autorelease/reason                    | *** -[NSAutoreleasePool autorelease]: Cannot autorelease an autorelease pool
+arp/-initWithCapacity:/isPool              | yes
+arp/-initWithCapacity:/beforeDrain         | 
+arp/-initWithCapacity:/afterDrain          | 1
+arp/-addObject:/retainCountAfterAdd        | 1
+arp/-addObject:/beforeDrain                | 
+arp/-addObject:/afterDrain                 | 321
+arp/nested/afterBothAdds                   | 
+arp/nested/afterInnerDrain                 | 2
+arp/nested/afterOuterDrain                 | 21
+arp/+addObject:/beforeDrain                | 
+arp/+addObject:/afterDrain                 | 7
+arp/-addObject:/afterDrain                 | 
+arp/-addObject:/callerReleases             | 5
+arp/-release/beforeRelease                 | 
+arp/-release/afterRelease                  | 6
+arp/+topAutoreleasePoolCount               | 0
+arp/+autoreleasePoolExists                 | NO
+arp/+autoreleasedObjectCount               | 0
+arp/+poolCountHighWaterMark                | 0
+arp/+poolCountHighWaterResolution          | 0
+arp/+totalAutoreleasedObjects              | 0
+arp/_NSAutoreleasePoolCount                | 0
+arp/__NSAutoreleasePoolGetRubyToken        | 62
+arp/__NSAutoreleasePoolSetRubyToken        | ok
 PORT_BEHAVIOR_END
