@@ -46,18 +46,37 @@ NSString *const NSURLIsExcludedFromBackupKey = @"NSURLIsExcludedFromBackupKey";
 /* Apple's private spelling of -path; the public name is NSURLPathKey. */
 NSString *const NSURLPathKeyPrivate = @"_NSURLPathKey";
 
-/* Every NSURL instance is a CFURL whose isa is bridged to NSURL (see the
- * constructor at the bottom of this file), so all of these receivers are
- * really CFURLRef.  Casting self is therefore the intended access path. */
+@interface NSURL () {
+    CFURLRef _url;
+}
+- (CFURLRef)_backingURL;
+- (instancetype)_initWithBackingURL:(CFURLRef)backing;
+@end
 
-/* Adopt a +1 CFURL as an ARC-managed NSURL, or nil if the CF call produced
- * nothing.  Ownership annotations belong on the cast, not the declarator. */
-static inline NSURL *_Nullable NSURLTransferCFURL(CFURLRef _Nullable url) {
-    return CFBridgingRelease(url);
+/* NSURL is an owning wrapper, not toll-free with CFURL.  CoreFoundation
+ * registers its own NSURL against the CFURL type while CF itself
+ * initializes, which necessarily runs before this library's constructors, so
+ * a CFURL always comes back as a CoreFoundation NSURL and none of the
+ * instance methods below would ever execute against this port's code.  (That
+ * is the same trap NSLocale documents for CFLocale.)  Holding the CFURL in an
+ * ivar keeps every instance a port class; unwrapping that ivar, rather than
+ * casting self, is the access path. */
+
+static CFURLRef NSURLBacking(NSURL *url) {
+    if (url == nil || ![url isKindOfClass:[NSURL class]]) return NULL;
+    return [url _backingURL];
 }
 
-static inline CFURLRef _Nullable NSURLGetCFURL(NSURL *url) {
-    return (__bridge CFURLRef)url;
+CFURLRef NSURLBackingCFURL(NSURL *url) {
+    return NSURLBacking(url);
+}
+
+/* Adopt a +1 CFURL as a port NSURL that owns it, or nil if the CF call
+ * produced nothing.  Ownership annotations belong on the cast, not the
+ * declarator. */
+static inline NSURL *_Nullable NSURLTransferCFURL(CFURLRef _Nullable url) {
+    if (url == NULL) return nil;
+    return [[NSURL alloc] _initWithBackingURL:url];
 }
 
 /* Apple's -URLWithString: percent-encodes as it parses; CFURL on its own
@@ -509,7 +528,7 @@ static NSString *_Nullable NSURLCopyComponent(CFStringRef _Nullable s) {
     }
     return NSURLTransferCFURL(CFURLCreateWithString(kCFAllocatorDefault,
                                                     (__bridge CFStringRef)encoded,
-                                                    NSURLGetCFURL(baseURL)));
+                                                    NSURLBacking(baseURL)));
 }
 
 - (instancetype)initFileURLWithPath:(NSString *)path {
@@ -545,7 +564,7 @@ static NSString *_Nullable NSURLCopyComponent(CFStringRef _Nullable s) {
         (__bridge CFStringRef)path,
         kCFURLPOSIXPathStyle,
         false,
-        NSURLGetCFURL(baseURL)));
+        NSURLBacking(baseURL)));
 }
 
 /* ---------------------------------------------------------------- */
@@ -553,7 +572,7 @@ static NSString *_Nullable NSURLCopyComponent(CFStringRef _Nullable s) {
 /* ---------------------------------------------------------------- */
 
 - (NSString *)absoluteString {
-    CFStringRef s = CFURLGetString(NSURLGetCFURL(self));
+    CFStringRef s = CFURLGetString(NSURLBacking(self));
     return CFBridgingRelease(CFRetain(s));
 }
 
@@ -568,7 +587,7 @@ static NSString *_Nullable NSURLCopyComponent(CFStringRef _Nullable s) {
 - (nullable NSURL *)baseURL {
     /* CFURLGetBaseURL returns a borrowed reference, so retain before
      * handing it to the ARC transfer helper. */
-    CFURLRef base = CFURLGetBaseURL(NSURLGetCFURL(self));
+    CFURLRef base = CFURLGetBaseURL(NSURLBacking(self));
     if (base == NULL) {
         return nil;
     }
@@ -576,27 +595,27 @@ static NSString *_Nullable NSURLCopyComponent(CFStringRef _Nullable s) {
 }
 
 - (NSURL *)absoluteURL {
-    return NSURLTransferCFURL(CFURLCopyAbsoluteURL(NSURLGetCFURL(self)));
+    return NSURLTransferCFURL(CFURLCopyAbsoluteURL(NSURLBacking(self)));
 }
 
 - (nullable NSString *)scheme {
-    return NSURLCopyComponent(CFURLCopyScheme(NSURLGetCFURL(self)));
+    return NSURLCopyComponent(CFURLCopyScheme(NSURLBacking(self)));
 }
 
 - (nullable NSString *)user {
-    return NSURLCopyComponent(CFURLCopyUserName(NSURLGetCFURL(self)));
+    return NSURLCopyComponent(CFURLCopyUserName(NSURLBacking(self)));
 }
 
 - (nullable NSString *)password {
-    return NSURLCopyComponent(CFURLCopyPassword(NSURLGetCFURL(self)));
+    return NSURLCopyComponent(CFURLCopyPassword(NSURLBacking(self)));
 }
 
 - (nullable NSString *)host {
-    return NSURLCopyComponent(CFURLCopyHostName(NSURLGetCFURL(self)));
+    return NSURLCopyComponent(CFURLCopyHostName(NSURLBacking(self)));
 }
 
 - (nullable NSNumber *)port {
-    SInt32 port = CFURLGetPortNumber(NSURLGetCFURL(self));
+    SInt32 port = CFURLGetPortNumber(NSURLBacking(self));
     if (port < 0) {
         return nil;
     }
@@ -604,7 +623,7 @@ static NSString *_Nullable NSURLCopyComponent(CFStringRef _Nullable s) {
 }
 
 - (nullable NSString *)path {
-    return NSURLCopyComponent(CFURLCopyFileSystemPath(NSURLGetCFURL(self),
+    return NSURLCopyComponent(CFURLCopyFileSystemPath(NSURLBacking(self),
                                                       kCFURLPOSIXPathStyle));
 }
 
@@ -612,32 +631,32 @@ static NSString *_Nullable NSURLCopyComponent(CFStringRef _Nullable s) {
     /* Apple reports the strict (still-encoded) path relative to the base;
      * when there is no base it coincides with -path. */
     Boolean isAbsolute = false;
-    CFStringRef s = CFURLCopyStrictPath(NSURLGetCFURL(self), &isAbsolute);
+    CFStringRef s = CFURLCopyStrictPath(NSURLBacking(self), &isAbsolute);
     return NSURLCopyComponent(s);
 }
 
 - (NSString *)pathExtension {
-    return NSURLCopyComponent(CFURLCopyPathExtension(NSURLGetCFURL(self))) ?: @"";
+    return NSURLCopyComponent(CFURLCopyPathExtension(NSURLBacking(self))) ?: @"";
 }
 
 - (NSString *)lastPathComponent {
-    return NSURLCopyComponent(CFURLCopyLastPathComponent(NSURLGetCFURL(self))) ?: @"";
+    return NSURLCopyComponent(CFURLCopyLastPathComponent(NSURLBacking(self))) ?: @"";
 }
 
 - (nullable NSString *)query {
-    return NSURLCopyComponent(CFURLCopyQueryString(NSURLGetCFURL(self), NULL));
+    return NSURLCopyComponent(CFURLCopyQueryString(NSURLBacking(self), NULL));
 }
 
 - (nullable NSString *)fragment {
-    return NSURLCopyComponent(CFURLCopyFragment(NSURLGetCFURL(self), NULL));
+    return NSURLCopyComponent(CFURLCopyFragment(NSURLBacking(self), NULL));
 }
 
 - (nullable NSString *)parameterString {
-    return NSURLCopyComponent(CFURLCopyParameterString(NSURLGetCFURL(self), NULL));
+    return NSURLCopyComponent(CFURLCopyParameterString(NSURLBacking(self), NULL));
 }
 
 - (nullable NSString *)resourceSpecifier {
-    return NSURLCopyComponent(CFURLCopyResourceSpecifier(NSURLGetCFURL(self)));
+    return NSURLCopyComponent(CFURLCopyResourceSpecifier(NSURLBacking(self)));
 }
 
 - (NSArray *)pathComponents {
@@ -660,7 +679,7 @@ static NSString *_Nullable NSURLCopyComponent(CFStringRef _Nullable s) {
 }
 
 - (BOOL)hasDirectoryPath {
-    return CFURLHasDirectoryPath(NSURLGetCFURL(self)) ? YES : NO;
+    return CFURLHasDirectoryPath(NSURLBacking(self)) ? YES : NO;
 }
 
 /* ---------------------------------------------------------------- */
@@ -675,7 +694,7 @@ static NSString *_Nullable NSURLCopyComponent(CFStringRef _Nullable s) {
                            isDirectory:(BOOL)isDirectory {
     return NSURLTransferCFURL(CFURLCreateCopyAppendingPathComponent(
         kCFAllocatorDefault,
-        NSURLGetCFURL(self),
+        NSURLBacking(self),
         (__bridge CFStringRef)pathComponent,
         isDirectory ? true : false));
 }
@@ -683,18 +702,18 @@ static NSString *_Nullable NSURLCopyComponent(CFStringRef _Nullable s) {
 - (NSURL *)URLByAppendingPathExtension:(NSString *)pathExtension {
     return NSURLTransferCFURL(CFURLCreateCopyAppendingPathExtension(
         kCFAllocatorDefault,
-        NSURLGetCFURL(self),
+        NSURLBacking(self),
         (__bridge CFStringRef)pathExtension));
 }
 
 - (NSURL *)URLByDeletingLastPathComponent {
     return NSURLTransferCFURL(CFURLCreateCopyDeletingLastPathComponent(
-        kCFAllocatorDefault, NSURLGetCFURL(self)));
+        kCFAllocatorDefault, NSURLBacking(self)));
 }
 
 - (NSURL *)URLByDeletingPathExtension {
     return NSURLTransferCFURL(CFURLCreateCopyDeletingPathExtension(
-        kCFAllocatorDefault, NSURLGetCFURL(self)));
+        kCFAllocatorDefault, NSURLBacking(self)));
 }
 
 /* Collapse "." and "x/.." segments in a POSIX path.  "/.." keeps a trailing
@@ -869,7 +888,7 @@ static const void *NSURLFileSystemRepresentationKey = &NSURLFileSystemRepresenta
 }
 
 - (NSData *)dataRepresentation {
-    CFURLRef url = NSURLGetCFURL(self);
+    CFURLRef url = NSURLBacking(self);
     CFIndex needed = CFURLGetBytes(url, NULL, 0);
     if (needed < 0) {
         return nil;
@@ -924,7 +943,7 @@ static NSString *_Nullable NSURLCFPropertyKeyForKey(NSString *key) {
      * package keys need filesystem calls CFURL does not make. */
     NSString *propertyKey = NSURLCFPropertyKeyForKey(key);
     CFTypeRef property = NULL;
-    if (!CFURLCopyResourcePropertyForKey(NSURLGetCFURL(self),
+    if (!CFURLCopyResourcePropertyForKey(NSURLBacking(self),
                                          (__bridge CFStringRef)propertyKey,
                                          &property,
                                          NULL)) {
@@ -951,7 +970,7 @@ static NSString *_Nullable NSURLCFPropertyKeyForKey(NSString *key) {
         [cfKeys addObject:NSURLCFPropertyKeyForKey(key)];
     }
     CFDictionaryRef properties = CFURLCopyResourcePropertiesForKeys(
-        NSURLGetCFURL(self),
+        NSURLBacking(self),
         (__bridge CFArrayRef)cfKeys,
         NULL);
     if (properties == NULL) {
@@ -1049,11 +1068,46 @@ static const char NSURLBookmarkMagic[] = "PDURLBK1";
     return [NSURL URLWithString:absolute relativeToURL:relativeToURL];
 }
 
-@end
-
-#if DEPLOYMENT_RUNTIME_OBJC
-__attribute__((constructor))
-static void __NSCFURLBridgeInit(void) {
-    _CFRuntimeBridgeClasses(CFURLGetTypeID(), "NSURL");
+- (CFURLRef)_backingURL {
+    return _url;
 }
-#endif
+
+- (instancetype)_initWithBackingURL:(CFURLRef)backing {
+    if (backing == NULL) return nil;
+    self = [super init];
+    if (self != nil) {
+        _url = backing;
+    }
+    return self;
+}
+
+- (void)dealloc {
+    if (_url != NULL) CFRelease(_url);
+    _url = NULL;
+}
+
+/* A port NSURL is a plain object, so it has to supply the value identity that
+ * CFURL used to provide while the port was toll-free: equal URLs must
+ * compare and hash alike, and copying an immutable URL must hand back the
+ * receiver. */
+- (BOOL)isEqual:(id)object {
+    if (self == object) return YES;
+    if (![object isKindOfClass:[NSURL class]]) return NO;
+    CFURLRef other = NSURLBacking(object);
+    return other != NULL && CFEqual(NSURLBacking(self), other);
+}
+
+- (NSUInteger)hash {
+    CFURLRef backing = NSURLBacking(self);
+    if (backing == NULL) return [super hash];
+    CFStringRef string = CFURLGetString(backing);
+    return string != NULL ? CFHash(string) : (NSUInteger)CFHash(backing);
+}
+
+- (id)copyWithZone:(NSZone *)zone {
+    /* NSURL is immutable, so -copy hands back the receiver, as CFURL did while
+     * the port was toll-free. */
+    return self;
+}
+
+@end

@@ -52,13 +52,13 @@ headers.
   compiled **into** a test executable (not linked against the built dylib, since
   the dylib's toll-free classes would be shadowed by Apple's CoreFoundation on the
   host) and linked only against Apple's CoreFoundation. The executable runs
-  ~1,250 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
+  ~1,350 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
   its output is diffed byte-for-byte against Apple's real Foundation output,
   captured in `Tests/port_behavior.golden`. New probe coverage requires adding the
   touched sources to `GATE_SRCS` in `Common.mk` and re-capturing the Apple truth.
 - **Pairing sweep** (`make pairing-sweep`, `Tests/pairing_sweep.py`). Every
-  selector declared in any header (53 headers, ~914 selectors) must be
-  implemented somewhere in the `.m` sources; 19 hand-verified selectors the
+  selector declared in any header (54 headers, ~948 selectors) must be
+  implemented somewhere in the `.m` sources; 20 hand-verified selectors the
   mechanical scanner can't match are allowlisted.
 
 ## What has been implemented
@@ -150,6 +150,18 @@ system binary's exports (the Swift counterpart of a `.tbd`).
   escapes, IPv6 bracket literals in the authority, and the scheme/authority
   validation that makes `http://[`, `http://[]x/`, `//[a[b]/`, `http://a b/`
   and `1:2` nil. 29 probes in `Tests/port_behavior.golden` pin this._
+- _`NSURL` owns its `CFURL` instead of bridging to it:_ CoreFoundation registers
+  its own `NSURL` against the `CFURL` type while CF itself initializes, which is
+  necessarily before this library's constructors, so a toll-free port `NSURL` lost
+  every instance method to CoreFoundation's implementation — the port's
+  `-path`, `-URLByStandardizingPath`, resource values and bookmarks were dead
+  code in both the dylib and the gate. `NSURL` is now an owning wrapper (the
+  `NSLocale`/`CFLocale` pattern) with its `CFURL` in an ivar, so
+  `object_getClass(url) == [NSURL class]` holds and the instance-method probes
+  finally exercise port code. Because it is a plain object again, it supplies its
+  own value identity: `isEqual:`/`hash` compare the backing `CFURL`, and `-copy`
+  returns the receiver, as Apple does for an immutable URL. The same trap applies
+  to any future `CFAttributedString`-backed class. 11 probes pin this.
 
 **Deepen partial classes**
 - `NSURL`: file bookmarks and resource-value accessors are still approximate

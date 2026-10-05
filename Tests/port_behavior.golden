@@ -102,6 +102,17 @@ uu file scheme init                        | 1
 uu http scheme init                        | 0
 uu file localhost path                     | /etc/hosts
 uu fragment abs                            | https://x/#f
+uu class identity                          | 1
+uu class kind                              | 1
+uu equal same                              | 1
+uu equal diff                              | 0
+uu equal symmetric                         | 1
+uu equal nil                               | 0
+uu equal string                            | 0
+uu equal hash                              | 1
+uu copy equal                              | 1
+uu copy distinct                           | 0
+uu copy string                             | http://h/a
 array count                                | 3
 array idx0                                 | z
 array idx2                                 | m

@@ -257,15 +257,16 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	    build/${CONFIG}/gate/*.o -framework CoreFoundation
 	@build/${CONFIG}/port_behavior > build/${CONFIG}/port_behavior.out
 	@diff Tests/port_behavior.golden build/${CONFIG}/port_behavior.out \
-	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 1343 probes)"
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 1354 probes)"
 
 verify: pairing-sweep behavior-gate
 
 # =====================================================================
 #  Umbrella header: copied from the subprojects' own headers and
-#  gathered into build/gen/Foundation/Foundation.h.  NSCFTypeID.h and
-#  NSAutoreleasePoolInternal.h are copied along (explicit inclusion is an
-#  opt-in) but excluded from the umbrella's #include list.
+#  gathered into build/gen/Foundation/Foundation.h.  NSCFTypeID.h and the
+#  *Internal.h headers (NSAutoreleasePoolInternal.h, NSURLInternal.h) are
+#  copied along (explicit inclusion is an opt-in) but excluded from the
+#  umbrella's #include list.
 # =====================================================================
 umbrella: build/gen/Foundation/Foundation.h
 
@@ -275,7 +276,7 @@ build/gen/Foundation/Foundation.h: pairing-instrument pairing-sweep
 	  for h in $$hdrs; do cp "$$h" build/gen/Foundation/; done; \
 	  { echo '// Foundation.h — generated from this project'"'"'s subproject headers'; \
 	    for h in $$hdrs; do case "$$h" in \
-	      */NSCFTypeID.h|*/NSAutoreleasePoolInternal.h) ;; \
+	      */NSCFTypeID.h|*Internal.h) ;; \
 	      *) echo "#include <Foundation/$${h##*/}>";; \
 	    esac; done; } > $@
 

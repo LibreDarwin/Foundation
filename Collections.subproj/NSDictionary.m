@@ -9,6 +9,7 @@
 #import <Foundation/NSDictionary.h>
 #import <Foundation/NSException.h>
 #import <Foundation/NSURL.h>
+#import "../URL.subproj/NSURLInternal.h"
 #import <Foundation/NSError.h>
 #import <Foundation/NSString.h>
 #import <Foundation/NSCoder.h>
@@ -264,7 +265,12 @@ static CFPropertyListRef pd_plist_from_path(CFStringRef path) {
         return nil;
     }
 
-    CFStringRef path = CFURLCopyFileSystemPath(NSDICT_CF(CFURLRef, url), kCFURLPOSIXPathStyle);
+    CFURLRef backing = NSURLBackingCFURL(url);
+    if (backing == NULL) {
+        return nil;
+    }
+
+    CFStringRef path = CFURLCopyFileSystemPath(backing, kCFURLPOSIXPathStyle);
     if (path == NULL) {
         return nil;
     }

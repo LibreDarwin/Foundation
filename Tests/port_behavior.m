@@ -506,6 +506,27 @@ int main(void) {
     p("uu file localhost path", [[NSURL URLWithString:@"file://localhost/etc/hosts"] path]);
     p("uu fragment abs", [[NSURL URLWithString:@"https://x/#f"] absoluteString]);
 
+    /* NSURL is an owning wrapper, not toll-free with CFURL: CoreFoundation
+     * registers its own NSURL first, so a bridged CFURL would dispatch every
+     * one of the probes above to CoreFoundation's code instead of this port's.
+     * These pin the class identity that the bridge used to take, plus the
+     * value identity the port now has to supply itself. */
+    NSURL *idA = [NSURL URLWithString:@"http://h/a"];
+    NSURL *idB = [NSURL URLWithString:@"http://h/a"];
+    NSURL *idC = [NSURL URLWithString:@"http://h/b"];
+    NSURL *idCopy = [idA copy];
+    p("uu class identity", object_getClass(idA) == [NSURL class] ? @"1" : @"0");
+    p("uu class kind", [idA isKindOfClass:[NSURL class]] ? @"1" : @"0");
+    p("uu equal same", [idA isEqual:idB] ? @"1" : @"0");
+    p("uu equal diff", [idA isEqual:idC] ? @"1" : @"0");
+    p("uu equal symmetric", [idB isEqual:idA] ? @"1" : @"0");
+    p("uu equal nil", [idA isEqual:(id)nil] ? @"1" : @"0");
+    p("uu equal string", [idA isEqual:(id)@"http://h/a"] ? @"1" : @"0");
+    p("uu equal hash", [idA hash] == [idB hash] ? @"1" : @"0");
+    p("uu copy equal", [idCopy isEqual:idA] ? @"1" : @"0");
+    p("uu copy distinct", idCopy == idA ? @"0" : @"1");
+    p("uu copy string", idCopy.absoluteString);
+
     /* ---------- NSArray ---------- */
     /* Built via +arrayWithObjects:count: (no @[] literal: the compiler lowers
      * that to the Apple-only NSConstantArray class the port does not ship). */
