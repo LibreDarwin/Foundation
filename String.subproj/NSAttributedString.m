@@ -54,25 +54,46 @@ static CFRange NSAttributedStringCFRange(NSRange range) {
 /* Apple rejects these arguments with NSInvalidArgumentException before any CF
  * call is made, and so must the port: CoreFoundation's own handling of a NULL
  * string, NULL replacement, or NULL attributed string is a crash rather than
- * an exception. */
-static void NSAttributedStringCheckNotNil(NSAttributedString *s, id object,
-                                          SEL selector, NSString *argument) {
+ * an exception.
+ *
+ * These helpers only read their object arguments before raising, so they borrow
+ * them.  Declaring them __strong would make ARC retain on entry and schedule the
+ * release for the function's normal exit; the raise never reaches that release,
+ * so the caller's object would be left one reference too heavy.  On the out-of-
+ * bounds path that leaked the receiving attributed string on every raise (~100
+ * bytes per call, unbounded) because the caller creates one per iteration and it
+ * is the parameter's retain -- not ARC's release at the caller's own scope
+ * -- that would have to balance.
+ *
+ * The class and selector names in the message are formatted from C strings with
+ * %s rather than from NSStringFromClass and NSStringFromSelector with %@.  Those
+ * two return autoreleased objects, and Objective-C sources are not compiled with
+ * -fobjc-arc-exceptions, so ARC has no cleanup to run when the raise unwinds this
+ * frame.  Handing the results straight to the format leaks them (ARC claims the
+ * autorelease and nobody releases: two CFStrings per raise, unbounded over a loop
+ * of range checks); parking them in a __unsafe_unretained local is worse -- ARC
+ * claims and then immediately balances the value, leaving the local pointing at
+ * freed memory by the time the format runs.  class_getName and sel_getName hand
+ * back C strings owned by the runtime and produce byte-identical text. */
+static void NSAttributedStringCheckNotNil(NSAttributedString * __unsafe_unretained s,
+                                          id __unsafe_unretained object,
+                                          SEL selector,
+                                          NSString * __unsafe_unretained argument) {
     if (object == nil) {
         [NSException raise:NSInvalidArgumentException
-                    format:@"*** -[%@ %@]: %@ argument cannot be nil",
-                           NSStringFromClass([s class]), NSStringFromSelector(selector),
-                           argument];
+                    format:@"*** -[%s %s]: %@ argument cannot be nil",
+                           class_getName([s class]), sel_getName(selector), argument];
     }
 }
 
-static void NSAttributedStringCheckRange(NSAttributedString *s, NSRange range,
-                                         SEL selector) {
+static void NSAttributedStringCheckRange(NSAttributedString * __unsafe_unretained s,
+                                         NSRange range, SEL selector) {
     NSUInteger length = (NSUInteger)CFAttributedStringGetLength(NSAttributedStringBacking(s));
     if (range.location > NSUIntegerMax - range.length ||
         range.location + range.length > length) {
         [NSException raise:NSRangeException
-                    format:@"*** -[%@ %@]: range {%lu, %lu} extends beyond the string's bounds {%lu, %lu}",
-                           NSStringFromClass([s class]), NSStringFromSelector(selector),
+                    format:@"*** -[%s %s]: range {%lu, %lu} extends beyond the string's bounds {%lu, %lu}",
+                           class_getName([s class]), sel_getName(selector),
                            (unsigned long)range.location, (unsigned long)range.length,
                            (unsigned long)0, (unsigned long)length];
     }
