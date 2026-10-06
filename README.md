@@ -55,7 +55,7 @@ headers.
   compiled **into** a test executable (not linked against the built dylib, since
   the dylib's toll-free classes would be shadowed by Apple's CoreFoundation on the
   host) and linked only against Apple's CoreFoundation. The executable runs
-  1,567 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
+  1,600 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
   its output is diffed byte-for-byte against Apple's real Foundation output,
   captured in `Tests/port_behavior.golden`. New probe coverage requires adding the
   touched sources to `GATE_SRCS` in `Common.mk` and re-capturing the Apple truth.
@@ -273,8 +273,9 @@ system binary's exports (the Swift counterpart of a `.tbd`).
   `NSFileHandle`/`NSPipe` (integration props), `NSBundle`, `NSUserDefaults`,
   `NSProcessInfo`, `NSStream` (schemes, sockets), fuller `NSDateFormatter`/
   `NSNumberFormatter` edge behavior.
-- `NSAttributedString`/`NSMutableAttributedString`: full attribute surface,
-  layout/document accessors.
+- `NSAttributedString`/`NSMutableAttributedString`: layout/document accessors;
+  the core attribute surface (effective-range lookups, enumeration, mutation
+  checks) is now Apple-matching.
 
 **Add missing Apple Foundation classes not yet present at all** (grouped):
 - *Collections/convenience*: NSCache, NSUUID, NSIndexPath, NSPointerArray,

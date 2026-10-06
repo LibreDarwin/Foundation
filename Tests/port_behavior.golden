@@ -1505,6 +1505,39 @@ as exc insert oob                          | NSRangeException
 as enum runs                               | 2 1:0+4 2:4+4 
 as enum one attr                           | 2 1:0+4 2:4+4 
 as enum stop                               | 1
+as s attrs eff@1                           | F/(null):0+3
+as s attrs eff@3                           | F/C:3+5
+as s ak eff@1                              | F:0+3
+as s ak longest@1w8                        | F:0+8
+as s bk longest@5clip3                     | C:3+3
+as s attrs longest@5clip3                  | F/C:3+3
+as s ak longest idxoob                     | name=no-exception val=F range=3+3
+as s zz longest inwin                      | val=(null) range=3+3
+as s attrs longest idxoob                  | F/(null):0+0
+as s attrs@len                             | NSRangeException
+as s attr@len                              | NSRangeException
+as s attrs oob101                          | NSRangeException
+as s attr oob101                           | NSRangeException
+as s addattr nil name                      | no-exception
+as s rmattr nil name                       | NSInvalidArgumentException
+as s substring len                         | 3
+as s substring ak@0                        | F
+as s substring bk@0                        | nil
+as s substring empty len                   | 0
+as s replace len                           | 8
+as s replace ak@1                          | F
+as s replace ak@3                          | F
+as s replace ak@7                          | F
+as s initas equal                          | 1
+as s initas ak eff@1                       | F:0+3
+as s immutable eq mutable                  | 1
+as s m copy class immutable                | immut
+as s enum reverse runs                     | 2 3+5:FC(null) 0+3:F(null)(null) 
+as s enum reverse attr                     | 2 3+5:C 0+3:(null) 
+as s enum reverse part                     | 2 3+4:FC 2+1:F(null) 
+as s enum fwd part                         | 2 2+1:F(null) 3+4:FC 
+as s enum fwd attr part                    | 2 2+1:(null) 3+4:C 
+as s enum notrequired cover                | 5 2-7
 as ct supportsSecureCoding                 | 1
 as ct bare                                 | len=3 runs=1 eq=1 | 3:{}
 as ct one run                              | len=11 runs=1 eq=1 | 11:{ak=F,bk=C}

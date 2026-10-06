@@ -301,9 +301,16 @@ static CFMutableAttributedStringRef NSAttributedStringBackingFromCoder(NSCoder *
  * shorter -effectiveRange: variants report that same range.  The search range
  * must span the whole string rather than start at `location`: an effective
  * range is allowed to extend backwards before the index it was asked about,
- * and restricting the search to [location, end) would clip it. */
+ * and restricting the search to [location, end) would clip it.
+ *
+ * The single-attribute variant is not the key's longest extent: it reports the
+ * run of the attribute SET holding the index (the same partition
+ * -attributesAtIndex:effectiveRange: walks), which ends where any other
+ * attribute changes.  -attribute:...longestEffectiveRange:inRange: is the one
+ * that reaches across a set boundary for one key's full extent. */
 - (NSDictionary<NSAttributedStringKey, id> *)attributesAtIndex:(NSUInteger)location
                                                 effectiveRange:(NSRangePointer)range {
+    NSAttributedStringCheckRange(self, NSMakeRange(location, 1), _cmd);
     CFRange effective = CFRangeMake(0, 0);
     CFDictionaryRef attributes = CFAttributedStringGetAttributesAndLongestEffectiveRange(
         NSAttributedStringBacking(self), (CFIndex)location,
@@ -317,27 +324,31 @@ static CFMutableAttributedStringRef NSAttributedStringBackingFromCoder(NSCoder *
 - (id)attribute:(NSAttributedStringKey)attrName
         atIndex:(NSUInteger)location
  effectiveRange:(NSRangePointer)range {
-    CFRange effective = CFRangeMake(0, 0);
-    CFTypeRef value = CFAttributedStringGetAttributeAndLongestEffectiveRange(
-        NSAttributedStringBacking(self), (CFIndex)location,
-        (__bridge CFStringRef)attrName,
-        NSAttributedStringCFRange(NSMakeRange(0, [self length])),
-        &effective);
-    if (range != NULL) *range = NSMakeRange((NSUInteger)effective.location,
-                                           (NSUInteger)effective.length);
-    /* CF reports an absent attribute as CFNULL; the port must hand back nil. */
-    if (value == NULL || value == kCFNull) return nil;
-    return CFBridgingRelease(CFRetain(value));
+    NSAttributedStringCheckRange(self, NSMakeRange(location, 1), _cmd);
+    NSRange run = NSMakeRange(0, 0);
+    (void)[self attributesAtIndex:location longestEffectiveRange:&run
+                          inRange:NSMakeRange(0, [self length])];
+    if (range != NULL) *range = run;
+    /* The value is looked up inside the set run, so a key absent from it hands
+     * back nil without reaching across a set boundary. */
+    return [self attribute:attrName atIndex:location
+         longestEffectiveRange:NULL inRange:run];
 }
 
 - (NSDictionary<NSAttributedStringKey, id> *)
     attributesAtIndex:(NSUInteger)location
   longestEffectiveRange:(NSRangePointer)range
               inRange:(NSRange)rangeLimit {
+    NSAttributedStringCheckRange(self, NSMakeRange(location, 1), _cmd);
     CFRange effective = CFRangeMake(0, 0);
     CFDictionaryRef attributes = CFAttributedStringGetAttributesAndLongestEffectiveRange(
         NSAttributedStringBacking(self), (CFIndex)location,
         NSAttributedStringCFRange(rangeLimit), &effective);
+    /* Apple keeps the set at the index but zeroes the reported range when the
+     * index falls outside rangeLimit rather than raising. */
+    if (location < rangeLimit.location || location >= NSMaxRange(rangeLimit)) {
+        effective = CFRangeMake(0, 0);
+    }
     if (range != NULL) *range = NSMakeRange((NSUInteger)effective.location,
                                            (NSUInteger)effective.length);
     return CFBridgingRelease(CFRetain(attributes));
@@ -347,12 +358,24 @@ static CFMutableAttributedStringRef NSAttributedStringBackingFromCoder(NSCoder *
         atIndex:(NSUInteger)location
  longestEffectiveRange:(NSRangePointer)range
         inRange:(NSRange)rangeLimit {
+    NSAttributedStringCheckRange(self, NSMakeRange(location, 1), _cmd);
     CFRange effective = CFRangeMake(0, 0);
     CFTypeRef value = CFAttributedStringGetAttributeAndLongestEffectiveRange(
         NSAttributedStringBacking(self), (CFIndex)location,
         (__bridge CFStringRef)attrName, NSAttributedStringCFRange(rangeLimit), &effective);
-    if (range != NULL) *range = NSMakeRange((NSUInteger)effective.location,
-                                           (NSUInteger)effective.length);
+    if (range != NULL) {
+        BOOL outside = (location < rangeLimit.location ||
+                        location >= NSMaxRange(rangeLimit));
+        /* Outside the window an absent attribute is reported as nil over {0,0};
+         * a present one keeps CF's window-clipped answer.  Inside the window
+         * CF's answer stands (an absent attribute reports the whole window). */
+        if (outside && (value == NULL || value == kCFNull)) {
+            *range = NSMakeRange(0, 0);
+        } else {
+            *range = NSMakeRange((NSUInteger)effective.location,
+                                 (NSUInteger)effective.length);
+        }
+    }
     if (value == NULL || value == kCFNull) return nil;
     return CFBridgingRelease(CFRetain(value));
 }
@@ -406,7 +429,10 @@ static CFMutableAttributedStringRef NSAttributedStringBackingFromCoder(NSCoder *
     BOOL reverse = (opts & NSAttributedStringEnumerationReverse) != 0;
 
     /* Reverse enumeration walks the same runs from the far end, because
-     * CoreFoundation has no reverse enumeration entry point of its own. */
+     * CoreFoundation has no reverse enumeration entry point of its own.  The
+     * window's right edge -- `limit` -- is what walks left past each reported
+     * run; `location` stays pinned to the enumeration range, so the last run
+     * is still reported clipped to it. */
     while (location < limit) {
         NSUInteger probe = reverse ? limit - 1 : location;
         NSRange run = NSMakeRange(location, 0);
@@ -417,7 +443,6 @@ static CFMutableAttributedStringRef NSAttributedStringBackingFromCoder(NSCoder *
         block(attrs, run, &stop);
         if (stop) return;
         if (reverse) {
-            location = run.location;
             limit = run.location;
         } else {
             location = NSMaxRange(run);
@@ -445,7 +470,6 @@ static CFMutableAttributedStringRef NSAttributedStringBackingFromCoder(NSCoder *
         block(value, run, &stop);
         if (stop) return;
         if (reverse) {
-            location = run.location;
             limit = run.location;
         } else {
             location = NSMaxRange(run);
@@ -684,7 +708,9 @@ static CFMutableAttributedStringRef NSAttributedStringBackingFromCoder(NSCoder *
 - (void)addAttribute:(NSAttributedStringKey)name value:(id)value range:(NSRange)range {
     NSAttributedStringCheckRange(self, range, _cmd);
     /* Unlike -removeAttribute:, Apple treats a nil value as an argument error
-     * rather than as a removal. */
+     * rather than as a removal.  A nil name, by contrast, is silently ignored
+     * rather than raised. */
+    if (name == nil) return;
     NSAttributedStringCheckNotNil(self, value, _cmd, @"value");
     CFAttributedStringSetAttribute(_mutableAttrString, NSAttributedStringCFRange(range),
                                    (__bridge CFStringRef)name, (__bridge CFTypeRef)value);
@@ -701,6 +727,9 @@ static CFMutableAttributedStringRef NSAttributedStringBackingFromCoder(NSCoder *
 
 - (void)removeAttribute:(NSAttributedStringKey)name range:(NSRange)range {
     NSAttributedStringCheckRange(self, range, _cmd);
+    /* Apple rejects a nil attribute name here even though -addAttribute:
+     * ignores one. */
+    NSAttributedStringCheckNotNil(self, name, _cmd, @"attributeName");
     CFAttributedStringRemoveAttribute(_mutableAttrString, NSAttributedStringCFRange(range),
                                       (__bridge CFStringRef)name);
 }

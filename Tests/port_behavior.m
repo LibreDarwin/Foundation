@@ -3270,6 +3270,193 @@ int main(void) {
     }];
     p("as enum stop", [NSString stringWithFormat:@"%d", asStopRuns]);
 
+    /* ---------- NSAttributedString full attribute surface ---------- */
+    /* A two-run string whose runs share a key: [0,3) carries {ak:F} and
+     * [3,8) carries {ak:F,bk:C}.  The attribute SET changes where a key
+     * disappears, so -attributesAtIndex:effectiveRange: reports {0,3},
+     * while -attribute:ak:effectiveRange: reports the single key's full
+     * extent {0,8}. */
+    NSMutableAttributedString *asSurf = [[NSMutableAttributedString alloc] initWithString:@"abcdefgh"];
+    [asSurf addAttribute:@"ak" value:@"F" range:NSMakeRange(0, 8)];
+    [asSurf addAttribute:@"bk" value:@"C" range:NSMakeRange(3, 5)];
+    NSRange asSR = NSMakeRange(0, 0);
+    NSDictionary *asSA1 = [asSurf attributesAtIndex:1 effectiveRange:&asSR];
+    p("as s attrs eff@1",
+      [NSString stringWithFormat:@"%@/%@:%lu+%lu",
+          [asSA1 objectForKey:@"ak"], [asSA1 objectForKey:@"bk"],
+          (unsigned long)asSR.location, (unsigned long)asSR.length]);
+    NSDictionary *asSA3 = [asSurf attributesAtIndex:3 effectiveRange:&asSR];
+    p("as s attrs eff@3",
+      [NSString stringWithFormat:@"%@/%@:%lu+%lu",
+          [asSA3 objectForKey:@"ak"], [asSA3 objectForKey:@"bk"],
+          (unsigned long)asSR.location, (unsigned long)asSR.length]);
+    p("as s ak eff@1",
+      [NSString stringWithFormat:@"%@:%lu+%lu",
+          [asSurf attribute:@"ak" atIndex:1 effectiveRange:&asSR],
+          (unsigned long)asSR.location, (unsigned long)asSR.length]);
+
+    /* -longestEffectiveRange:inRange: answers within the window, clipping a
+     * run that extends past either edge. */
+    p("as s ak longest@1w8",
+      [NSString stringWithFormat:@"%@:%lu+%lu",
+          [asSurf attribute:@"ak" atIndex:1 longestEffectiveRange:&asSR inRange:NSMakeRange(0, 8)],
+          (unsigned long)asSR.location, (unsigned long)asSR.length]);
+    p("as s bk longest@5clip3",
+      [NSString stringWithFormat:@"%@:%lu+%lu",
+          [asSurf attribute:@"bk" atIndex:5 longestEffectiveRange:&asSR inRange:NSMakeRange(3, 3)],
+          (unsigned long)asSR.location, (unsigned long)asSR.length]);
+    NSDictionary *asSLD = [asSurf attributesAtIndex:5 longestEffectiveRange:&asSR inRange:NSMakeRange(3, 3)];
+    p("as s attrs longest@5clip3",
+      [NSString stringWithFormat:@"%@/%@:%lu+%lu",
+          [asSLD objectForKey:@"ak"], [asSLD objectForKey:@"bk"],
+          (unsigned long)asSR.location, (unsigned long)asSR.length]);
+    /* A query index outside the window: the key is present at index 1 but the
+     * window is [3,6), so the answer is whatever Apple hands back for "atIndex
+     * not in rangeLimit". */
+    {
+        NSString *asOobName = @"no-exception";
+        NSRange asOobRange = NSMakeRange(9, 9);
+        id asOobValue = nil;
+        @try {
+            asOobValue = [asSurf attribute:@"ak" atIndex:1
+                  longestEffectiveRange:&asOobRange inRange:NSMakeRange(3, 3)];
+        } @catch (NSException *e) { asOobName = e.name; }
+        p("as s ak longest idxoob",
+          [NSString stringWithFormat:@"name=%@ val=%@ range=%lu+%lu",
+              asOobName, asOobValue, (unsigned long)asOobRange.location, (unsigned long)asOobRange.length]);
+    }
+    /* An absent key queried inside the window, and a set lookup past the
+     * window's left edge, pin how far the wrapper keeps CF's answer. */
+    {
+        NSRange asOobRange = NSMakeRange(9, 9);
+        id asOobValue = [asSurf attribute:@"zzz" atIndex:5
+                      longestEffectiveRange:&asOobRange inRange:NSMakeRange(3, 3)];
+        p("as s zz longest inwin",
+          [NSString stringWithFormat:@"val=%@ range=%lu+%lu",
+              asOobValue, (unsigned long)asOobRange.location, (unsigned long)asOobRange.length]);
+        asOobRange = NSMakeRange(9, 9);
+        NSDictionary *asOobDict = [asSurf attributesAtIndex:1
+                                      longestEffectiveRange:&asOobRange inRange:NSMakeRange(3, 3)];
+        p("as s attrs longest idxoob",
+          [NSString stringWithFormat:@"%@/%@:%lu+%lu",
+              [asOobDict objectForKey:@"ak"], [asOobDict objectForKey:@"bk"],
+              (unsigned long)asOobRange.location, (unsigned long)asOobRange.length]);
+    }
+
+    /* An index equal to length, and one beyond, are out of bounds for the
+     * plain lookup variants too. */
+#define asSurfExcept(label, expr) do { \
+        const char *asSName = "no-exception"; \
+        @try { (void)(expr); } \
+        @catch (NSException *asSE) { asSName = [[asSE name] UTF8String]; } \
+        p("as s " label, [@(asSName) description]); \
+    } while (0)
+    asSurfExcept("attrs@len", [asSurf attributesAtIndex:(unsigned long)asSurf.length effectiveRange:NULL]);
+    asSurfExcept("attr@len", [asSurf attribute:@"ak" atIndex:(unsigned long)asSurf.length effectiveRange:NULL]);
+    asSurfExcept("attrs oob101", [asSurf attributesAtIndex:101 effectiveRange:NULL]);
+    asSurfExcept("attr oob101", [asSurf attribute:@"ak" atIndex:101 effectiveRange:NULL]);
+    asSurfExcept("addattr nil name",
+                 [[[NSMutableAttributedString alloc] initWithString:@"abc"] addAttribute:nil value:@"v" range:NSMakeRange(0, 3)]);
+    asSurfExcept("rmattr nil name",
+                 [[[NSMutableAttributedString alloc] initWithString:@"abc"] removeAttribute:nil range:NSMakeRange(0, 3)]);
+#undef asSurfExcept
+
+    /* -attributedSubstringFromRange: copies the attributes of the covered
+     * runs, and an empty substring at length is valid. */
+    NSAttributedString *asSubS = [asSurf attributedSubstringFromRange:NSMakeRange(0, 3)];
+    p("as s substring len", [NSString stringWithFormat:@"%lu", (unsigned long)asSubS.length]);
+    p("as s substring ak@0", [asSubS attribute:@"ak" atIndex:0 effectiveRange:NULL]);
+    p("as s substring bk@0", [asSubS attribute:@"bk" atIndex:0 effectiveRange:NULL] ? @"yes" : @"nil");
+    NSAttributedString *asSubEmpty = [asSurf attributedSubstringFromRange:NSMakeRange(8, 0)];
+    p("as s substring empty len", [NSString stringWithFormat:@"%lu", (unsigned long)asSubEmpty.length]);
+
+    /* A replacement inside a run: the inserted characters keep the attributes
+     * of the run they land in. */
+    NSMutableAttributedString *asReplS = [[NSMutableAttributedString alloc] initWithString:@"abcdefgh"];
+    [asReplS addAttribute:@"ak" value:@"F" range:NSMakeRange(0, 8)];
+    [asReplS replaceCharactersInRange:NSMakeRange(2, 2) withString:@"XY"];
+    p("as s replace len", [NSString stringWithFormat:@"%lu", (unsigned long)asReplS.length]);
+    p("as s replace ak@1", [asReplS attribute:@"ak" atIndex:1 effectiveRange:NULL]);
+    p("as s replace ak@3", [asReplS attribute:@"ak" atIndex:3 effectiveRange:NULL]);
+    p("as s replace ak@7", [asReplS attribute:@"ak" atIndex:7 effectiveRange:NULL]);
+
+    /* -initWithAttributedString: copies and compares equal; -copy of a mutable
+     * string is a distinct immutable copy; mutable == immutable compares
+     * by content. */
+    NSAttributedString *asInitS = [[NSAttributedString alloc] initWithAttributedString:asSurf];
+    p("as s initas equal", [asInitS isEqualToAttributedString:asSurf] ? @"1" : @"0");
+    p("as s initas ak eff@1",
+      [NSString stringWithFormat:@"%@:%lu+%lu",
+          [asInitS attribute:@"ak" atIndex:1 effectiveRange:&asSR],
+          (unsigned long)asSR.location, (unsigned long)asSR.length]);
+    p("as s immutable eq mutable", [[asSurf copy] isEqualToAttributedString:asSurf] ? @"1" : @"0");
+    p("as s m copy class immutable", [[asSurf copy] isKindOfClass:[NSMutableAttributedString class]] ? @"mut" : @"immut");
+
+    /* Reverse enumeration walks the runs from the far end, reporting each clip
+     * of the enumeration range in reverse order; a partial range reports the
+     * same clipped runs forwards or backwards. */
+    __block int asRevRuns = 0; NSMutableString *asRevAcc = [NSMutableString string];
+    [asSurf enumerateAttributesInRange:NSMakeRange(0, 8)
+                               options:NSAttributedStringEnumerationReverse
+                            usingBlock:^(NSDictionary *at, NSRange r, BOOL *stop) {
+        asRevRuns++;
+        [asRevAcc appendFormat:@"%lu+%lu:%@%@%@ ",
+            (unsigned long)r.location, (unsigned long)r.length,
+            [at objectForKey:@"ak"], [at objectForKey:@"bk"], [at objectForKey:@"ck"]];
+    }];
+    p("as s enum reverse runs", [NSString stringWithFormat:@"%d %@", asRevRuns, asRevAcc]);
+    __block int asRevAttrR = 0; NSMutableString *asRevAttrAcc = [NSMutableString string];
+    [asSurf enumerateAttribute:@"bk" inRange:NSMakeRange(0, 8)
+                       options:NSAttributedStringEnumerationReverse
+                    usingBlock:^(id v, NSRange r, BOOL *stop) {
+        asRevAttrR++;
+        [asRevAttrAcc appendFormat:@"%lu+%lu:%@ ", (unsigned long)r.location, (unsigned long)r.length, v];
+    }];
+    p("as s enum reverse attr", [NSString stringWithFormat:@"%d %@", asRevAttrR, asRevAttrAcc]);
+    __block int asRevP = 0; NSMutableString *asRevPAcc = [NSMutableString string];
+    [asSurf enumerateAttributesInRange:NSMakeRange(2, 5)
+                               options:NSAttributedStringEnumerationReverse
+                            usingBlock:^(NSDictionary *at, NSRange r, BOOL *stop) {
+        asRevP++;
+        [asRevPAcc appendFormat:@"%lu+%lu:%@%@ ",
+            (unsigned long)r.location, (unsigned long)r.length,
+            [at objectForKey:@"ak"], [at objectForKey:@"bk"]];
+    }];
+    p("as s enum reverse part", [NSString stringWithFormat:@"%d %@", asRevP, asRevPAcc]);
+    __block int asFwdP = 0; NSMutableString *asFwdPAcc = [NSMutableString string];
+    [asSurf enumerateAttributesInRange:NSMakeRange(2, 5)
+                               options:0
+                            usingBlock:^(NSDictionary *at, NSRange r, BOOL *stop) {
+        asFwdP++;
+        [asFwdPAcc appendFormat:@"%lu+%lu:%@%@ ",
+            (unsigned long)r.location, (unsigned long)r.length,
+            [at objectForKey:@"ak"], [at objectForKey:@"bk"]];
+    }];
+    p("as s enum fwd part", [NSString stringWithFormat:@"%d %@", asFwdP, asFwdPAcc]);
+    __block int asFwdAttrP = 0; NSMutableString *asFwdAttrPAcc = [NSMutableString string];
+    [asSurf enumerateAttribute:@"bk" inRange:NSMakeRange(2, 5)
+                       options:0
+                    usingBlock:^(id v, NSRange r, BOOL *stop) {
+        asFwdAttrP++;
+        [asFwdAttrPAcc appendFormat:@"%lu+%lu:%@ ", (unsigned long)r.location, (unsigned long)r.length, v];
+    }];
+    p("as s enum fwd attr part", [NSString stringWithFormat:@"%d %@", asFwdAttrP, asFwdAttrPAcc]);
+
+    /* NSAttributedStringEnumerationLongestEffectiveRangeNotRequired gives
+     * CoreFoundation leave to subdivide a run at its own convenience, so only
+     * the coverage (total length and extent) is pinned, not the boundaries. */
+    __block NSUInteger asNRlen = 0, asNRmin = 8, asNRmax = 0;
+    [asSurf enumerateAttributesInRange:NSMakeRange(2, 5)
+                               options:NSAttributedStringEnumerationLongestEffectiveRangeNotRequired
+                            usingBlock:^(NSDictionary *at, NSRange r, BOOL *stop) {
+        (void)at;
+        asNRlen += r.length;
+        asNRmin = MIN(asNRmin, (NSUInteger)r.location);
+        asNRmax = MAX(asNRmax, NSMaxRange(r));
+    }];
+    p("as s enum notrequired cover", [NSString stringWithFormat:@"%lu %lu-%lu",
+        (unsigned long)asNRlen, (unsigned long)asNRmin, (unsigned long)asNRmax]);
+
     /* ---------- NSAttributedString NSCoding ---------- */
     /* Apple encodes an attributed string as: a run-ordered NSAttributes array
      * (one NSDictionary per run, an empty dict for a bare run), plus an
