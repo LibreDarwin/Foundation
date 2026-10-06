@@ -21,7 +21,7 @@ typedef NS_OPTIONS(NSUInteger, NSAttributedStringEnumerationOptions) {
   NSAttributedStringEnumerationLongestEffectiveRangeNotRequired = (1UL << 20)
 };
 
-@interface NSAttributedString : NSObject <NSCopying, NSMutableCopying>
+@interface NSAttributedString : NSObject <NSCopying, NSMutableCopying, NSSecureCoding>
 
 /* NSAttributedString owns a CFAttributedString rather than bridging to it, for
  * the reason documented beside NSAttributedStringBacking() in

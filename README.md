@@ -55,7 +55,7 @@ headers.
   compiled **into** a test executable (not linked against the built dylib, since
   the dylib's toll-free classes would be shadowed by Apple's CoreFoundation on the
   host) and linked only against Apple's CoreFoundation. The executable runs
-  1,541 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
+  1,553 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
   its output is diffed byte-for-byte against Apple's real Foundation output,
   captured in `Tests/port_behavior.golden`. New probe coverage requires adding the
   touched sources to `GATE_SRCS` in `Common.mk` and re-capturing the Apple truth.
@@ -229,6 +229,25 @@ system binary's exports (the Swift counterpart of a `.tbd`).
   validates before delegating. `-setAttributes:range:` is a *replacement*
   (`clearOtherAttributes` must be set, or CF merges instead), while
   `-addAttributes:range:` merges and `-setAttributes:nil` clears the range.
+- _`NSAttributedString`/`NSMutableAttributedString` are now `NSSecureCoding`:_ the
+  archive uses Apple's keyed shape — `NSString`, an `NSAttributes` array with one
+  dictionary per attribute run (a bare run is an empty dictionary), and an
+  `NSAttributeInfo` LEB128 `(runLength, attributeIndex)` blob that is omitted when
+  there is at most one run, as Apple omits it. Encoding walks maximal runs and is
+  linear; decoding validates the whole archive before adopting any CF backing, so a
+  malformed archive cannot strand a half-built CF object (these sources do not use
+  `-fobjc-arc-exceptions`). The decoder reads with `decodeObjectOfClass:`, and a
+  foreign-writer proof is baked in: 12 probes decode a 682-byte archive captured
+  from Apple's own archiver for the same string to the identical run layout.
+  Two keyed-archiver gaps surfaced and were fixed: the archiver now always writes
+  `NS.keys`/`NS.objects` for an empty dictionary and `NS.objects` for an empty set
+  (Apple writes them even when empty, and Apple's reader requires them), and the
+  unarchiver now materializes `NSData`/`NSMutableData` entries from their plist
+  bytes — those classes are host toll-free in the gate, so no allocator exists.
+  Secure decode still refuses an archive whose top-level class is not in the
+  allowed set, including structural containers like a root `NSArray`, while nested
+  containers stay ungated because they are rebuilt from plist leaves, never
+  `initWithCoder:`. 12 probes pin all of this against Apple.
 
 **Deepen partial classes**
 - `NSURL`: file bookmarks and resource-value accessors are still approximate
@@ -238,7 +257,7 @@ system binary's exports (the Swift counterpart of a `.tbd`).
   `NSProcessInfo`, `NSStream` (schemes, sockets), fuller `NSDateFormatter`/
   `NSNumberFormatter` edge behavior.
 - `NSAttributedString`/`NSMutableAttributedString`: full attribute surface,
-  `NSCoding`/copying, attachment handling, layout/document accessors.
+  attachment handling, layout/document accessors.
 
 **Add missing Apple Foundation classes not yet present at all** (grouped):
 - *Collections/convenience*: NSCache, NSUUID, NSIndexPath, NSPointerArray,

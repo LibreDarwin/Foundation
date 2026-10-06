@@ -581,10 +581,10 @@ static Class _PublicCodedClass(Class cls) {
         CFIndex count = CFDictionaryGetCount(dictionary);
         const void **keys = count > 0 ? calloc((size_t)count, sizeof(void *)) : NULL;
         const void **values = count > 0 ? calloc((size_t)count, sizeof(void *)) : NULL;
+        NSMutableArray *keyList = [NSMutableArray arrayWithCapacity:(NSUInteger)count];
+        NSMutableArray *valueList = [NSMutableArray arrayWithCapacity:(NSUInteger)count];
         if (keys != NULL && values != NULL) {
             CFDictionaryGetKeysAndValues(dictionary, keys, values);
-            NSMutableArray *keyList = [NSMutableArray arrayWithCapacity:(NSUInteger)count];
-            NSMutableArray *valueList = [NSMutableArray arrayWithCapacity:(NSUInteger)count];
             /* The keys are encoded as a run before the values, not a key and
              * its object alternating.  A keyed archive hands out $objects
              * positions in the order the writer reaches the objects, and Apple
@@ -597,9 +597,11 @@ static Class _PublicCodedClass(Class cls) {
             for (CFIndex i = 0; i < count; i++) {
                 [valueList addObject:[self _encodeObjectToken:(__bridge id)values[i]]];
             }
-            node[@"NS.keys"] = keyList;
-            node[@"NS.objects"] = valueList;
         }
+        /* Apple writes both lists even for an empty dictionary, and the reader
+         * requires them. */
+        node[@"NS.keys"] = keyList;
+        node[@"NS.objects"] = valueList;
         free(keys);
         free(values);
         return;
@@ -609,14 +611,15 @@ static Class _PublicCodedClass(Class cls) {
         CFSetRef set = (__bridge CFSetRef)object;
         CFIndex count = CFSetGetCount(set);
         const void **values = count > 0 ? calloc((size_t)count, sizeof(void *)) : NULL;
+        NSMutableArray *list = [NSMutableArray arrayWithCapacity:(NSUInteger)count];
         if (values != NULL) {
             CFSetGetValues(set, values);
-            NSMutableArray *list = [NSMutableArray arrayWithCapacity:(NSUInteger)count];
             for (CFIndex i = 0; i < count; i++) {
                 [list addObject:[self _encodeObjectToken:(__bridge id)values[i]]];
             }
-            node[@"NS.objects"] = list;
         }
+        /* An empty set still carries an (empty) NS.objects list. */
+        node[@"NS.objects"] = list;
         free(values);
         return;
     }

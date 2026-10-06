@@ -1505,6 +1505,18 @@ as exc insert oob                          | NSRangeException
 as enum runs                               | 2 1:0+4 2:4+4 
 as enum one attr                           | 2 1:0+4 2:4+4 
 as enum stop                               | 1
+as ct supportsSecureCoding                 | 1
+as ct bare                                 | len=3 runs=1 eq=1 | 3:{}
+as ct one run                              | len=11 runs=1 eq=1 | 11:{ak=F,bk=C}
+as ct empty                                | len=0 runs=0 eq=1 | 
+as ct three runs                           | len=11 runs=4 eq=1 | 4:{ak=F}|1:{ak=F,ck=2}|2:{ck=2}|4:{}
+as ct mutable runs                         | len=6 runs=2 eq=1 | 3:{ak=F}|3:{ck=2}
+as ct decoded class                        | immutable
+as ct many runs                            | len=300 runs=300 eq=1 | first=1:{k=v0} last=1:{k=v299}
+as ct apple fixture                        | 4:{ak=F}|1:{ak=F,ck=2}|2:{ck=2}|4:{}
+as ct apple fixture eq                     | 1
+as ct garbage                              | err NSCocoaErrorDomain/4864
+as ct wrong class                          | err NSCocoaErrorDomain/4864
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1

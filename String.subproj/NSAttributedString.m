@@ -8,8 +8,11 @@
 
 #import <Foundation/NSAttributedString.h>
 #import <Foundation/NSArray.h>
+#import <Foundation/NSCoder.h>
+#import <Foundation/NSData.h>
 #import <Foundation/NSEnumerator.h>
 #import <Foundation/NSException.h>
+#import <Foundation/NSNumber.h>
 #import <Foundation/NSValue.h>
 #include <CoreFoundation/CFAttributedString.h>
 #include <objc/runtime.h>
@@ -97,6 +100,151 @@ static void NSAttributedStringCheckRange(NSAttributedString * __unsafe_unretaine
                            (unsigned long)range.location, (unsigned long)range.length,
                            (unsigned long)0, (unsigned long)length];
     }
+}
+
+/* ---- NSCoding ---- */
+/* Apple's keyed archive of an attributed string carries:
+ *   NSString        the backing characters
+ *   NSAttributes    one NSDictionary per attribute run, in run order; a bare
+ *                   run is an empty dictionary rather than a missing entry
+ *   NSAttributeInfo an NSData of LEB128 (runLength, attributeIndex) pairs,
+ *                   where the index selects an entry of NSAttributes.  The
+ *                   key is omitted when there is at most one run, in which
+ *                   case the single NSAttributes entry applies to the whole
+ *                   string, or to nothing at all when the string is empty.
+ * The blob is what lets one dictionary object serve several disjoint runs, and
+ * what tells the decoder where each run ends without walking the string. */
+
+static void NSAttributedStringAppendLEB128(NSMutableData *data, uint32_t value) {
+    do {
+        uint8_t byte = (uint8_t)(value & 0x7f);
+        value >>= 7;
+        if (value != 0) byte |= 0x80;
+        [data appendBytes:&byte length:1];
+    } while (value != 0);
+}
+
+static BOOL NSAttributedStringReadLEB128(const uint8_t *bytes, NSUInteger length,
+                                        NSUInteger *cursor, uint32_t *valueOut) {
+    uint32_t value = 0;
+    unsigned shift = 0;
+    while (*cursor < length && shift <= 28) {
+        uint8_t byte = bytes[(*cursor)++];
+        value |= ((uint32_t)(byte & 0x7f)) << shift;
+        if ((byte & 0x80) == 0) {
+            *valueOut = value;
+            return YES;
+        }
+        shift += 7;
+    }
+    return NO;
+}
+
+/* Decode an archived attributed string into a new +1 CF backing.  The whole
+ * archive is validated before the backing is created, so a raise on a malformed
+ * archive cannot strand a half-built CF object: Objective-C sources here are not
+ * compiled with -fobjc-arc-exceptions, so there is no cleanup to run when the
+ * raise unwinds this frame. */
+static CFMutableAttributedStringRef NSAttributedStringBackingFromCoder(NSCoder *coder,
+                                                                       Class cls) {
+    NSString *archiveString = [coder decodeObjectOfClass:[NSString class] forKey:@"NSString"];
+    if (archiveString != nil && ![archiveString isKindOfClass:[NSString class]]) {
+        [NSException raise:NSInvalidArgumentException
+                    format:@"*** -[%s initWithCoder:]: the NSString entry is not a string",
+                           class_getName(cls)];
+    }
+    /* A missing string is an empty string rather than a rejection: the run
+     * table then has nothing to apply either. */
+    NSString *string = archiveString ?: @"";
+
+    NSArray *archiveAttributes = [coder decodeObjectOfClass:[NSArray class] forKey:@"NSAttributes"];
+    if (archiveAttributes == nil) archiveAttributes = [NSArray array];
+    if (![archiveAttributes isKindOfClass:[NSArray class]]) {
+        [NSException raise:NSInvalidArgumentException
+                    format:@"*** -[%s initWithCoder:]: the NSAttributes entry is not an array",
+                           class_getName(cls)];
+    }
+    NSArray * __unsafe_unretained attributes = archiveAttributes;
+    NSUInteger attributeCount = [attributes count];
+    NSUInteger stringLength = [string length];
+
+    NSData *archiveBlob = [coder decodeObjectOfClass:[NSData class] forKey:@"NSAttributeInfo"];
+    if (archiveBlob != nil && ![archiveBlob isKindOfClass:[NSData class]]) {
+        [NSException raise:NSInvalidArgumentException
+                    format:@"*** -[%s initWithCoder:]: the NSAttributeInfo entry is not data",
+                           class_getName(cls)];
+    }
+    NSData * __unsafe_unretained blob = archiveBlob;
+
+    /* Expand the run table now, while nothing but autoreleased Foundation
+     * objects is held, so every archive-shape error raises before CF is
+     * entered and before any +1 reference is taken. */
+    NSMutableArray *ranges = [NSMutableArray array];
+    NSMutableArray *indices = [NSMutableArray array];
+    if (blob == nil) {
+        /* One run covering the whole string, or none at all. */
+        if (attributeCount == 1 && stringLength > 0) {
+            [ranges addObject:[NSValue valueWithRange:NSMakeRange(0, stringLength)]];
+            [indices addObject:[NSNumber numberWithUnsignedInteger:(NSUInteger)0]];
+        }
+    } else if (stringLength == 0) {
+        /* A run table for a zero-length string has nothing to apply. */
+    } else {
+        const uint8_t *bytes = [blob bytes];
+        NSUInteger byteCount = [blob length];
+        NSUInteger cursor = 0;
+        NSUInteger location = 0;
+        while (location < stringLength) {
+            uint32_t runLength = 0;
+            uint32_t attributeIndex = 0;
+            if (!NSAttributedStringReadLEB128(bytes, byteCount, &cursor, &runLength) ||
+                !NSAttributedStringReadLEB128(bytes, byteCount, &cursor, &attributeIndex) ||
+                runLength == 0 ||
+                (NSUInteger)runLength > stringLength - location ||
+                (NSUInteger)attributeIndex >= attributeCount) {
+                [NSException raise:NSInvalidArgumentException
+                            format:@"*** -[%s initWithCoder:]: the NSAttributeInfo run table does not describe the string",
+                                   class_getName(cls)];
+            }
+            [ranges addObject:[NSValue valueWithRange:NSMakeRange(location, (NSUInteger)runLength)]];
+            [indices addObject:[NSNumber numberWithUnsignedInteger:(NSUInteger)attributeIndex]];
+            location += (NSUInteger)runLength;
+        }
+        /* Trailing bytes would mean Apple and this port disagree about the run
+         * layout, which is worth failing on rather than silently ignoring. */
+        if (cursor != byteCount) {
+            [NSException raise:NSInvalidArgumentException
+                        format:@"*** -[%s initWithCoder:]: the NSAttributeInfo run table has %lu trailing bytes",
+                               class_getName(cls), (unsigned long)(byteCount - cursor)];
+        }
+    }
+
+    CFMutableAttributedStringRef backing =
+        CFAttributedStringCreateMutable(kCFAllocatorDefault, 0);
+    if (backing == NULL) {
+        [NSException raise:NSMallocException
+                    format:@"*** -[%s initWithCoder:]: could not allocate the backing store",
+                           class_getName(cls)];
+    }
+    /* The freshly created mutable backing is empty, and this port's vendored
+     * header does not expose CFAttributedStringSetString, so the archived
+     * characters go in through the replacement entry point the same way the
+     * delete path uses it. */
+    CFAttributedStringReplaceString(backing, CFRangeMake(0, 0),
+                                    (__bridge CFStringRef)string);
+    NSUInteger runCount = [ranges count];
+    for (NSUInteger i = 0; i < runCount; i++) {
+        NSUInteger attributeIndex =
+            (NSUInteger)[[indices objectAtIndex:i] unsignedIntegerValue];
+        NSDictionary *attrs = [attributes objectAtIndex:attributeIndex];
+        /* Let CoreFoundation merge any adjacent run that carries the same
+         * dictionary, so the decoded layout is maximal the same way Apple's
+         * is. */
+        CFAttributedStringSetAttributes(backing,
+                                        NSAttributedStringCFRange([[ranges objectAtIndex:i] rangeValue]),
+                                        (__bridge CFDictionaryRef)attrs, true);
+    }
+    return backing;
 }
 
 @implementation NSAttributedString
@@ -303,6 +451,59 @@ static void NSAttributedStringCheckRange(NSAttributedString * __unsafe_unretaine
             location = NSMaxRange(run);
         }
     }
+}
+
++ (BOOL)supportsSecureCoding {
+    return YES;
+}
+
+/* Encode one entry per attribute run, then a run table that says how those
+ * entries are laid out.  -enumerateAttributesInRange:options:usingBlock: walks
+ * maximal runs, so an attribute dictionary that covers several disjoint places
+ * is recorded once and referenced by more than one run length. */
+- (void)encodeWithCoder:(NSCoder *)coder {
+    NSMutableArray *table = [NSMutableArray array];
+    NSMutableArray *runLengths = [NSMutableArray array];
+    NSUInteger length = CFAttributedStringGetLength(NSAttributedStringBacking(self));
+    [self enumerateAttributesInRange:NSMakeRange(0, length)
+                            options:0
+                         usingBlock:^(NSDictionary<NSAttributedStringKey, id> *attrs,
+                                      NSRange range, BOOL *stop) {
+        (void)stop;
+        /* The port has no indexOfObject:, and equality is what matters: two
+         * dictionaries that isEqual: may share one NSAttributes entry. */
+        BOOL known = NO;
+        NSUInteger tableCount = [table count];
+        for (NSUInteger k = 0; k < tableCount; k++) {
+            if ([[table objectAtIndex:k] isEqual:attrs]) {
+                known = YES;
+                break;
+            }
+        }
+        if (!known) [table addObject:attrs];
+        [runLengths addObject:[NSNumber numberWithUnsignedInteger:range.length]];
+    }];
+
+    NSString *string = self.string;
+    if (string == nil) string = @"";
+    [coder encodeObject:string forKey:@"NSString"];
+    [coder encodeObject:table forKey:@"NSAttributes"];
+
+    NSUInteger runCount = [runLengths count];
+    /* Apple omits NSAttributeInfo when there is at most one run: the single
+     * NSAttributes entry, if any, then applies to the whole string. */
+    if (runCount <= 1) return;
+
+    NSMutableData *blob = [NSMutableData data];
+    for (NSUInteger i = 0; i < runCount; i++) {
+        NSAttributedStringAppendLEB128(blob, (uint32_t)[[runLengths objectAtIndex:i] unsignedIntegerValue]);
+        NSAttributedStringAppendLEB128(blob, (uint32_t)i);
+    }
+    [coder encodeObject:blob forKey:@"NSAttributeInfo"];
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder {
+    return [self _initWithBacking:NSAttributedStringBackingFromCoder(coder, [NSAttributedString class])];
 }
 
 @end
@@ -589,6 +790,15 @@ static void NSAttributedStringCheckRange(NSAttributedString * __unsafe_unretaine
     if (backing == NULL) return nil;
     return [[NSMutableAttributedString alloc] _initWithMutableBacking:
         CFAttributedStringCreateMutableCopy(kCFAllocatorDefault, 0, backing)];
+}
+
+/* Decodes into a mutable backing directly rather than decoding an immutable
+ * string and copying it, so the archive is read once.  The shared decoder
+ * already builds a CFMutableAttributedStringRef, which is exactly what
+ * -_initWithMutableBacking: adopts. */
+- (instancetype)initWithCoder:(NSCoder *)coder {
+    return [self _initWithMutableBacking:
+        NSAttributedStringBackingFromCoder(coder, [NSMutableAttributedString class])];
 }
 
 @end

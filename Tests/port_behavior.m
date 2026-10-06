@@ -359,6 +359,77 @@ static NSData *kaKnownArchive(void) {
     return [NSKeyedArchiver archivedDataWithRootObject:o];
 }
 
+/* Describe an attributed string as its run layout: one "<length>:{key=value,...}"
+ * entry per attribute run.  Keys are sorted so the text cannot depend on
+ * NSDictionary's iteration order, which differs between the port and Apple. */
+static NSString *asRunsDescription(NSAttributedString *a) {
+    NSMutableString *out = [NSMutableString string];
+    NSUInteger length = a.length;
+    NSUInteger location = 0;
+    while (location < length) {
+        NSRange run = NSMakeRange(location, 0);
+        NSDictionary *attrs = [a attributesAtIndex:location
+                                 longestEffectiveRange:&run
+                                               inRange:NSMakeRange(location,
+                                                                  length - location)];
+        NSArray *keys = [[attrs allKeys]
+            sortedArrayUsingSelector:@selector(compare:)];
+        NSMutableString *body = [NSMutableString string];
+        for (NSString *key in keys) {
+            if (body.length) [body appendString:@","];
+            [body appendFormat:@"%@=%@", key, [attrs objectForKey:key]];
+        }
+        if (out.length) [out appendString:@"|"];
+        [out appendFormat:@"%lu:{%@}", (unsigned long)run.length, body];
+        location = NSMaxRange(run);
+    }
+    return out;
+}
+
+/* Encode, decode, and report the run layout that comes back plus whether the
+ * decoded object still compares equal to the original.  No archive bytes are
+ * printed: the port's archive layout is not expected to match Apple's
+ * byte-for-byte, only the semantics decoded from it. */
+static void asCt(const char *label, NSAttributedString *a) {
+    NSData *arch = [NSKeyedArchiver archivedDataWithRootObject:a];
+    id back = [NSKeyedUnarchiver unarchiveObjectWithData:arch];
+    if (![back isKindOfClass:[NSAttributedString class]]) {
+        p(label, [NSString stringWithFormat:@"decoded=%s runs=%@",
+                  back ? object_getClassName(back) : "nil",
+                  asRunsDescription([NSAttributedString new])]);
+        return;
+    }
+    NSAttributedString *b = back;
+    NSUInteger runCount = 0;
+    NSString *desc = asRunsDescription(b);
+    if (desc.length) {
+        runCount = [[desc componentsSeparatedByString:@"|"] count];
+    }
+    p(label, [NSString stringWithFormat:@"len=%lu runs=%lu eq=%d | %@",
+              (unsigned long)b.length, (unsigned long)runCount,
+              [b isEqualToAttributedString:a] ? 1 : 0, desc]);
+}
+
+/* Same round trip, but report only the run count and the first/last run so a
+ * hundreds-of-runs case still fits on one golden line. */
+static void asCtBrief(const char *label, NSAttributedString *a) {
+    NSData *arch = [NSKeyedArchiver archivedDataWithRootObject:a];
+    id back = [NSKeyedUnarchiver unarchiveObjectWithData:arch];
+    if (![back isKindOfClass:[NSAttributedString class]]) {
+        p(label, [NSString stringWithFormat:@"decoded=%s",
+                  back ? object_getClassName(back) : "nil"]);
+        return;
+    }
+    NSAttributedString *b = back;
+    NSArray *runs = [asRunsDescription(b) componentsSeparatedByString:@"|"];
+    NSUInteger runCount = [runs count];
+    NSString *first = runCount ? [runs objectAtIndex:0] : @"";
+    NSString *last = runCount ? [runs objectAtIndex:runCount - 1] : @"";
+    p(label, [NSString stringWithFormat:@"len=%lu runs=%lu eq=%d | first=%@ last=%@",
+              (unsigned long)b.length, (unsigned long)[runs count],
+              [b isEqualToAttributedString:a] ? 1 : 0, first, last]);
+}
+
 int main(void) {
     /* Line-buffer stdout so a crash reveals the exact failing probe. */
     setvbuf(stdout, NULL, _IOLBF, 0);
@@ -3198,6 +3269,134 @@ int main(void) {
         *stop = YES;
     }];
     p("as enum stop", [NSString stringWithFormat:@"%d", asStopRuns]);
+
+    /* ---------- NSAttributedString NSCoding ---------- */
+    /* Apple encodes an attributed string as: a run-ordered NSAttributes array
+     * (one NSDictionary per run, an empty dict for a bare run), plus an
+     * NSAttributeInfo blob of LEB128 (runLength, attributeIndex) pairs that is
+     * omitted when there are at most one run.  Probes below pin the decoded run
+     * layout, not the archive bytes: the port's archive layout is not required
+     * to match Apple's byte-for-byte. */
+    p("as ct supportsSecureCoding",
+      [NSAttributedString supportsSecureCoding] ? @"1" : @"0");
+    asCt("as ct bare",
+         [[NSAttributedString alloc] initWithString:@"abc"]);
+    asCt("as ct one run", asX);
+    asCt("as ct empty",
+         [[NSAttributedString alloc] initWithString:@"" attributes:asAttrs]);
+
+    /* ak on [0,5) and ck on [4,7) of "hello world" split it into four runs,
+     * so the encoded archive carries an NSAttributeInfo blob. */
+    NSMutableAttributedString *asHw =
+        [[NSMutableAttributedString alloc] initWithString:@"hello world"];
+    [asHw addAttribute:@"ak" value:@"F" range:NSMakeRange(0, 5)];
+    [asHw addAttribute:@"ck" value:@"2" range:NSMakeRange(4, 3)];
+    asCt("as ct three runs", asHw);
+
+    NSMutableAttributedString *asMut =
+        [[NSMutableAttributedString alloc] initWithString:@"abcdef"];
+    [asMut addAttribute:@"ak" value:@"F" range:NSMakeRange(0, 3)];
+    [asMut addAttributes:@{@"ck": @"2"} range:NSMakeRange(3, 3)];
+    asCt("as ct mutable runs", asMut);
+
+    id asDecoded = [NSKeyedUnarchiver unarchiveObjectWithData:
+        [NSKeyedArchiver archivedDataWithRootObject:asX]];
+    /* The concrete class names differ between Apple (NSConcreteAttributedString)
+     * and the port, so pin the mutability of the decoded object instead. */
+    p("as ct decoded class",
+      [asDecoded isKindOfClass:[NSMutableAttributedString class]] ? @"mutable"
+          : ([asDecoded isKindOfClass:[NSAttributedString class]] ? @"immutable"
+             : (asDecoded
+                  ? [NSString stringWithFormat:@"other %s",
+                       object_getClassName(asDecoded)]
+                  : @"nil")));
+
+    /* 300 distinct runs pushes the attribute index past 127, so a faithful
+     * encoder has to spend more than one LEB128 byte per index. */
+    NSMutableString *asPad = [NSMutableString stringWithCapacity:300];
+    while (asPad.length < 300) [asPad appendString:@"a"];
+    NSMutableAttributedString *asMany =
+        [[NSMutableAttributedString alloc] initWithString:asPad];
+    for (NSUInteger i = 0; i < 300; i++) {
+        [asMany addAttribute:@"k"
+                       value:[NSString stringWithFormat:@"v%lu", (unsigned long)i]
+                       range:NSMakeRange(i, 1)];
+    }
+    asCtBrief("as ct many runs", asMany);
+
+    /* Decode an archive Apple itself produced, so the port's reader is proved
+     * against a foreign writer.  The bytes were captured from Apple's own
+     * NSKeyedArchiver for the same four-run graph as "as ct three runs" above. */
+    {
+        const char *asAppleHex =
+            "62706c6973743030d4010203040506070a582476657273696f6e59246172636869766572"
+            "5424746f7058246f626a6563747312000186a05f100f4e534b65796564417263686976"
+            "6572d1080954726f6f748001af10110b0c15161e2526272d3536373d4145494d55246e"
+            "756c6cd40d0e0f1011121314584e53537472696e675f100f4e53417474726962757465"
+            "496e666f5c4e53417474726962757465735624636c6173738002800e800380105b6865"
+            "6c6c6f20776f726c64d21710181d5a4e532e6f626a65637473a4191a1b1c8004800880"
+            "0b800c800dd31f1710202224574e532e6b657973a1218005a1238006800752616b5146"
+            "d228292a2b5a24636c6173736e616d655824636c61737365735c4e5344696374696f6e"
+            "617279a22a2c584e534f626a656374d31f17102e3124a2213080058009a22333800680"
+            "0a800752636b5132d31f1710383a24a1308009a133800a8007d31f17103e3f24a0a080"
+            "07d2282942435e4e534d757461626c654172726179a342442c574e534172726179d246"
+            "104748574e532e64617461480400010102020403800fd228294a4b5d4e534d75746162"
+            "6c6544617461a34a4c2c564e5344617461d228294e4f5f10124e534174747269627574"
+            "6564537472696e67a2502c5f10124e5341747472696275746564537472696e67000800"
+            "11001a00240029003200370049004c005100530067006d0076007f0091009e00a500a7"
+            "00a900ab00ad00b900be00c900ce00d000d200d400d600d800df00e700e900eb00ed0"
+            "0ef00f100f400f600fb0106010f011c011f0128012f0132013401360139013b013d013"
+            "f01420144014b014d014f015101530155015c015d015e016001650174017801800185"
+            "018d01960198019d01ab01af01b601bb01d001d300000000000002010000000000000"
+            "051000000000000000000000000000001e8";
+        NSUInteger hexLen = strlen(asAppleHex);
+        NSMutableData *asAppleData = [NSMutableData dataWithCapacity:hexLen / 2];
+        for (NSUInteger i = 0; i + 1 < hexLen; i += 2) {
+            unsigned int byte = 0;
+            sscanf(asAppleHex + i, "%2x", &byte);
+            uint8_t b = (uint8_t)byte;
+            [asAppleData appendBytes:&b length:1];
+        }
+        id asAppleBack = [NSKeyedUnarchiver unarchiveObjectWithData:asAppleData];
+        p("as ct apple fixture",
+          [asAppleBack isKindOfClass:[NSAttributedString class]]
+              ? asRunsDescription(asAppleBack)
+              : [NSString stringWithFormat:@"decoded=%s",
+                   asAppleBack ? object_getClassName(asAppleBack) : "nil"]);
+        NSError *asAppleErr = nil;
+        id asAppleSecure = [NSKeyedUnarchiver
+            unarchivedObjectOfClass:[NSAttributedString class]
+                           fromData:asAppleData
+                              error:&asAppleErr];
+        p("as ct apple fixture eq",
+          [asAppleSecure isEqualToAttributedString:asHw] ? @"1"
+              : (asAppleErr
+                     ? [NSString stringWithFormat:@"err %@/%ld", asAppleErr.domain,
+                          (long)asAppleErr.code]
+                     : @"0"));
+    }
+
+    /* Corruption: garbage bytes cannot be a keyed archive at all. */
+    catchProbe("as ct garbage", ^id {
+        const unsigned char gg[8] = {'g', 'a', 'r', 'b', 0, 'a', 'g', 'e'};
+        NSData *garbage = [NSData dataWithBytes:gg length:8];
+        NSError *err = nil;
+        id back = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSAttributedString class]
+                                                    fromData:garbage
+                                                       error:&err];
+        if (back) return (id)@"decoded";
+        return [NSString stringWithFormat:@"err %@/%ld", err.domain, (long)err.code];
+    });
+    /* A well-formed archive of some other class is refused, not mis-decoded. */
+    catchProbe("as ct wrong class", ^id {
+        NSData *other = [NSKeyedArchiver archivedDataWithRootObject:@[@1, @2]];
+        NSError *err = nil;
+        id back = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSAttributedString class]
+                                                    fromData:other
+                                                       error:&err];
+        if (back) return (id)@"decoded";
+        return [NSString stringWithFormat:@"err %@/%ld", err.domain, (long)err.code];
+    });
 
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
     port_behavior_pool();

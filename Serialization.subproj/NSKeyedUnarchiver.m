@@ -1059,6 +1059,11 @@ static BOOL _PortCollectionIsMutable(NSString *codedName) {
     return [codedName hasPrefix:@"NSMutable"];
 }
 
+static BOOL _PortCodedDataIsData(NSString *codedName) {
+    return [codedName isEqualToString:@"NSData"] ||
+           [codedName isEqualToString:@"NSMutableData"];
+}
+
 static BOOL _PortCollectionIsBuiltHere(NSString *codedName) {
     return [codedName isEqualToString:@"NSArray"] ||
            [codedName isEqualToString:@"NSMutableArray"] ||
@@ -1147,17 +1152,70 @@ static BOOL _PortCollectionIsBuiltHere(NSString *codedName) {
     return result;
 }
 
+/*
+ * Data is another host-drawn type: the Foundation NSData and NSMutableData
+ * classes the archive names live in CoreFoundation, and no allocator descended
+ * from them can be told to build a new instance.  The bytes the writer saved
+ * under NS.data are pulled out in the same way the collection builders read
+ * their element lists, and the value is made with the Data constructors this
+ * Foundation defines so the decoded object is never a host placeholder.
+ */
+- (NSData *)_decodeDataForUID:(NSUInteger)uid node:(NSDictionary *)node
+                       codedName:(NSString *)codedName {
+    BOOL isMutable = [codedName isEqualToString:@"NSMutableData"];
+
+    [self _pushContainer:node];
+    NSUInteger length = 0;
+    const uint8_t *bytes = [self decodeBytesForKey:@"NS.data" returnedLength:&length];
+    [self _popContainer];
+
+    if (bytes == NULL && length > 0) {
+        [self _failCorrupt];
+        return nil;
+    }
+
+    id data = isMutable ? (id)[NSMutableData dataWithBytes:bytes length:length]
+                        : (id)[NSData dataWithBytes:bytes length:length];
+
+    NSNumber *key = @(uid);
+    _uidToObject[key] = data;
+    return data;
+}
+
 - (id)_decodeInstanceForUID:(NSUInteger)uid node:(NSDictionary *)node {
     Class cls = [self _classForNode:node];
     if (cls == Nil) {
         return nil;
     }
-    [self _validateClass:cls];
 
     NSString *codedName = [self _codedNameForNode:node];
+    /* The structural containers and data are rebuilt from their plist leaves
+     * rather than by allocating the archive's class, so their decoded node
+     * never runs the class's -initWithCoder:.  Nothing of theirs is classed
+     * state either -- a container holds only plist leaves and further nodes of
+     * its own kind -- so the secure coder does not gate nested containers
+     * against the allowed set; the classes it does gate are the ones that are
+     * actually instantiated below, which is what a secure archive's
+     * restrictions are about.  The value reached from the top-level dictionary
+     * is the object the caller asked for, so it is checked like any other
+     * decoded class: the allowed set must admit it even when it is a container
+     * (a secure decode of an array under an NSAttributedString-only set must
+     * refuse it). */
+    BOOL atTopLevel = ([_containerStack count] == 0);
     if (codedName != nil && _PortCollectionIsBuiltHere(codedName)) {
+        if (atTopLevel) {
+            [self _validateClass:cls];
+        }
         return [self _decodeCollectionForUID:uid node:node codedName:codedName];
     }
+    if (codedName != nil && _PortCodedDataIsData(codedName)) {
+        if (atTopLevel) {
+            [self _validateClass:cls];
+        }
+        return [self _decodeDataForUID:uid node:node codedName:codedName];
+    }
+
+    [self _validateClass:cls];
 
     NSNumber *key = @(uid);
     id placeholder = [[cls alloc] init];
