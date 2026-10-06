@@ -100,6 +100,10 @@ static NSString *plainJoin(NSArray *arr, NSString *sep) {
     return out;
 }
 
+static unsigned long ai_pointerAsInt(void *pointer) {
+    return (unsigned long)(uintptr_t)pointer;
+}
+
 static NSDecimal dmv(int limb, int exponent, int negative) {
     NSDecimal d;
     memset(&d, 0, sizeof d);
@@ -3764,6 +3768,249 @@ int main(void) {
         if (back) return (id)@"decoded";
         return [NSString stringWithFormat:@"err %@/%ld", err.domain, (long)err.code];
     });
+
+    /* ---------- NSUUID ---------- */
+    {
+        NSUUID *u1 = [[NSUUID alloc] initWithUUIDString:@"68753A44-4D6F-1226-9C60-0050E4C00067"];
+        NSUUID *u2 = [[NSUUID alloc] initWithUUIDString:@"68753a44-4d6f-1226-9c60-0050e4c00067"];
+        NSUUID *u3 = [[NSUUID alloc] initWithUUIDString:@"E621E1F8-C36C-495A-93FC-0C247A3E6E5F"];
+        uint8_t ubytes[16];
+        [u1 getUUIDBytes:ubytes];
+        p("uud uuidString", u1.UUIDString);
+        p("uud lower parsed", [u2.UUIDString isEqualToString:@"68753A44-4D6F-1226-9C60-0050E4C00067"] ? @"same" : @"diff");
+        uint8_t u2bytes[16];
+        [u2 getUUIDBytes:u2bytes];
+        int uBytesEq = (memcmp(ubytes, u2bytes, 16) == 0);
+        p("uud case bytes eq", uBytesEq ? @"eq" : @"!eq");
+        p("uud isEqual", [u1 isEqual:u2] ? @"eq" : @"!eq");
+        p("uud hash eq", [u1 hash] == [u2 hash] ? @"eq" : @"!eq");
+        int uCmp = [u1 compare:u3];
+        p("uud compare", uCmp < 0 ? (uCmp == -1 ? @"asc" : @"other") : (uCmp > 0 ? (uCmp == 1 ? @"desc" : @"other") : @"same"));
+        p("uud same compare", [u1 compare:u2] == NSOrderedSame ? @"same" : @"diff");
+        p("uud bytes", [NSString stringWithFormat:@"%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+                        ubytes[0], ubytes[1], ubytes[2], ubytes[3], ubytes[4], ubytes[5], ubytes[6], ubytes[7],
+                        ubytes[8], ubytes[9], ubytes[10], ubytes[11], ubytes[12], ubytes[13], ubytes[14], ubytes[15]]);
+        p("uud desc", u1.description);
+        NSUUID *u4 = [[NSUUID alloc] initWithUUIDString:@"zzz-invalid"];
+        p("uud invalid nil", u4 == nil ? @"nil" : @"nonnil");
+        p("uud invalid partial", [[NSUUID alloc] initWithUUIDString:@"68753A44-4D6F-1226-9C60-0050E4C0006X"] == nil ? @"nil" : @"nonnil");
+        catchProbe("uud compare nil", ^id {
+            NSUUID *a = [[NSUUID alloc] initWithUUIDString:@"68753A44-4D6F-1226-9C60-0050E4C00067"];
+            return [NSString stringWithFormat:@"r=%d", (int)[a compare:nil]];
+        });
+        NSUUID *uCopy = [u1 copy];
+        p("uud copy", [uCopy isEqual:u1] && [uCopy isKindOfClass:[NSUUID class]] ? @"eq" : @"!eq");
+        NSUUID *uInit = [[NSUUID alloc] init];
+        p("uud random init parseable", (uInit.UUIDString != nil) ? @"yes" : @"no");
+        NSError *uSaveErr = nil;
+        NSData *uData = [NSKeyedArchiver archivedDataWithRootObject:u1 requiringSecureCoding:NO error:&uSaveErr];
+        p("uud encode hex", [NSString stringWithFormat:@"hex=%@", hexDump(uData)]);
+        NSError *uLoadErr = nil;
+        NSUUID *uBack = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSUUID class]
+                                                         fromData:uData
+                                                            error:&uLoadErr];
+        p("uud decode", [uBack isEqual:u1] && uLoadErr == nil ? @"eq" : @"!eq");
+    }
+
+    /* ---------- NSValueTransformer ---------- */
+    {
+        id tNeg = [NSValueTransformer valueTransformerForName:NSNegateBooleanTransformerName];
+        p("vt negate found", tNeg != nil ? NSStringFromClass([tNeg class]) : @"nil");
+        p("vt negate tf", [[tNeg transformedValue:@NO] boolValue] ? @"t" : @"f");
+        p("vt negate tf2", [[tNeg transformedValue:@YES] boolValue] ? @"t" : @"f");
+        p("vt negate tfv class", NSStringFromClass([[tNeg class] transformedValueClass]));
+        p("vt negate reversible", [[tNeg class] allowsReverseTransformation] ? @"y" : @"n");
+        id tNegRev = [tNeg reverseTransformedValue:@YES];
+        p("vt negate rev", [tNegRev boolValue] ? @"t" : @"f");
+        id tIsNil = [NSValueTransformer valueTransformerForName:NSIsNilTransformerName];
+        p("vt isNil found", tIsNil != nil ? NSStringFromClass([tIsNil class]) : @"nil");
+        p("vt isNil nil", [[tIsNil transformedValue:nil] boolValue] ? @"t" : @"f");
+        p("vt isNil val", [[tIsNil transformedValue:@"x"] boolValue] ? @"t" : @"f");
+        p("vt isNil rev yes", [tIsNil reverseTransformedValue:@YES] == nil ? @"nil" : @"nonnil");
+        catchProbe("vt isNil rev no", ^id {
+            return [tIsNil reverseTransformedValue:@NO] ? @"nonnil" : @"nil";
+        });
+        id tIsNotNil = [NSValueTransformer valueTransformerForName:NSIsNotNilTransformerName];
+        p("vt isNotNil found", tIsNotNil != nil ? NSStringFromClass([tIsNotNil class]) : @"nil");
+        p("vt isNotNil tf", [[tIsNotNil transformedValue:@"x"] boolValue] ? @"t" : @"f");
+        p("vt isNotNil nil", [[tIsNotNil transformedValue:nil] boolValue] ? @"t" : @"f");
+        id tSecure = [NSValueTransformer valueTransformerForName:NSSecureUnarchiveFromDataTransformerName];
+        p("vt secure found", tSecure != nil ? NSStringFromClass([tSecure class]) : @"nil");
+        p("vt secure rev", [[tSecure class] allowsReverseTransformation] ? @"y" : @"n");
+        p("vt secure tfv class", NSStringFromClass([[tSecure class] transformedValueClass]));
+        p("vt secure pointer funcs", [NSValueTransformer valueTransformerForName:NSKeyedUnarchiveFromDataTransformerName] != nil ? @"y" : @"n");
+        p("vt deprecated unarchive found", [NSValueTransformer valueTransformerForName:NSUnarchiveFromDataTransformerName] != nil ? @"y" : @"n");
+        id tOld = [NSValueTransformer valueTransformerForName:NSKeyedUnarchiveFromDataTransformerName];
+        p("vt old keyed unarchive class", tOld != nil ? NSStringFromClass([tOld class]) : @"nil");
+    }
+
+    /* ---------- NSIndexPath ---------- */
+    {
+        NSIndexPath *p1 = [NSIndexPath indexPathWithIndex:2];
+        NSUInteger ixs[] = {5, 7};
+        NSIndexPath *p2 = [NSIndexPath indexPathWithIndexes:ixs length:2];
+        NSUInteger ixEmpty[] = {};
+        NSIndexPath *p0 = [NSIndexPath indexPathWithIndexes:ixEmpty length:0];
+        p("ixp len1", [NSString stringWithFormat:@"%lu", (unsigned long)p1.length]);
+        p("ixp len2", [NSString stringWithFormat:@"%lu", (unsigned long)p2.length]);
+        p("ixp len0", [NSString stringWithFormat:@"%lu", (unsigned long)p0.length]);
+        p("ixp at0", [NSString stringWithFormat:@"%lu", (unsigned long)[p2 indexAtPosition:0]]);
+        p("ixp at1", [NSString stringWithFormat:@"%lu", (unsigned long)[p2 indexAtPosition:1]]);
+        catchProbe("ixp at oob", ^id {
+            NSIndexPath *q = [NSIndexPath indexPathWithIndex:3];
+            return [NSString stringWithFormat:@"%lu", (unsigned long)[q indexAtPosition:1]];
+        });
+        NSIndexPath *p2a = [p2 indexPathByAddingIndex:9];
+        p("ixp add len", [NSString stringWithFormat:@"%lu", (unsigned long)p2a.length]);
+        p("ixp add at2", [NSString stringWithFormat:@"%lu", (unsigned long)[p2a indexAtPosition:2]]);
+        p("ixp add orig", [NSString stringWithFormat:@"%lu", (unsigned long)p2a.length - 1 == 0 ? 0 : (unsigned long)[p2 indexAtPosition:1]]);
+        NSIndexPath *p2r = [p2 indexPathByRemovingLastIndex];
+        p("ixp remove len", [NSString stringWithFormat:@"%lu", (unsigned long)p2r.length]);
+        p("ixp remove at0", [NSString stringWithFormat:@"%lu", (unsigned long)[p2r indexAtPosition:0]]);
+        catchProbe("ixp remove empty", ^id {
+            NSIndexPath *q = [NSIndexPath indexPathWithIndex:1];
+            for (int i = 0; i < 2; i++) q = [q indexPathByRemovingLastIndex];
+            return @"removed";
+        });
+        p("ixp eq", [p1 isEqual:p1] ? @"eq" : @"!eq");
+        p("ixp eq diff", [p1 isEqual:p2] ? @"eq" : @"!eq");
+        p("ixp new eq", [p1 isEqual:[NSIndexPath indexPathWithIndex:2]] ? @"eq" : @"!eq");
+        p("ixp hash", [p1 hash] == [[NSIndexPath indexPathWithIndex:2] hash] ? @"eq" : @"!eq");
+        NSUInteger c1[] = {5, 8};
+        NSUInteger c2[] = {5, 8, 1};
+        NSUInteger c3[] = {5, 9};
+        NSIndexPath *cp1 = [NSIndexPath indexPathWithIndexes:c1 length:2];
+        NSIndexPath *cp2 = [NSIndexPath indexPathWithIndexes:c2 length:3];
+        NSIndexPath *cp3 = [NSIndexPath indexPathWithIndexes:c3 length:2];
+        p("ixp cmp lt", [cp1 compare:cp3] == NSOrderedAscending ? @"asc" : @"(no)");
+        p("ixp cmp gt", [cp3 compare:cp1] == NSOrderedDescending ? @"desc" : @"(no)");
+        p("ixp cmp eq", [cp1 compare:cp1] == NSOrderedSame ? @"same" : @"(no)");
+        p("ixp cmp prefix", [cp1 compare:cp2] == NSOrderedAscending ? @"asc" : @"(no)");
+        p("ixp cmp prefix rev", [cp2 compare:cp1] == NSOrderedDescending ? @"desc" : @"(no)");
+        NSUInteger gotIxs[4] = {99, 99, 99, 99};
+        [cp2 getIndexes:gotIxs range:NSMakeRange(0, 2)];
+        p("ixp get range", [NSString stringWithFormat:@"%lu,%lu", (unsigned long)gotIxs[0], (unsigned long)gotIxs[1]]);
+        [cp2 getIndexes:gotIxs];
+        p("ixp get all", [NSString stringWithFormat:@"%lu,%lu,%lu", (unsigned long)gotIxs[0], (unsigned long)gotIxs[1], (unsigned long)gotIxs[2]]);
+        catchProbe("ixp get range oob", ^id {
+            NSIndexPath *q = [NSIndexPath indexPathWithIndex:1];
+            NSUInteger buf[4];
+            [q getIndexes:buf range:NSMakeRange(0, 2)];
+            return @"got";
+        });
+        p("ixp path form", [NSString stringWithFormat:@"%lu:%lu:%lu", (unsigned long)cp1.length,
+                            (unsigned long)[cp1 indexAtPosition:0], (unsigned long)[cp1 indexAtPosition:1]]);
+        NSError *ixSaveErr = nil;
+        NSData *ixData = [NSKeyedArchiver archivedDataWithRootObject:cp2 requiringSecureCoding:NO error:&ixSaveErr];
+        p("ixp encode hex", [NSString stringWithFormat:@"hex=%@", hexDump(ixData)]);
+        NSError *ixLoadErr = nil;
+        NSIndexPath *ixBack = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSIndexPath class]
+                                                               fromData:ixData
+                                                                  error:&ixLoadErr];
+        p("ixp decode", (ixBack && [ixBack isEqual:cp2] && ixLoadErr == nil) ? @"eq" : @"!eq");
+    }
+
+    /* ---------- NSPointerArray ---------- */
+    {
+        NSPointerArray *ai = [NSPointerArray pointerArrayWithOptions:(NSPointerFunctionsOpaqueMemory | NSPointerFunctionsIntegerPersonality)];
+        catchProbe("ipa int reject", ^id {
+            (void)[[NSPointerArray alloc] initWithOptions:NSPointerFunctionsIntegerPersonality];
+            return @"accepted";
+        });
+        catchProbe("ipa mem reject", ^id {
+            (void)[[NSPointerArray alloc] initWithOptions:NSPointerFunctionsMachVirtualMemory];
+            return @"accepted";
+        });
+        [ai addPointer:(void *)5];
+        [ai addPointer:(void *)7];
+        [ai addPointer:NULL];
+        [ai addPointer:(void *)9];
+        p("ipa count", [NSString stringWithFormat:@"%lu", (unsigned long)ai.count]);
+        p("ipa at0", [NSString stringWithFormat:@"%lu", (unsigned long)ai_pointerAsInt([ai pointerAtIndex:0])]);
+        p("ipa at1", [NSString stringWithFormat:@"%lu", (unsigned long)ai_pointerAsInt([ai pointerAtIndex:1])]);
+        p("ipa at2 null", [ai pointerAtIndex:2] == NULL ? @"null" : @"value");
+        p("ipa at3", [NSString stringWithFormat:@"%lu", (unsigned long)ai_pointerAsInt([ai pointerAtIndex:3])]);
+        catchProbe("ipa at oob", ^id {
+            return [NSString stringWithFormat:@"%lu", (unsigned long)ai_pointerAsInt([ai pointerAtIndex:4])];
+        });
+        [ai setCount:6];
+        p("ipa grow count", [NSString stringWithFormat:@"%lu", (unsigned long)ai.count]);
+        p("ipa grow at4", [ai pointerAtIndex:4] == NULL ? @"null" : @"value");
+        [ai setCount:2];
+        p("ipa shrink count", [NSString stringWithFormat:@"%lu", (unsigned long)ai.count]);
+        p("ipa shrink at1", [NSString stringWithFormat:@"%lu", (unsigned long)ai_pointerAsInt([ai pointerAtIndex:1])]);
+        NSPointerArray *ai2 = [NSPointerArray pointerArrayWithOptions:(NSPointerFunctionsOpaqueMemory | NSPointerFunctionsIntegerPersonality)];
+        [ai2 addPointer:(void *)1];
+        [ai2 addPointer:(void *)2];
+        [ai2 insertPointer:(void *)42 atIndex:1];
+        p("ipa insert", [NSString stringWithFormat:@"%lu:%lu:%lu",
+                         (unsigned long)ai_pointerAsInt([ai2 pointerAtIndex:0]),
+                         (unsigned long)ai_pointerAsInt([ai2 pointerAtIndex:1]),
+                         (unsigned long)ai_pointerAsInt([ai2 pointerAtIndex:2])]);
+        [ai2 removePointerAtIndex:0];
+        p("ipa remove", [NSString stringWithFormat:@"%lu:%lu",
+                         (unsigned long)ai_pointerAsInt([ai2 pointerAtIndex:0]),
+                         (unsigned long)ai_pointerAsInt([ai2 pointerAtIndex:1])]);
+        [ai2 replacePointerAtIndex:0 withPointer:(void *)8];
+        p("ipa replace", [NSString stringWithFormat:@"%lu", (unsigned long)ai_pointerAsInt([ai2 pointerAtIndex:0])]);
+        [ai2 insertPointer:NULL atIndex:1];
+        [ai2 compact];
+        p("ipa compact", [NSString stringWithFormat:@"%lu", (unsigned long)ai2.count]);
+        catchProbe("ipa remove empty", ^id {
+            NSPointerArray *e = [NSPointerArray pointerArrayWithOptions:(NSPointerFunctionsOpaqueMemory | NSPointerFunctionsIntegerPersonality)];
+            [e removePointerAtIndex:0];
+            return @"removed";
+        });
+        NSPointerArray *aiCopy = [ai copy];
+        p("ipa copy", [NSString stringWithFormat:@"%lu:%lu",
+                       (unsigned long)ai_pointerAsInt([aiCopy pointerAtIndex:0]),
+                       (unsigned long)ai_pointerAsInt([aiCopy pointerAtIndex:1])]);
+
+        NSPointerArray *ws = [NSPointerArray weakObjectsPointerArray];
+        id wLive = [[NSMutableString alloc] initWithString:@"alive"];
+        id wDead = [[NSMutableString alloc] initWithString:@"dead"];
+        [ws addPointer:(__bridge void *)wLive];
+        [ws addPointer:(__bridge void *)wDead];
+        p("wpa live read", [ws pointerAtIndex:0] == (__bridge void *)wLive ? @"same" : @"diff");
+        p("wpa weak dead before", [ws pointerAtIndex:1] == (__bridge void *)wDead ? @"same" : @"diff");
+        wDead = nil;
+        p("wpa weak dead after", [ws pointerAtIndex:1] == NULL ? @"null" : @"value");
+        p("wpa count no compact", [NSString stringWithFormat:@"%lu", (unsigned long)ws.count]);
+        [ws compact];
+        p("wpa compact count", [NSString stringWithFormat:@"%lu", (unsigned long)ws.count]);
+        p("wpa compact alive", [ws pointerAtIndex:0] == (__bridge void *)wLive ? @"same" : @"diff");
+
+        NSPointerArray *so = [NSPointerArray strongObjectsPointerArray];
+        id soObj1 = [[NSMutableString alloc] initWithString:@"abc"];
+        id soObj2 = [[NSMutableString alloc] initWithString:@"def"];
+        [so addPointer:(__bridge void *)soObj1];
+        [so addPointer:(__bridge void *)soObj2];
+        [so addPointer:NULL];
+        p("so count", [NSString stringWithFormat:@"%lu", (unsigned long)so.count]);
+        p("so read back", [so pointerAtIndex:0] == (__bridge void *)soObj1 ? @"same" : @"diff");
+        NSMutableArray *soEnum = [NSMutableArray array];
+        for (id e in so) {
+            if (e) [soEnum addObject:[e isEqual:@"abc"] ? @"abc" : ([e isEqual:@"def"] ? @"def" : @"?")];
+            else [soEnum addObject:@"null"];
+        }
+        p("so fast enum", plainJoin(soEnum, @","));
+        p("so allObjects", [[so allObjects] count] == 2 ? @"2" : @"other");
+        NSError *soSaveErr = nil;
+        NSData *soData = [NSKeyedArchiver archivedDataWithRootObject:so requiringSecureCoding:NO error:&soSaveErr];
+        p("so enc len", [NSString stringWithFormat:@"%lu", (unsigned long)soData.length]);
+        p("so enc err", soSaveErr == nil ? @"nil" : [NSString stringWithFormat:@"%@/%ld", soSaveErr.domain, (long)soSaveErr.code]);
+        p("so encode hex", [NSString stringWithFormat:@"hex=%@", hexDump(soData)]);
+        NSError *soLoadErr = nil;
+        NSPointerArray *soBack = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSPointerArray class]
+                                                                  fromData:soData
+                                                                     error:&soLoadErr];
+        id soBack0 = (soBack && soBack.count > 0) ? (__bridge id)[soBack pointerAtIndex:0] : nil;
+        p("so dec class", soBack != nil ? NSStringFromClass([soBack class]) : @"nil");
+        p("so dec count", soBack != nil ? [NSString stringWithFormat:@"%lu", (unsigned long)soBack.count] : @"nil");
+        p("so dec ptr0", soBack0 == nil ? @"null" : ([soBack0 isEqual:@"abc"] ? @"abc" : @"other"));
+        p("so dec err", soLoadErr == nil ? @"nil" : [NSString stringWithFormat:@"%@/%ld", soLoadErr.domain, (long)soLoadErr.code]);
+        p("so dec errinfo", soLoadErr == nil ? @"nil" : [NSString stringWithFormat:@"%@", soLoadErr]);
+    }
 
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
     port_behavior_pool();

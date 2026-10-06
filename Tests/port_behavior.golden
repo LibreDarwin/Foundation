@@ -1564,6 +1564,151 @@ as att archive secure                      | decoded=NSTextAttachment ct=1 ft=1 
 as att apple fixture                       | decoded=NSTextAttachment ct=1 ft=1
 as att apple fixture secure                | decoded=NSTextAttachment ct=1 ft=1 err=0
 as att garbage                             | err NSCocoaErrorDomain/4864
+uud uuidString                             | 68753A44-4D6F-1226-9C60-0050E4C00067
+uud lower parsed                           | same
+uud case bytes eq                          | eq
+uud isEqual                                | eq
+uud hash eq                                | eq
+uud compare                                | asc
+uud same compare                           | same
+uud bytes                                  | 68753A444D6F12269C600050E4C00067
+uud desc                                   | 68753A44-4D6F-1226-9C60-0050E4C00067
+uud invalid nil                            | nil
+uud invalid partial                        | nil
+uud compare nil                            | r=1
+uud copy                                   | eq
+uud random init parseable                  | yes
+uud encode hex                             | hex=62706c6973743030d4010203040506070a582476
+657273696f6e592461726368697665725424746f
+7058246f626a6563747312000186a05f100f4e53
+4b657965644172636869766572d1080954726f6f
+748001a40b0c111255246e756c6cd20d0e0f105a
+55554944537472696e675624636c617373800280
+035f102436383735334134342d344436462d3132
+32362d394336302d303035304534433030303637
+d2131415165a24636c6173736e616d655824636c
+6173736573564e5355554944a21517584e534f62
+6a65637408111a24293237494c5153585e636e75
+7779a0a5b0b9c0c3000000000000010100000000
+00000018000000000000000000000000000000cc
+uud decode                                 | eq
+vt negate found                            | _NSNegateBooleanTransformer
+vt negate tf                               | t
+vt negate tf2                              | f
+vt negate tfv class                        | NSNumber
+vt negate reversible                       | y
+vt negate rev                              | f
+vt isNil found                             | _NSIsNilTransformer
+vt isNil nil                               | t
+vt isNil val                               | f
+vt isNil rev yes                           | nonnil
+vt isNil rev no                            | nonnil
+vt isNotNil found                          | _NSIsNotNilTransformer
+vt isNotNil tf                             | t
+vt isNotNil nil                            | f
+vt secure found                            | NSSecureUnarchiveFromDataTransformer
+vt secure rev                              | y
+vt secure tfv class                        | (null)
+vt secure pointer funcs                    | y
+vt deprecated unarchive found              | y
+vt old keyed unarchive class               | _NSKeyedUnarchiveFromDataTransformer
+ixp len1                                   | 1
+ixp len2                                   | 2
+ixp len0                                   | 0
+ixp at0                                    | 5
+ixp at1                                    | 7
+ixp at oob                                 | 9223372036854775807
+ixp add len                                | 3
+ixp add at2                                | 9
+ixp add orig                               | 7
+ixp remove len                             | 1
+ixp remove at0                             | 5
+ixp remove empty                           | removed
+ixp eq                                     | eq
+ixp eq diff                                | !eq
+ixp new eq                                 | eq
+ixp hash                                   | eq
+ixp cmp lt                                 | asc
+ixp cmp gt                                 | desc
+ixp cmp eq                                 | same
+ixp cmp prefix                             | asc
+ixp cmp prefix rev                         | desc
+ixp get range                              | 5,8
+ixp get all                                | 5,8,1
+ixp get range oob                          | raise NSRangeException
+ixp path form                              | 2:5:8
+ixp encode hex                             | hex=62706c6973743030d4010203040506070a582476
+657273696f6e592461726368697665725424746f
+7058246f626a6563747312000186a05f100f4e53
+4b657965644172636869766572d1080954726f6f
+748001a80b0c1118191a1b2255246e756c6cd20d
+0e0f1057696e64657865735624636c6173738002
+8007d2120e13175a4e532e6f626a65637473a314
+15168003800480058006100510081001d21c1d1e
+1f5a24636c6173736e616d655824636c61737365
+735e4e534d757461626c654172726179a31e2021
+574e534172726179584e534f626a656374d21c1d
+23245b4e53496e64657850617468a225215b4e53
+496e6465785061746808111a24293237494c5153
+5c62676f76787a7f8a8e90929496989a9ca1acb5
+c4c8d0d9deeaed00000000000001010000000000
+000026000000000000000000000000000000f9
+ixp decode                                 | eq
+ipa int reject                             | raise NSInternalInconsistencyException
+ipa mem reject                             | raise NSInternalInconsistencyException
+ipa count                                  | 4
+ipa at0                                    | 5
+ipa at1                                    | 7
+ipa at2 null                               | null
+ipa at3                                    | 9
+ipa at oob                                 | raise NSRangeException
+ipa grow count                             | 6
+ipa grow at4                               | null
+ipa shrink count                           | 2
+ipa shrink at1                             | 7
+ipa insert                                 | 1:42:2
+ipa remove                                 | 42:2
+ipa replace                                | 8
+ipa compact                                | 2
+ipa remove empty                           | raise NSInvalidArgumentException
+ipa copy                                   | 5:7
+wpa live read                              | same
+wpa weak dead before                       | same
+wpa weak dead after                        | value
+wpa count no compact                       | 2
+wpa compact count                          | 2
+wpa compact alive                          | same
+so count                                   | 3
+so read back                               | same
+so fast enum                               | abc,def,null
+so allObjects                              | 2
+so enc len                                 | 396
+so enc err                                 | nil
+so encode hex                              | hex=62706c6973743030d4010203040506070a582476
+657273696f6e592461726368697665725424746f
+7058246f626a6563747312000186a05f100f4e53
+4b657965644172636869766572d1080954726f6f
+748001a80b0c13141a1b1c2355246e756c6cd30d
+0e0f101112576f626a656374735624636c617373
+5f1010706f696e74657246756e6374696f6e7380
+0380078002480000000000000000d2150e16195a
+4e532e6f626a65637473a2171880048005800653
+61626353646566d21d1e1f205a24636c6173736e
+616d655824636c61737365735e4e534d75746162
+6c654172726179a31f2122574e53417272617958
+4e534f626a656374d21d1e24255e4e53506f696e
+7465724172726179a226225e4e53506f696e7465
+72417272617900080011001a0024002900320037
+0049004c00510053005c0062006900710078008b
+008d008f0091009a009f00aa00ad00af00b100b3
+00b700bb00c000cb00d400e300e700ef00f800fd
+010c010f00000000000002010000000000000027
+0000000000000000000000000000011e
+so dec class                               | NSPointerArray
+so dec count                               | 2
+so dec ptr0                                | abc
+so dec err                                 | nil
+so dec errinfo                             | nil
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1

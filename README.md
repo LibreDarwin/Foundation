@@ -55,12 +55,17 @@ headers.
   compiled **into** a test executable (not linked against the built dylib, since
   the dylib's toll-free classes would be shadowed by Apple's CoreFoundation on the
   host) and linked only against Apple's CoreFoundation. The executable runs
-  1,600 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
+  1,745 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
   its output is diffed byte-for-byte against Apple's real Foundation output,
   captured in `Tests/port_behavior.golden`. New probe coverage requires adding the
   touched sources to `GATE_SRCS` in `Common.mk` and re-capturing the Apple truth.
+  Two Apple quirks are captured as intentional divergences in the port's output:
+  `ns enumerate pairs` (Apple's reflection-based `pair` mis-keys an enumerated
+  NSNull dictionary entry) and `NSPointerArray` keyed archives (Apple writes the
+  legacy `$N`-key slot buffer that its own secure `initWithCoder:` rejects with
+  `NSCocoaErrorDomain/4864`; the port archives and decodes the modern schema).
 - **Pairing sweep** (`make pairing-sweep`, `Tests/pairing_sweep.py`). Every
-  selector declared in any header (55 headers, 976 selectors) must be
+  selector declared in any header (59 headers, 1,011 selectors) must be
   implemented somewhere in the `.m` sources; 20 hand-verified selectors the
   mechanical scanner can't match are allowlisted.
 
@@ -72,7 +77,8 @@ Grouped by subproject (`.m` is present and the declared surface is implemented;
 **Collections** — NSArray/NSMutableArray, NSData, NSDictionary/NSMutableDictionary,
 NSSet/NSCountedSet/NSMutableSet, NSOrderedSet/NSMutableOrderedSet,
 NSIndexSet/NSMutableIndexSet (sorted range-array), NSEnumerator (+ private
-array enumerator), NSHashTable, NSMapTable, NSPointerFunctions.
+array enumerator), NSHashTable, NSMapTable, NSPointerFunctions, NSPointerArray
+(Apple-matching memory/personality option guard), NSIndexPath, NSUUID.
 
 **String** — NSString/NSMutableString (factories, encodings, compare options,
 bounds, percent), NSCFString, NSCharacterSet, NSScanner (locale-aware
@@ -90,7 +96,9 @@ init-swap), NSNumberFormatter (CFNumberFormatter-backed, all style/parse bridges
 **Runtime** — NSObject, NSValue, NSNull (toll-free with CFNull), NSError,
 NSException, NSZone, NSRange, NSGeometry, NSLog, NSProcessInfo, NSBundle,
 NSUserDefaults, NSPropertyList, NSJSONSerialization, NSKeyValueCoding,
-NSDebug, NSObjCRuntime, NSAutoreleasePool; `FoundationErrors.h`,
+NSDebug, NSObjCRuntime, NSAutoreleasePool, NSValueTransformer (negate/isNil/
+isNotNil UUID-pinning, secure + legacy keyed-unarchive registrations);
+`FoundationErrors.h`,
 `Foundation.apinotes`.
 
 **Serialization** — NSCoder, and the recently completed keyed-archive pair:
@@ -278,8 +286,8 @@ system binary's exports (the Swift counterpart of a `.tbd`).
   checks) is now Apple-matching.
 
 **Add missing Apple Foundation classes not yet present at all** (grouped):
-- *Collections/convenience*: NSCache, NSUUID, NSIndexPath, NSPointerArray,
-  NSValueTransformer.
+- *Collections/convenience*: NSCache (deferred: eviction timings are
+  nondeterministic on Apple, so it cannot be pinned by the behavior gate).
 - *Predicates & regex*: NSPredicate, NSComparisonPredicate, NSCompoundPredicate,
   NSExpression, NSRegularExpression, NSTextCheckingResult.
 - *KVO*: NSKeyValueObserving (NSObject KVO machinery).
