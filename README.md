@@ -134,14 +134,31 @@ system binary's exports (the Swift counterpart of a `.tbd`).
   This stayed invisible only because the class had no `-dealloc`, and became a
   release-only use-after-free (SIGSEGV at `-[NSException description]`) as soon as
   one was added. It now returns `[self retain]`.
-- **Raising from `NSAttributedString`'s range check still leaks** (~100 bytes per
-  raise: 50,000 caught out-of-bounds `attributedSubstringFromRange:` calls grow RSS
-  by ~4.9 MB). This is *not* the exception machinery — creating the string and
-  throwing an unrelated `NSException` in the same scope is flat, and an in-range
-  `attributedSubstringFromRange:` is flat, so the leak is specific to the
-  `NSAttributedStringCheckRange` failure path in `String.subproj/NSAttributedString.m`.
-  It is pre-existing and orthogonal to the `NSException` fix above. `NSStringFromClass`
-  separately leaks ~12 bytes per call.
+- **Raising from `NSAttributedString`'s range and nil checks no longer leaks.**
+  `NSAttributedStringCheckRange` and `NSAttributedStringCheckNotNil` raise out of
+  an ARC file, and clang emits no cleanup landing pads for Objective-C exception
+  unwinds in Objective-C sources, so the raising frame stranded everything ARC
+  owned there: ~100 bytes per out-of-bounds raise from the retained receiver
+  parameter, plus two `CFString`s per raise from the `NSStringFromClass` and
+  `NSStringFromSelector` used to build the message. The helpers now borrow their
+  object parameters (`__unsafe_unretained` — they only read them before raising,
+  and a `__strong` parameter would retain on entry and schedule the release for a
+  normal exit that a raise never reaches) and format the class and selector names
+  from C strings with `%s` through `class_getName`/`sel_getName`, which the
+  runtime owns outright and which produce byte-identical text. 50,000 caught
+  raises now add 3 `CFString`s where they used to add 100,003, and a repeated
+  25,000-iteration batch measures 0.0 bytes per iteration. Note that
+  `NSStringFrom…` must *not* be used this way from ARC code: handing the
+  autoreleased result straight to a format leaks it (ARC claims the autorelease
+  and nothing releases), while an `__unsafe_unretained` local is use-after-free
+  (ARC claims and immediately balances it, and the local is dangling when the
+  format runs) — the second of which is a `SIGTRAP` in `__CF_IS_OBJC` reached
+  from `__CFCopyFormattingDescription`. Separately, `NSStringFromClass` and its
+  two siblings leaked ~12 bytes per call because they are built in an
+  `-fno-objc-arc` file (`MRC_GATE_PAT`) and did not autorelease the `+1` from
+  `CFStringCreateWithCString`; Cocoa documents all three as plain accessors
+  returning autoreleased objects, so `Runtime.subproj/NSObjCRuntime.m` now does
+  that.
 - **Tree is green**: `make all` (build + pairing sweep + behavior gate) passes for
   both `release` and `debug` configurations. 970 selectors across 54 headers are
   declared and implemented.
