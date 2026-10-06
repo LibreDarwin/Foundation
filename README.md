@@ -55,12 +55,12 @@ headers.
   compiled **into** a test executable (not linked against the built dylib, since
   the dylib's toll-free classes would be shadowed by Apple's CoreFoundation on the
   host) and linked only against Apple's CoreFoundation. The executable runs
-  1,553 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
+  1,567 deterministic, timezone-agnostic probes (`Tests/port_behavior.m`), and
   its output is diffed byte-for-byte against Apple's real Foundation output,
   captured in `Tests/port_behavior.golden`. New probe coverage requires adding the
   touched sources to `GATE_SRCS` in `Common.mk` and re-capturing the Apple truth.
 - **Pairing sweep** (`make pairing-sweep`, `Tests/pairing_sweep.py`). Every
-  selector declared in any header (54 headers, 970 selectors) must be
+  selector declared in any header (55 headers, 976 selectors) must be
   implemented somewhere in the `.m` sources; 20 hand-verified selectors the
   mechanical scanner can't match are allowlisted.
 
@@ -248,6 +248,23 @@ system binary's exports (the Swift counterpart of a `.tbd`).
   allowed set, including structural containers like a root `NSArray`, while nested
   containers stay ungated because they are rebuilt from plist leaves, never
   `initWithCoder:`. 12 probes pin all of this against Apple.
+- _`NSTextAttachment` and the attachment conveniences:_ the class
+  (`initWithData:ofType:` plus copy-semantics `contents`/`fileType`, surfaced from
+  Foundation where Apple keeps it behind AppKit on UIFoundation), the
+  `NSAttachmentCharacter` (0xFFFC) and `NSAttachmentAttributeName` ("NSAttachment")
+  constants, and `+attributedStringWithAttachment:` (plus the `attributes:` variant,
+  where the attachment argument wins over any value already under the key while the
+  remaining attributes ride along). The archive matches Apple's keyed shape —
+  `NS.contents` (plist data), `NS.fileType` (plist string) and an `NSFileWrapper`
+  slot — and Apple's own `-initWithCoder:` ignores the file-wrapper node its writer
+  emits (that node holds the RTFD serialization Apple's rich-text machinery builds
+  at encode time), so the port encodes nil in that slot and Apple-made archives
+  still decode, pinned by a baked-in 695-byte fixture from Apple's own archiver
+  alongside the legacy and secure round trips. Apple's macOS 26 `-setFileType:`
+  writes an unused slot, so a UTI assigned after init never comes back; the port
+  deliberately does not reproduce that quirk. The AppKit-dependent surface —
+  image, bounds, fileWrapper, cell, view provider, `NSTextAttachmentLayout` — is out
+  of scope for a Foundation without AppKit. 14 probes pin all of this against Apple.
 
 **Deepen partial classes**
 - `NSURL`: file bookmarks and resource-value accessors are still approximate
@@ -257,7 +274,7 @@ system binary's exports (the Swift counterpart of a `.tbd`).
   `NSProcessInfo`, `NSStream` (schemes, sockets), fuller `NSDateFormatter`/
   `NSNumberFormatter` edge behavior.
 - `NSAttributedString`/`NSMutableAttributedString`: full attribute surface,
-  attachment handling, layout/document accessors.
+  layout/document accessors.
 
 **Add missing Apple Foundation classes not yet present at all** (grouped):
 - *Collections/convenience*: NSCache, NSUUID, NSIndexPath, NSPointerArray,

@@ -3398,6 +3398,186 @@ int main(void) {
         return [NSString stringWithFormat:@"err %@/%ld", err.domain, (long)err.code];
     });
 
+    /* ---------- NSTextAttachment (attachment handling) ---------- */
+    /* What is pinned: the class's init/get/copy semantics, the constants, the
+     * +attributedStringWithAttachment: conveniences, and the keyed-archive
+     * round trip.  Apple writes an extra NSFileWrapper node (the RTFD
+     * serialization of the rich text around the attachment) into the archive of
+     * a content-bearing attachment and ignores it on decode; the port encodes
+     * nil in its place, so its own archives decode to the same contents and
+     * fileType, and an Apple-made archive still decodes (the wrapper node is
+     * never touched by the reader). */
+    p("as att supportsSecureCoding",
+      [NSTextAttachment supportsSecureCoding] ? @"1" : @"0");
+
+    NSTextAttachment *taEmpty = [[NSTextAttachment alloc] init];
+    p("as att empty init",
+      [NSString stringWithFormat:@"ct=%d ft=%d",
+          taEmpty.contents != nil, taEmpty.fileType != nil]);
+
+    NSData *taData = [@"0123456789abcdef" dataUsingEncoding:NSUTF8StringEncoding];
+    NSTextAttachment *taFull =
+        [[NSTextAttachment alloc] initWithData:taData ofType:@"public.data"];
+    p("as att data uti init",
+      [NSString stringWithFormat:@"ct=%d ft=%d",
+          [taFull.contents isEqual:taData], [taFull.fileType isEqual:@"public.data"]]);
+
+    /* Copy semantics: an NSMutableData assigned as contents is snapshotted, so
+     * later edits to the source never reach the attachment. */
+    {
+        NSMutableData *taMut = [NSMutableData dataWithBytes:"0123456789abcdef" length:16];
+        NSTextAttachment *taCopy = [[NSTextAttachment alloc] init];
+        taCopy.contents = taMut;
+        NSData *taSnap = [@"0123456789abcdef" dataUsingEncoding:NSUTF8StringEncoding];
+        [taMut appendBytes:"ZZ" length:2];
+        p("as att contents copy",
+          [NSString stringWithFormat:@"len=%lu eq=%d",
+              (unsigned long)taCopy.contents.length, [taCopy.contents isEqual:taSnap]]);
+    }
+
+    p("as att character", [NSString stringWithFormat:@"%04X", NSAttachmentCharacter]);
+    p("as att const",
+      [NSString stringWithFormat:@"%@", NSAttachmentAttributeName]);
+
+    /* One-argument convenience: a one-character string on the attachment
+     * character whose NSAttachmentAttributeName value is the very instance
+     * passed in, spanning the whole string. */
+    {
+        NSTextAttachment *taC = [[NSTextAttachment alloc] init];
+        NSAttributedString *taStr = [NSAttributedString attributedStringWithAttachment:taC];
+        NSRange taEr = NSMakeRange(0, 0);
+        id taVal = [taStr attribute:NSAttachmentAttributeName atIndex:0 effectiveRange:&taEr];
+        p("as att convenience",
+          [NSString stringWithFormat:@"len=%lu ch=%04X has=%d same=%d er=%@",
+              (unsigned long)taStr.length,
+              [taStr.string characterAtIndex:0], taVal != nil, taVal == taC,
+              fmtRange(taEr)]);
+    }
+
+    /* Two-argument convenience: the attachment argument wins over any value
+     * already under NSAttachmentAttributeName, and the other attributes ride
+     * along untouched. */
+    {
+        NSTextAttachment *taWinner = [[NSTextAttachment alloc] init];
+        NSTextAttachment *taLoser = [[NSTextAttachment alloc] init];
+        NSAttributedString *taStr = [NSAttributedString
+            attributedStringWithAttachment:taWinner
+                                attributes:@{NSAttachmentAttributeName: taLoser, @"ak": @"F"}];
+        NSRange taEr = NSMakeRange(0, 0);
+        id taVal = [taStr attribute:NSAttachmentAttributeName atIndex:0 effectiveRange:&taEr];
+        p("as att convenience attrs",
+          [NSString stringWithFormat:@"len=%lu val==ta=%d val==other=%d ak=%@ er=%@",
+              (unsigned long)taStr.length, taVal == taWinner, taVal == taLoser,
+              [taStr attribute:@"ak" atIndex:0 effectiveRange:NULL], fmtRange(taEr)]);
+    }
+
+    /* The attachment value routes through the attribute machinery like any
+     * other object: a run carrying an NSTextAttachment across [0,3) reports
+     * that whole range as its longest effective range. */
+    {
+        NSTextAttachment *taR = [[NSTextAttachment alloc] init];
+        NSMutableAttributedString *taMut = [[NSMutableAttributedString alloc] initWithString:@"abcde"];
+        [taMut addAttribute:NSAttachmentAttributeName value:taR range:NSMakeRange(0, 3)];
+        NSRange taEr = NSMakeRange(0, 0);
+        id taVal = [taMut attribute:NSAttachmentAttributeName
+                            atIndex:0
+             longestEffectiveRange:&taEr
+                           inRange:NSMakeRange(0, 5)];
+        p("as att routing",
+          [NSString stringWithFormat:@"er=%@ same=%d", fmtRange(taEr), taVal == taR]);
+    }
+
+    /* Keyed-archive round trip: encode, decode, keep contents and fileType.
+     * No archive bytes are printed: the port's node layout is not expected to
+     * match Apple's byte-for-byte, only the object it decodes to.  Both the
+     * legacy and the secure readers are pinned. */
+    {
+        NSData *taArch = [NSKeyedArchiver archivedDataWithRootObject:taFull];
+        id taBack = [NSKeyedUnarchiver unarchiveObjectWithData:taArch];
+        p("as att archive",
+          [NSString stringWithFormat:@"decoded=%s ct=%d ft=%d",
+              taBack ? object_getClassName(taBack) : "nil",
+              [((NSTextAttachment *)taBack).contents isEqual:taData],
+              [((NSTextAttachment *)taBack).fileType isEqual:@"public.data"]]);
+        NSError *taErr = nil;
+        id taSecure = [NSKeyedUnarchiver
+            unarchivedObjectOfClass:[NSTextAttachment class]
+                           fromData:taArch
+                              error:&taErr];
+        p("as att archive secure",
+          [NSString stringWithFormat:@"decoded=%s ct=%d ft=%d err=%d",
+              taSecure ? object_getClassName(taSecure) : "nil",
+              [((NSTextAttachment *)taSecure).contents isEqual:taData],
+              [((NSTextAttachment *)taSecure).fileType isEqual:@"public.data"],
+              taErr != nil]);
+    }
+
+    /* Decode an archive Apple itself produced for the same contents/fileType
+     * graph as "as att data uti init" above, so the port's reader is proved
+     * against a foreign writer.  The bytes are the Apple ground truth captured
+     * on macOS 26; the writer's NSFileWrapper node is present but never
+     * decoded. */
+    {
+        const char *taAppleHex =
+            "62706c6973743030d4010203040506070a582476657273696f6e59246172636869766572"
+            "5424746f7058246f626a6563747312000186a05f100f4e534b65796564417263686976"
+            "6572d1080954726f6f748001a90b0c1516171b1f262a55246e756c6cd40d0e0f101112"
+            "13145624636c6173735b4e532e636f6e74656e74735b4e532e66696c65547970655d4e"
+            "5346696c655772617070657280088002800380044f1010303132333435363738396162"
+            "636465665b7075626c69632e64617461d2180d191a5f10114e5346696c655772617070"
+            "65724461746180058007d21c0d1d1e574e532e646174614f10bf727466640000000003"
+            "00000004000000020000002e2e130000005f5f405072656665727265644e616d65405f"
+            "5f170000005f5f40555446385072656665727265644e616d65405f5f010000002e1800"
+            "0000120000001200000026000000010000001000000030313233343536373839616263"
+            "646566010000000a0000004174746163686d656e74010000000a000000417474616368"
+            "6d656e74010000001e00000001000000020000002e2e1000000000000000b601000002"
+            "000000010000008006d2202122235a24636c6173736e616d655824636c61737365735d"
+            "4e534d757461626c6544617461a3222425564e5344617461584e534f626a656374d220"
+            "2127285d4e5346696c6557726170706572a229255d4e5346696c6557726170706572d2"
+            "20212b2c5f10104e53546578744174746163686d656e74a22d255f10104e5354657874"
+            "4174746163686d656e7400080011001a00240029003200370049004c00510053005d00"
+            "63006c0073007f008b0099009b009d009f00a100b400c000c500d900db00dd00e200ea"
+            "01ac01ae01b301be01c701d501d901e001e901ee01fc01ff020d021202250228000000"
+            "0000000201000000000000002e0000000000000000000000000000023b";
+        NSUInteger taHexLen = strlen(taAppleHex);
+        NSMutableData *taAppleData = [NSMutableData dataWithCapacity:taHexLen / 2];
+        for (NSUInteger i = 0; i + 1 < taHexLen; i += 2) {
+            unsigned int byte = 0;
+            sscanf(taAppleHex + i, "%2x", &byte);
+            uint8_t b = (uint8_t)byte;
+            [taAppleData appendBytes:&b length:1];
+        }
+        id taAppleBack = [NSKeyedUnarchiver unarchiveObjectWithData:taAppleData];
+        NSError *taAppleErr = nil;
+        id taAppleSecure = [NSKeyedUnarchiver
+            unarchivedObjectOfClass:[NSTextAttachment class]
+                           fromData:taAppleData
+                              error:&taAppleErr];
+        p("as att apple fixture",
+          [NSString stringWithFormat:@"decoded=%s ct=%d ft=%d",
+              taAppleBack ? object_getClassName(taAppleBack) : "nil",
+              [((NSTextAttachment *)taAppleBack).contents isEqual:taData],
+              [((NSTextAttachment *)taAppleBack).fileType isEqual:@"public.data"]]);
+        p("as att apple fixture secure",
+          [NSString stringWithFormat:@"decoded=%s ct=%d ft=%d err=%d",
+              taAppleSecure ? object_getClassName(taAppleSecure) : "nil",
+              [((NSTextAttachment *)taAppleSecure).contents isEqual:taData],
+              [((NSTextAttachment *)taAppleSecure).fileType isEqual:@"public.data"],
+              taAppleErr != nil]);
+    }
+
+    /* Corruption: garbage bytes cannot be a keyed archive at all. */
+    catchProbe("as att garbage", ^id {
+        const unsigned char gg[8] = {'g', 'a', 'r', 'b', 0, 'a', 'g', 'e'};
+        NSData *garbage = [NSData dataWithBytes:gg length:8];
+        NSError *err = nil;
+        id back = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSTextAttachment class]
+                                                    fromData:garbage
+                                                       error:&err];
+        if (back) return (id)@"decoded";
+        return [NSString stringWithFormat:@"err %@/%ld", err.domain, (long)err.code];
+    });
+
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
     port_behavior_pool();
 

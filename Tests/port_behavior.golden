@@ -1517,6 +1517,20 @@ as ct apple fixture                        | 4:{ak=F}|1:{ak=F,ck=2}|2:{ck=2}|4:{
 as ct apple fixture eq                     | 1
 as ct garbage                              | err NSCocoaErrorDomain/4864
 as ct wrong class                          | err NSCocoaErrorDomain/4864
+as att supportsSecureCoding                | 1
+as att empty init                          | ct=0 ft=0
+as att data uti init                       | ct=1 ft=1
+as att contents copy                       | len=16 eq=1
+as att character                           | FFFC
+as att const                               | NSAttachment
+as att convenience                         | len=1 ch=FFFC has=1 same=1 er={0,1}
+as att convenience attrs                   | len=1 val==ta=1 val==other=0 ak=F er={0,1}
+as att routing                             | er={0,3} same=1
+as att archive                             | decoded=NSTextAttachment ct=1 ft=1
+as att archive secure                      | decoded=NSTextAttachment ct=1 ft=1 err=0
+as att apple fixture                       | decoded=NSTextAttachment ct=1 ft=1
+as att apple fixture secure                | decoded=NSTextAttachment ct=1 ft=1 err=0
+as att garbage                             | err NSCocoaErrorDomain/4864
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1
