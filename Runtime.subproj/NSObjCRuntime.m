@@ -15,8 +15,13 @@ static NSString *_stringFromCString(const char *cString) {
     if (cString == NULL) {
         return nil;
     }
-    return (NSString *)CFStringCreateWithCString(kCFAllocatorDefault, cString,
-                                                 kCFStringEncodingUTF8);
+    /* Every caller (NSStringFromSelector, NSStringFromClass,
+     * NSStringFromProtocol) is documented by Cocoa as a plain accessor, not a
+     * Create or Copy function, so it hands back an autoreleased +0 object. This
+     * file is built with -fno-objc-arc, which makes the +1 from the Create rule
+     * leak on every call unless it is balanced here. */
+    return [(NSString *)CFStringCreateWithCString(kCFAllocatorDefault, cString,
+                                                  kCFStringEncodingUTF8) autorelease];
 }
 
 /* CFStringGetCStringPtr can refuse, so go through a bounded copy. */
