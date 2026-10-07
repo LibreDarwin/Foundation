@@ -219,6 +219,8 @@ GATE_SRCS = String.subproj/NSString.m \
             Serialization.subproj/NSCoder.m \
             Serialization.subproj/NSKeyedArchiver.m \
             Serialization.subproj/NSKeyedUnarchiver.m \
+            String.subproj/NSTextCheckingResult.m \
+            String.subproj/NSRegularExpression.m \
             Predicate.subproj/NSPredicate.m \
             Predicate.subproj/NSComparisonPredicate.m \
             Predicate.subproj/NSCompoundPredicate.m \
