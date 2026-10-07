@@ -222,6 +222,8 @@ GATE_SRCS = String.subproj/NSString.m \
             Serialization.subproj/NSKeyedUnarchiver.m \
             String.subproj/NSTextCheckingResult.m \
             String.subproj/NSRegularExpression.m \
+            Runtime.subproj/NSMethodSignature.m \
+            Runtime.subproj/NSInvocation.m \
             Predicate.subproj/NSPredicate.m \
             Predicate.subproj/NSComparisonPredicate.m \
             Predicate.subproj/NSCompoundPredicate.m \
@@ -239,6 +241,8 @@ MRC_SOURCES = ./Collections.subproj/NSMapTable.m \
               ./Runtime.subproj/NSAutoreleasePool.m \
               ./Runtime.subproj/NSBundle.m \
               ./Runtime.subproj/NSException.m \
+              ./Runtime.subproj/NSInvocation.m \
+              ./Runtime.subproj/NSMethodSignature.m \
               ./Runtime.subproj/NSObjCRuntime.m \
               ./Runtime.subproj/NSProcessInfo.m \
               ./Runtime.subproj/NSUserDefaults.m \
@@ -246,7 +250,7 @@ MRC_SOURCES = ./Collections.subproj/NSMapTable.m \
               ./Runtime.subproj/NSZone.m
 
 # The gate compiles a subset of GATE_SRCS with -fno-objc-arc as well.
-MRC_GATE_PAT = Collections.subproj/NSData.m|Collections.subproj/NSMapTable.m|Collections.subproj/NSHashTable.m|Collections.subproj/NSPointerFunctions.m|Runtime.subproj/NSAutoreleasePool.m|Runtime.subproj/NSException.m|Runtime.subproj/NSObjCRuntime.m|Runtime.subproj/NSValue.m|Runtime.subproj/NSZone.m
+MRC_GATE_PAT = Collections.subproj/NSData.m|Collections.subproj/NSMapTable.m|Collections.subproj/NSHashTable.m|Collections.subproj/NSPointerFunctions.m|Runtime.subproj/NSAutoreleasePool.m|Runtime.subproj/NSException.m|Runtime.subproj/NSObjCRuntime.m|Runtime.subproj/NSValue.m|Runtime.subproj/NSZone.m|Runtime.subproj/NSInvocation.m|Runtime.subproj/NSMethodSignature.m
 
 # The gate executable links against Apple's CoreFoundation for its CF_* C
 # symbols only.  It must link with the Apple SDK sysroot, not ${RN}: the
@@ -270,7 +274,7 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	    build/${CONFIG}/gate/*.o -framework CoreFoundation
 	@build/${CONFIG}/port_behavior > build/${CONFIG}/port_behavior.out
 	@diff Tests/port_behavior.golden build/${CONFIG}/port_behavior.out \
-	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 1766 probes)"
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 1793 probes)"
 
 verify: pairing-sweep behavior-gate
 

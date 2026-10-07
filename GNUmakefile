@@ -35,7 +35,7 @@ include Common.mk
 # GNU pattern rule (bmake cannot match a literal directory prefix in a
 # pattern rule; it uses the .for loop in Makefile instead).  Most sources
 # are ARC; the sources in MRC_OBJ_PAT are compiled with -fno-objc-arc.
-MRC_OBJ_PAT = Collections.subproj/NSMapTable.m|Collections.subproj/NSHashTable.m|Collections.subproj/NSPointerFunctions.m|Collections.subproj/NSData.m|FileManager.subproj/NSFileHandle.m|FileManager.subproj/NSFileManager.m|FileManager.subproj/NSPathUtilities.m|Runtime.subproj/NSAutoreleasePool.m|Runtime.subproj/NSBundle.m|Runtime.subproj/NSException.m|Runtime.subproj/NSObjCRuntime.m|Runtime.subproj/NSProcessInfo.m|Runtime.subproj/NSUserDefaults.m|Runtime.subproj/NSValue.m|Runtime.subproj/NSZone.m
+MRC_OBJ_PAT = Collections.subproj/NSMapTable.m|Collections.subproj/NSHashTable.m|Collections.subproj/NSPointerFunctions.m|Collections.subproj/NSData.m|FileManager.subproj/NSFileHandle.m|FileManager.subproj/NSFileManager.m|FileManager.subproj/NSPathUtilities.m|Runtime.subproj/NSAutoreleasePool.m|Runtime.subproj/NSBundle.m|Runtime.subproj/NSException.m|Runtime.subproj/NSObjCRuntime.m|Runtime.subproj/NSProcessInfo.m|Runtime.subproj/NSUserDefaults.m|Runtime.subproj/NSValue.m|Runtime.subproj/NSZone.m|Runtime.subproj/NSMethodSignature.m|Runtime.subproj/NSInvocation.m
 
 build/$(CONFIG)/objects/%.o: %.m build/gen/Foundation/Foundation.h
 	@mkdir -p $(@D)

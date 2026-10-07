@@ -1763,6 +1763,33 @@ kvo ordered remove                         | kp=items k=3 old=(a) idx=0
 kvo ordered replace                        | kp=items k=4 old=(b) new=(Q) idx=0
 kvo set union                              | kp=tags k=2 new={z}
 kvo set minus                              | kp=tags k=3 old={x}
+msig nargs                                 | 4
+msig ret                                   | i
+msig retlen                                | 4
+msig arg0                                  | @
+msig arg1                                  | :
+msig arg2                                  | i
+msig arg3                                  | i
+msig out of range                          | NSInvalidArgumentException
+msig void nargs                            | 2
+msig void ret                              | v
+msig void retlen                           | 0
+msig obj nargs                             | 2
+msig obj ret                               | @
+msig obj retlen                            | 8
+msig inst known                            | i
+msig unknown instance                      | nil
+msig responds label                        | @
+msig unknown selector                      | nil
+inv default retained                       | 0
+inv add result                             | 9
+inv retained after                         | 1
+inv half result                            | 4.5
+inv label result                           | target
+fwd forwardingTarget                       | nil
+inv forward return                         | 60
+inv forward arg                            | 6
+fwd default raise                          | NSInvalidArgumentException
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1

@@ -545,6 +545,48 @@ static NSString *kvoDrain(PKVOObserver *observer) {
     return out;
 }
 
+/* NSInvocation/NSMethodSignature/forwarding probes. */
+@interface PInvokeTarget : NSObject
+- (int)add:(int)a to:(int)b;
+- (double)half:(double)x;
+- (NSString *)label;
+@end
+
+@implementation PInvokeTarget
+- (int)add:(int)a to:(int)b { return a + b; }
+- (double)half:(double)x { return x / 2.0; }
+- (NSString *)label { return @"target"; }
+@end
+
+@interface PForwarder : NSObject
+@property (nonatomic, assign) NSInteger lastArgument;
+@end
+
+/* Declared but deliberately unimplemented: exercised through forwarding. */
+@interface PForwarder (Forwarded)
+- (int)timesTen:(int)x;
+@end
+
+@implementation PForwarder
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)selector {
+    if (selector == @selector(timesTen:)) {
+        return [NSMethodSignature signatureWithObjCTypes:"i@:i"];
+    }
+    return [super methodSignatureForSelector:selector];
+}
+- (void)forwardInvocation:(NSInvocation *)invocation {
+    if ([invocation selector] == @selector(timesTen:)) {
+        int x = 0;
+        [invocation getArgument:&x atIndex:2];
+        self.lastArgument = x;
+        int result = x * 10;
+        [invocation setReturnValue:&result];
+        return;
+    }
+    [super forwardInvocation:invocation];
+}
+@end
+
 int main(void) {
     /* Line-buffer stdout so a crash reveals the exact failing probe. */
     setvbuf(stdout, NULL, _IOLBF, 0);
@@ -4275,6 +4317,98 @@ int main(void) {
     [kt didChangeValueForKey:@"tags" withSetMutation:NSKeyValueMinusSetMutation usingObjects:[NSSet setWithObject:@"x"]];
     p("kvo set minus", kvoDrain(ko));
     [kt removeObserver:ko forKeyPath:@"tags"];
+
+    /* ---------- NSMethodSignature ---------- */
+    NSMethodSignature *msig = [NSMethodSignature signatureWithObjCTypes:"i@:ii"];
+    p("msig nargs", [NSString stringWithFormat:@"%lu", (unsigned long)[msig numberOfArguments]]);
+    p("msig ret", [NSString stringWithUTF8String:[msig methodReturnType]]);
+    p("msig retlen", [NSString stringWithFormat:@"%lu", (unsigned long)[msig methodReturnLength]]);
+    p("msig arg0", [NSString stringWithUTF8String:[msig getArgumentTypeAtIndex:0]]);
+    p("msig arg1", [NSString stringWithFormat:@"%s", [msig getArgumentTypeAtIndex:1]]);
+    p("msig arg2", [NSString stringWithFormat:@"%s", [msig getArgumentTypeAtIndex:2]]);
+    p("msig arg3", [NSString stringWithFormat:@"%s", [msig getArgumentTypeAtIndex:3]]);
+    @try {
+        [msig getArgumentTypeAtIndex:4];
+        p("msig out of range", @"no-raise");
+    } @catch (NSException *e) {
+        p("msig out of range", e.name);
+    }
+    NSMethodSignature *msigVoid = [NSMethodSignature signatureWithObjCTypes:"v@:"];
+    p("msig void nargs", [NSString stringWithFormat:@"%lu", (unsigned long)[msigVoid numberOfArguments]]);
+    p("msig void ret", [NSString stringWithFormat:@"%s", [msigVoid methodReturnType]]);
+    p("msig void retlen", [NSString stringWithFormat:@"%lu", (unsigned long)[msigVoid methodReturnLength]]);
+    NSMethodSignature *msigObj = [NSMethodSignature signatureWithObjCTypes:"@@:"];
+    p("msig obj nargs", [NSString stringWithFormat:@"%lu", (unsigned long)[msigObj numberOfArguments]]);
+    p("msig obj ret", [NSString stringWithFormat:@"%s", [msigObj methodReturnType]]);
+    p("msig obj retlen", [NSString stringWithFormat:@"%lu", (unsigned long)[msigObj methodReturnLength]]);
+
+    NSMethodSignature *instAddSig = [PInvokeTarget instanceMethodSignatureForSelector:@selector(add:to:)];
+    p("msig inst known", instAddSig != nil ? [NSString stringWithFormat:@"%s", [instAddSig methodReturnType]] : @"nil");
+    NSMethodSignature *unknownInstance = [PInvokeTarget instanceMethodSignatureForSelector:@selector(noSuchMethod)];
+    p("msig unknown instance", unknownInstance == nil ? @"nil" : @"nonnull");
+
+    PInvokeTarget *pit = [PInvokeTarget new];
+    NSMethodSignature *labelSig = [pit methodSignatureForSelector:@selector(label)];
+    p("msig responds label", labelSig != nil ? [NSString stringWithFormat:@"%s", [labelSig methodReturnType]] : @"nil");
+    NSMethodSignature *unknownSig = [pit methodSignatureForSelector:@selector(noSuchMethod)];
+    p("msig unknown selector", unknownSig == nil ? @"nil" : @"nonnull");
+
+    /* ---------- NSInvocation ---------- */
+    NSMethodSignature *addSig = [pit methodSignatureForSelector:@selector(add:to:)];
+    NSInvocation *inv = [NSInvocation invocationWithMethodSignature:addSig];
+    p("inv default retained", [NSString stringWithFormat:@"%d", [inv argumentsRetained]]);
+    [inv setTarget:pit];
+    [inv setSelector:@selector(add:to:)];
+    int av = 4, bv = 5, sum = 0;
+    [inv setArgument:&av atIndex:2];
+    [inv setArgument:&bv atIndex:3];
+    [inv invoke];
+    [inv getReturnValue:&sum];
+    p("inv add result", [NSString stringWithFormat:@"%d", sum]);
+    [inv retainArguments];
+    p("inv retained after", [NSString stringWithFormat:@"%d", [inv argumentsRetained]]);
+
+    NSMethodSignature *halfSig = [pit methodSignatureForSelector:@selector(half:)];
+    NSInvocation *inv2 = [NSInvocation invocationWithMethodSignature:halfSig];
+    [inv2 setSelector:@selector(half:)];
+    double hv = 9.0, hr = 0.0;
+    [inv2 setArgument:&hv atIndex:2];
+    [inv2 invokeWithTarget:pit];
+    [inv2 getReturnValue:&hr];
+    p("inv half result", [NSString stringWithFormat:@"%.1f", hr]);
+
+    NSMethodSignature *labelSig2 = [pit methodSignatureForSelector:@selector(label)];
+    NSInvocation *inv3 = [NSInvocation invocationWithMethodSignature:labelSig2];
+    [inv3 setSelector:@selector(label)];
+    [inv3 invokeWithTarget:pit];
+    id labelValue = nil;
+    [inv3 getReturnValue:&labelValue];
+    p("inv label result", labelValue != nil ? labelValue : @"nil");
+
+    /* ---------- forwarding ---------- */
+    PForwarder *fwd = [PForwarder new];
+    p("fwd forwardingTarget", [pit forwardingTargetForSelector:@selector(noSuchMethod)] == nil ? @"nil" : @"nonnull");
+
+    NSMethodSignature *forwardSig = [fwd methodSignatureForSelector:@selector(timesTen:)];
+    NSInvocation *forwardInv = [NSInvocation invocationWithMethodSignature:forwardSig];
+    [forwardInv setSelector:@selector(timesTen:)];
+    int forwardArg = 6, forwardRet = 0;
+    [forwardInv setArgument:&forwardArg atIndex:2];
+    [fwd forwardInvocation:forwardInv];
+    [forwardInv getReturnValue:&forwardRet];
+    p("inv forward return", [NSString stringWithFormat:@"%d", forwardRet]);
+    p("inv forward arg", [NSString stringWithFormat:@"%ld", (long)fwd.lastArgument]);
+
+    @try {
+        NSMethodSignature *vsig = [NSMethodSignature signatureWithObjCTypes:"v@:"];
+        NSInvocation *vinv = [NSInvocation invocationWithMethodSignature:vsig];
+        [vinv setTarget:pit];
+        [vinv setSelector:@selector(noSuchMethod)];
+        [pit forwardInvocation:vinv];
+        p("fwd default raise", @"no-raise");
+    } @catch (NSException *e) {
+        p("fwd default raise", e.name);
+    }
 
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
     port_behavior_pool();
