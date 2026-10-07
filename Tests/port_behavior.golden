@@ -1742,6 +1742,27 @@ pd any modifier                            | 1
 pd any modifier none                       | 0
 pd all modifier                            | 1
 pd all modifier none                       | 0
+kvo auto target name                       | 0
+kvo auto default                           | 1
+kvo deps display                           | 1:name
+kvo deps none                              | 0
+kvo default raise                          | NSInternalInconsistencyException
+kvo obsInfo before                         | NULL
+kvo obsInfo after                          | nonnull
+kvo set new+old                            | kp=name k=1 old=a new=b
+kvo obsInfo removed                        | NULL
+kvo set new only                           | kp=name k=1 new=c
+kvo set old only                           | kp=name k=1 old=c
+kvo set prior                              | kp=name k=1 prior old=d | kp=name k=1 old=d new=e
+kvo initial                                | kp=name k=1 new=e
+kvo dependent                              | kp=display k=1 new=D:f
+kvo context                                | kp=name k=1 new=g ctx
+kvo remove unregistered                    | NSRangeException
+kvo ordered insert                         | kp=items k=2 new=(Z) idx=3
+kvo ordered remove                         | kp=items k=3 old=(a) idx=0
+kvo ordered replace                        | kp=items k=4 old=(b) new=(Q) idx=0
+kvo set union                              | kp=tags k=2 new={z}
+kvo set minus                              | kp=tags k=3 old={x}
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1

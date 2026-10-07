@@ -434,6 +434,117 @@ static void asCtBrief(const char *label, NSAttributedString *a) {
               [b isEqualToAttributedString:a] ? 1 : 0, first, last]);
 }
 
+/* A KVO target that opts out of automatic notification so the probes drive
+ * -willChangeValueForKey:/-didChangeValueForKey: themselves (the manual KVO
+ * half the port implements).  ``display'' is declared dependent on ``name''. */
+@interface PKVOTarget : NSObject
+@property (nonatomic, strong) NSString *name;
+@property (nonatomic, strong) NSMutableArray *items;
+@property (nonatomic, strong) NSMutableSet *tags;
+@end
+
+@implementation PKVOTarget
++ (BOOL)automaticallyNotifiesObserversForKey:(NSString *)key {
+    (void)key;
+    return NO;
+}
++ (NSSet *)keyPathsForValuesAffectingDisplay {
+    return [NSSet setWithObject:@"name"];
+}
+- (NSString *)display {
+    return [@"D:" stringByAppendingString:self.name ?: @"-"];
+}
+- (void)setName:(NSString *)name {
+    [self willChangeValueForKey:@"name"];
+    _name = name;
+    [self didChangeValueForKey:@"name"];
+}
+@end
+
+@interface PKVOObserver : NSObject
+@property (nonatomic, strong) NSMutableArray<NSString *> *log;
+@property (nonatomic, assign) void *markedContext;
+@end
+
+static NSString *kvoIdx(NSIndexSet *s) {
+    if (s == nil) return @"-";
+    NSMutableString *o = [NSMutableString string];
+    __block NSUInteger i = 0;
+    [s enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
+        if (i++) [o appendString:@","];
+        [o appendFormat:@"%lu", (unsigned long)idx];
+    }];
+    return o;
+}
+
+static NSString *kvoVal(id v) {
+    if (v == nil) return @"-";
+    if ([v isKindOfClass:[NSArray class]]) {
+        NSMutableString *o = [NSMutableString string];
+        [o appendString:@"("];
+        NSUInteger n = [v count];
+        for (NSUInteger i = 0; i < n; i++) {
+            if (i) [o appendString:@","];
+            [o appendFormat:@"%@", [v objectAtIndex:i]];
+        }
+        [o appendString:@")"];
+        return o;
+    }
+    if ([v isKindOfClass:[NSSet class]]) {
+        NSArray *a = [[v allObjects] sortedArrayUsingSelector:@selector(compare:)];
+        NSMutableString *o = [NSMutableString string];
+        [o appendString:@"{"];
+        for (NSUInteger i = 0; i < [a count]; i++) {
+            if (i) [o appendString:@","];
+            [o appendFormat:@"%@", [a objectAtIndex:i]];
+        }
+        [o appendString:@"}"];
+        return o;
+    }
+    return [NSString stringWithFormat:@"%@", v];
+}
+
+@implementation PKVOObserver
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        _log = [NSMutableArray array];
+    }
+    return self;
+}
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary *)change
+                       context:(void *)context {
+    (void)object;
+    NSMutableString *s = [NSMutableString string];
+    [s appendFormat:@"kp=%@ k=%@", keyPath, [change objectForKey:NSKeyValueChangeKindKey]];
+    if ([change objectForKey:NSKeyValueChangeNotificationIsPriorKey]) [s appendString:@" prior"];
+    if ([change objectForKey:NSKeyValueChangeOldKey]) {
+        [s appendFormat:@" old=%@", kvoVal([change objectForKey:NSKeyValueChangeOldKey])];
+    }
+    if ([change objectForKey:NSKeyValueChangeNewKey]) {
+        [s appendFormat:@" new=%@", kvoVal([change objectForKey:NSKeyValueChangeNewKey])];
+    }
+    if ([change objectForKey:NSKeyValueChangeIndexesKey]) {
+        [s appendFormat:@" idx=%@", kvoIdx([change objectForKey:NSKeyValueChangeIndexesKey])];
+    }
+    if (context != NULL && context == self.markedContext) [s appendString:@" ctx"];
+    [self.log addObject:s];
+}
+@end
+
+static NSString *kvoDrain(PKVOObserver *observer) {
+    NSMutableString *out = [NSMutableString string];
+    NSUInteger n = [observer.log count];
+    for (NSUInteger i = 0; i < n; i++) {
+        if (i != 0) [out appendString:@" | "];
+        [out appendString:[observer.log objectAtIndex:i]];
+    }
+    [observer.log removeAllObjects];
+    return out;
+}
+
 int main(void) {
     /* Line-buffer stdout so a crash reveals the exact failing probe. */
     setvbuf(stdout, NULL, _IOLBF, 0);
@@ -4056,6 +4167,115 @@ int main(void) {
     p("pd any modifier none", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"ANY age == 99"] evaluateWithObject:pdPeople]]);
     p("pd all modifier", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"ALL age < 100"] evaluateWithObject:pdPeople]]);
     p("pd all modifier none", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"ALL age > 100"] evaluateWithObject:pdPeople]]);
+    /* ---------- Key-Value Observing ---------- */
+    p("kvo auto target name", [NSString stringWithFormat:@"%d", [PKVOTarget automaticallyNotifiesObserversForKey:@"name"]]);
+    p("kvo auto default", [NSString stringWithFormat:@"%d", [NSObject automaticallyNotifiesObserversForKey:@"anything"]]);
+    {
+        NSArray *deps = [[PKVOTarget keyPathsForValuesAffectingValueForKey:@"display"] allObjects];
+        p("kvo deps display", [NSString stringWithFormat:@"%lu:%@", (unsigned long)[deps count],
+              [deps count] ? [deps objectAtIndex:0] : @"-"]);
+    }
+    p("kvo deps none", [NSString stringWithFormat:@"%lu",
+          (unsigned long)[[PKVOTarget keyPathsForValuesAffectingValueForKey:@"name"] count]]);
+
+    @try {
+        NSObject *plain = [NSObject new];
+        [plain observeValueForKeyPath:@"name" ofObject:nil change:@{} context:NULL];
+        p("kvo default raise", @"no-raise");
+    } @catch (NSException *e) {
+        p("kvo default raise", e.name);
+    }
+
+    PKVOTarget *kt = [PKVOTarget new];
+    kt.name = @"a";
+    NSMutableArray *kvoItems = [NSMutableArray array];
+    [kvoItems addObject:@"a"];
+    [kvoItems addObject:@"b"];
+    [kvoItems addObject:@"c"];
+    kt.items = kvoItems;
+    NSMutableSet *kvoTags = [[NSMutableSet alloc] initWithCapacity:4];
+    [kvoTags addObject:@"x"];
+    [kvoTags addObject:@"y"];
+    kt.tags = kvoTags;
+    PKVOObserver *ko = [PKVOObserver new];
+
+    p("kvo obsInfo before", kt.observationInfo == NULL ? @"NULL" : @"nonnull");
+    [kt addObserver:ko forKeyPath:@"name" options:(NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld) context:NULL];
+    p("kvo obsInfo after", kt.observationInfo != NULL ? @"nonnull" : @"NULL");
+    kt.name = @"b";
+    p("kvo set new+old", kvoDrain(ko));
+    [kt removeObserver:ko forKeyPath:@"name"];
+    p("kvo obsInfo removed", [kt observationInfo] == NULL ? @"NULL" : @"nonnull");
+
+    [kt addObserver:ko forKeyPath:@"name" options:NSKeyValueObservingOptionNew context:NULL];
+    kt.name = @"c";
+    p("kvo set new only", kvoDrain(ko));
+    [kt removeObserver:ko forKeyPath:@"name"];
+
+    [kt addObserver:ko forKeyPath:@"name" options:NSKeyValueObservingOptionOld context:NULL];
+    kt.name = @"d";
+    p("kvo set old only", kvoDrain(ko));
+    [kt removeObserver:ko forKeyPath:@"name"];
+
+    [kt addObserver:ko forKeyPath:@"name"
+            options:(NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld | NSKeyValueObservingOptionPrior)
+            context:NULL];
+    kt.name = @"e";
+    p("kvo set prior", kvoDrain(ko));
+    [kt removeObserver:ko forKeyPath:@"name"];
+
+    [kt addObserver:ko forKeyPath:@"name"
+            options:(NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld)
+            context:NULL];
+    p("kvo initial", kvoDrain(ko));
+    [kt removeObserver:ko forKeyPath:@"name"];
+
+    [kt addObserver:ko forKeyPath:@"display" options:NSKeyValueObservingOptionNew context:NULL];
+    kt.name = @"f";
+    p("kvo dependent", kvoDrain(ko));
+    [kt removeObserver:ko forKeyPath:@"display"];
+
+    ko.markedContext = (void *)0x1234;
+    [kt addObserver:ko forKeyPath:@"name" options:NSKeyValueObservingOptionNew context:ko.markedContext];
+    kt.name = @"g";
+    p("kvo context", kvoDrain(ko));
+    [kt removeObserver:ko forKeyPath:@"name" context:ko.markedContext];
+    @try {
+        [kt removeObserver:ko forKeyPath:@"name"];
+        p("kvo remove unregistered", @"no-raise");
+    } @catch (NSException *e) {
+        p("kvo remove unregistered", e.name);
+    }
+    ko.markedContext = NULL;
+
+    [kt addObserver:ko forKeyPath:@"items"
+            options:(NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld) context:NULL];
+    [kt willChange:NSKeyValueChangeInsertion valuesAtIndexes:[NSIndexSet indexSetWithIndex:3] forKey:@"items"];
+    [kt.items addObject:@"Z"];
+    [kt didChange:NSKeyValueChangeInsertion valuesAtIndexes:[NSIndexSet indexSetWithIndex:3] forKey:@"items"];
+    p("kvo ordered insert", kvoDrain(ko));
+    [kt willChange:NSKeyValueChangeRemoval valuesAtIndexes:[NSIndexSet indexSetWithIndex:0] forKey:@"items"];
+    [kt.items removeObjectAtIndex:0];
+    [kt didChange:NSKeyValueChangeRemoval valuesAtIndexes:[NSIndexSet indexSetWithIndex:0] forKey:@"items"];
+    p("kvo ordered remove", kvoDrain(ko));
+    [kt willChange:NSKeyValueChangeReplacement valuesAtIndexes:[NSIndexSet indexSetWithIndex:0] forKey:@"items"];
+    [kt.items replaceObjectAtIndex:0 withObject:@"Q"];
+    [kt didChange:NSKeyValueChangeReplacement valuesAtIndexes:[NSIndexSet indexSetWithIndex:0] forKey:@"items"];
+    p("kvo ordered replace", kvoDrain(ko));
+    [kt removeObserver:ko forKeyPath:@"items"];
+
+    [kt addObserver:ko forKeyPath:@"tags"
+            options:(NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld) context:NULL];
+    [kt willChangeValueForKey:@"tags" withSetMutation:NSKeyValueUnionSetMutation usingObjects:[NSSet setWithObject:@"z"]];
+    [kt.tags addObject:@"z"];
+    [kt didChangeValueForKey:@"tags" withSetMutation:NSKeyValueUnionSetMutation usingObjects:[NSSet setWithObject:@"z"]];
+    p("kvo set union", kvoDrain(ko));
+    [kt willChangeValueForKey:@"tags" withSetMutation:NSKeyValueMinusSetMutation usingObjects:[NSSet setWithObject:@"x"]];
+    [kt.tags removeObject:@"x"];
+    [kt didChangeValueForKey:@"tags" withSetMutation:NSKeyValueMinusSetMutation usingObjects:[NSSet setWithObject:@"x"]];
+    p("kvo set minus", kvoDrain(ko));
+    [kt removeObserver:ko forKeyPath:@"tags"];
+
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
     port_behavior_pool();
 
