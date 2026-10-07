@@ -218,7 +218,11 @@ GATE_SRCS = String.subproj/NSString.m \
             Runtime.subproj/NSValueTransformer.m \
             Serialization.subproj/NSCoder.m \
             Serialization.subproj/NSKeyedArchiver.m \
-            Serialization.subproj/NSKeyedUnarchiver.m
+            Serialization.subproj/NSKeyedUnarchiver.m \
+            Predicate.subproj/NSPredicate.m \
+            Predicate.subproj/NSComparisonPredicate.m \
+            Predicate.subproj/NSCompoundPredicate.m \
+            Predicate.subproj/NSExpression.m
 
 # Sources written for non-ARC (they cast raw CF objects without __bridge).
 # The bmake compile rules match with :M; the GNU rules use MRC_OBJ_PAT.
