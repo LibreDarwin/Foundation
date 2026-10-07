@@ -10,8 +10,11 @@
 #import <Foundation/NSCoder.h>
 #import <Foundation/NSString.h>
 #import <Foundation/NSException.h>
+#import <Foundation/NSZone.h>
+#import <Foundation/NSObjCRuntime.h>
 
 #include <string.h>
+#include <stdlib.h>
 #include <objc/runtime.h>
 
 /*
@@ -82,389 +85,457 @@ __asm__(
 "    ret\n"
 );
 
+/* Frame layout constants, mirroring NSMethodSignature.m. */
+#define NSFRAME_GP_LIMIT 0x40
+#define NSFRAME_FP_BASE  0x50
+#define NSFRAME_FP_LIMIT 0xd0
+#define NSFRAME_STACK    0xe0
+#define NSINVOCATION_BUFFER_HEADROOM 0x140
+#define NSINVOCATION_MAGIC 0x29332568u
+
+static uint64_t NSPACGA(uint64_t modifier, uint64_t data) {
+    uint64_t result;
+
+    __asm__ volatile("pacga %0, %1, %2" : "=r"(result) : "r"(modifier), "r"(data));
+
+    return result;
+}
+
+@interface NSInvocation (LibreDarwinPrivate)
+- (uint64_t)_ns_computeInvocationChecksum;
+@end
+
+/*
+ * CoreFoundation derives a PAC checksum over a handful of invocation fields
+ * and re-derives it before dispatching a forwarded message.  We reproduce the
+ * same chain so our value stays consistent with its verification.
+ */
+@implementation NSInvocation (LibreDarwinPrivate)
+
+- (uint64_t)_ns_computeInvocationChecksum {
+    uint64_t hash = NSPACGA((uint64_t)[_signature numberOfArguments], 0x1f99ULL);
+
+    hash = NSPACGA(_magic, hash);
+    hash = NSPACGA((uint64_t)(uintptr_t)_signature, hash);
+    hash = NSPACGA((uint64_t)(uintptr_t)object_getClass(self), hash);
+    hash = NSPACGA((uint64_t)[_signature frameLength], hash);
+
+    if ([_signature frameLength] != 0) {
+        const uint64_t *frame = (const uint64_t *)_frame;
+        unsigned i;
+
+        for (i = 0; i < 8; i++)
+            hash = NSPACGA(frame[i], hash);
+    }
+
+    hash = NSPACGA((uint64_t)(uintptr_t)self, hash);
+
+    return hash;
+}
+
+@end
+
 @implementation NSInvocation
 
--(void)buildFrame {
-   NSInteger  i,count=[_signature numberOfArguments];
-   NSUInteger align;
-
-   NSGetSizeAndAlignment([_signature methodReturnType],&_returnSize,&align);
-   _returnValue=NSZoneCalloc(NULL,MAX(_returnSize, sizeof(long)),1);
-
-   _argumentFrameSize=0;
-   _argumentSizes=NSZoneCalloc(NULL,count,sizeof(NSUInteger));
-   _argumentOffsets=NSZoneCalloc(NULL,count,sizeof(NSUInteger));
-
-   for(i=0;i<count;i++){
-    NSUInteger naturalSize;
-    NSUInteger promotedSize;
-
-    _argumentOffsets[i]=_argumentFrameSize;
-
-    NSGetSizeAndAlignment([_signature getArgumentTypeAtIndex:i],&naturalSize,&align);
-    promotedSize=((naturalSize+sizeof(long)-1)/sizeof(long))*sizeof(long);
-
-    _argumentSizes[i]=naturalSize;
-    _argumentFrameSize+=promotedSize;
-   }
++ (NSInvocation *)invocationWithMethodSignature:(NSMethodSignature *)signature {
+    return [[[self allocWithZone:NULL] initWithMethodSignature:signature] autorelease];
 }
 
--initWithMethodSignature:(NSMethodSignature *)signature {
-   if(signature==nil){
-    [NSException raise:NSInvalidArgumentException format:@"nil signature in NSInvocation creation"];
-    return nil;
-   }
-
-   _signature=[signature retain];
-
-   [self buildFrame];
-
-   _argumentFrame=NSZoneCalloc(NULL,_argumentFrameSize,1);
-
-   return self;
++ (NSInvocation *)invocationWithMethodSignature:(NSMethodSignature *)signature
+                                      arguments:(void *)arguments {
+    return [[[self allocWithZone:NULL] initWithMethodSignature:signature
+                                                      arguments:arguments] autorelease];
 }
 
--initWithMethodSignature:(NSMethodSignature *)signature arguments:(void *)arguments {
-   unsigned       i;
-   uint8_t *stackFrame=arguments;
+- (id)initWithMethodSignature:(NSMethodSignature *)signature {
+    if (signature == nil) {
+        [NSException raise:NSInvalidArgumentException
+                    format:@"nil signature in NSInvocation creation"];
+        return nil;
+    }
 
-   [self initWithMethodSignature:signature];
+    NSUInteger size = [signature frameLength] + NSINVOCATION_BUFFER_HEADROOM;
 
-   for(i=0;i<_argumentFrameSize;i++)
-    _argumentFrame[i]=stackFrame[i];
+    _signature = [signature retain];
+    _container = nil;
+    _retdata = NSZoneCalloc(NULL, size, 1);
+    _frame = (uint8_t *)_retdata + NSINVOCATION_BUFFER_HEADROOM;
+    _magic = NSINVOCATION_MAGIC;
+    _retainedArgs = 0;
+    _stackAllocated = 0;
+    _returnSize = [signature methodReturnLength];
+    _bufferSize = size;
+    _retainArguments = NO;
+    _pac_signature = [self _ns_computeInvocationChecksum];
 
-   return self;
+    return self;
 }
 
--(void)dealloc {
+- (id)initWithMethodSignature:(NSMethodSignature *)signature arguments:(void *)arguments {
+    NSUInteger frameLength;
+
+    if ([self initWithMethodSignature:signature] == nil)
+        return nil;
+
+    frameLength = [signature frameLength];
+    if (arguments != NULL && frameLength > 0)
+        memcpy(_frame, arguments, frameLength);
+
+    return self;
+}
+
+- (id)initWithCoder:(NSCoder *)coder {
+    void  *buffer = NULL;
+    const char *type;
+    NSInteger   i, count;
+
+    _signature = [[coder decodeObject] retain];
+
+    NSUInteger size = [_signature frameLength] + NSINVOCATION_BUFFER_HEADROOM;
+    _retdata = NSZoneCalloc(NULL, size, 1);
+    _frame = (uint8_t *)_retdata + NSINVOCATION_BUFFER_HEADROOM;
+    _container = nil;
+    _magic = NSINVOCATION_MAGIC;
+    _retainedArgs = 0;
+    _stackAllocated = 0;
+    _returnSize = [_signature methodReturnLength];
+    _bufferSize = size;
+    _retainArguments = NO;
+
+    if ([_signature methodReturnLength] > 0) {
+        NSUInteger retSize, retAlign;
+
+        type = [_signature methodReturnType];
+        NSGetSizeAndAlignment(type, &retSize, &retAlign);
+        buffer = NSZoneMalloc(NULL, retSize);
+        [coder decodeValueOfObjCType:type at:buffer];
+        [self setReturnValue:buffer];
+        NSZoneFree(NULL, buffer);
+        buffer = NULL;
+    }
+
+    count = [_signature numberOfArguments];
+    for (i = 0; i < count; i++) {
+        NSUInteger argSize, argAlign;
+
+        type = [_signature getArgumentTypeAtIndex:i];
+        NSGetSizeAndAlignment(type, &argSize, &argAlign);
+        buffer = NSZoneMalloc(NULL, argSize);
+        [coder decodeValueOfObjCType:type at:buffer];
+        [self setArgument:buffer atIndex:i];
+        NSZoneFree(NULL, buffer);
+        buffer = NULL;
+    }
+
+    _pac_signature = [self _ns_computeInvocationChecksum];
+
+    return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder {
+    void  *buffer = NULL;
+    const char *type;
+    NSInteger   i, count;
+
+    [coder encodeObject:_signature];
+
+    if ([_signature methodReturnLength] > 0) {
+        NSUInteger retSize, retAlign;
+
+        type = [_signature methodReturnType];
+        NSGetSizeAndAlignment(type, &retSize, &retAlign);
+        buffer = NSZoneMalloc(NULL, retSize);
+        [self getReturnValue:buffer];
+        [coder encodeValueOfObjCType:type at:buffer];
+        NSZoneFree(NULL, buffer);
+        buffer = NULL;
+    }
+
+    count = [_signature numberOfArguments];
+    for (i = 0; i < count; i++) {
+        NSUInteger argSize, argAlign;
+
+        type = [_signature getArgumentTypeAtIndex:i];
+        NSGetSizeAndAlignment(type, &argSize, &argAlign);
+        buffer = NSZoneMalloc(NULL, argSize);
+        [self getArgument:buffer atIndex:i];
+        [coder encodeValueOfObjCType:type at:buffer];
+        NSZoneFree(NULL, buffer);
+        buffer = NULL;
+    }
+}
+
+- (void)dealloc {
     if (_retainArguments) {
         NSInteger i, count = [_signature numberOfArguments];
 
         for (i = 0; i < count; ++i) {
             const char *type = [_signature getArgumentTypeAtIndex:i];
 
-            switch (type[0]) {
-                case '@': {
-                    id object;
+            if (type[0] == '@') {
+                id object;
 
-                    [self getArgument:&object atIndex:i];
-                    [object release];
-                    break;
-                }
-
-                case '*': {
-                    char *ptr;
-
-                    [self getArgument:&ptr atIndex:i];
-                    NSZoneFree(NULL, ptr);
-                    break;
-                }
-
-                default:
-                    break;
+                [self getArgument:&object atIndex:i];
+                [object release];
             }
         }
     }
 
-   NSZoneFree(NULL,_returnValue);
-   NSZoneFree(NULL,_argumentSizes);
-   NSZoneFree(NULL,_argumentOffsets);
-   NSZoneFree(NULL,_argumentFrame);
-   [_signature release];
-   [super dealloc];
+    if (!_stackAllocated && _retdata != NULL)
+        NSZoneFree(NULL, _retdata);
+
+    [_signature release];
+    [super dealloc];
 }
 
-static void *bufferForType(void *buffer,const char *type){
-   NSUInteger size,align;
-
-   NSGetSizeAndAlignment(type,&size,&align);
-   if(buffer!=NULL)
-    NSZoneFree(NULL,buffer);
-
-   return NSZoneMalloc(NULL,size);
+- (NSMethodSignature *)methodSignature {
+    return _signature;
 }
 
--initWithCoder:(NSCoder *)coder {
-   const char *type;
-   NSInteger         i,count;
-   void       *buffer=NULL;
-
-   _signature=[[coder decodeObject] retain];
-
-   [self buildFrame];
-
-   _argumentFrame=NSZoneCalloc(NULL,_argumentFrameSize,1);
-
-   if([_signature methodReturnLength]>0){
-    type=[_signature methodReturnType];
-    buffer=bufferForType(buffer,type);
-    [coder decodeValueOfObjCType:type at:buffer];
-    [self setReturnValue:buffer];
-   }
-
-   count=[_signature numberOfArguments];
-   for(i=0;i<count;i++){
-    type=[_signature getArgumentTypeAtIndex:i];
-    buffer=bufferForType(buffer,type);
-    [coder decodeValueOfObjCType:type at:buffer];
-    [self setArgument:buffer atIndex:i];
-   }
-   NSZoneFree(NULL,buffer);
-
-   return self;
+- (void)getReturnValue:(void *)pointerToValue {
+    [self getArgument:pointerToValue atIndex:-1];
 }
 
--(void)encodeWithCoder:(NSCoder *)coder {
-   const char *type;
-   NSInteger         i,count;
-   void       *buffer=NULL;
-
-   [coder encodeObject:_signature];
-
-   if([_signature methodReturnLength]>0){
-    type=[_signature methodReturnType];
-    buffer=bufferForType(buffer,type);
-    [self getReturnValue:buffer];
-    [coder encodeValueOfObjCType:type at:buffer];
-   }
-
-   count=[_signature numberOfArguments];
-   for(i=0;i<count;i++){
-    type=[_signature getArgumentTypeAtIndex:i];
-    buffer=bufferForType(buffer,type);
-    [self getArgument:buffer atIndex:i];
-    [coder encodeValueOfObjCType:type at:buffer];
-   }
+- (void)setReturnValue:(void *)pointerToValue {
+    [self setArgument:pointerToValue atIndex:-1];
 }
 
-+(NSInvocation *)invocationWithMethodSignature:(NSMethodSignature *)signature {
-   return [[[self allocWithZone:NULL] initWithMethodSignature:signature] autorelease];
+- (void)getArgument:(void *)pointerToValue atIndex:(NSInteger)index {
+    NSMethodFrameArgInfo *info = [_signature _argInfo:index];
+    void *base = (index < 0) ? _retdata : _frame;
+
+    memcpy(pointerToValue, (uint8_t *)base + info->offset, info->size);
 }
 
-+(NSInvocation *)invocationWithMethodSignature:(NSMethodSignature *)signature arguments:(void *)arguments {
-   return [[[self allocWithZone:NULL] initWithMethodSignature:signature arguments:arguments] autorelease];
+- (void)setArgument:(void *)pointerToValue atIndex:(NSInteger)index {
+    NSMethodFrameArgInfo *info = [_signature _argInfo:index];
+    void *base = (index < 0) ? _retdata : _frame;
+
+    memcpy((uint8_t *)base + info->offset, pointerToValue, info->size);
 }
 
--(NSMethodSignature *)methodSignature {
-   return _signature;
-}
+- (void)retainArguments {
+    NSInteger i, count;
 
-static void byteCopy(void *src,void *dst,NSUInteger length){
-   NSInteger i;
+    if (_retainArguments)
+        return;
 
-   for(i=0;i<length;i++)
-    ((char *)dst)[i]=((char *)src)[i];
-}
+    _retainArguments = YES;
+    _retainedArgs = 1;
 
--(void)getReturnValue:(void *)pointerToValue {
-   byteCopy(_returnValue,pointerToValue,_returnSize);
-}
+    count = [_signature numberOfArguments];
+    for (i = 0; i < count; i++) {
+        const char *type = [_signature getArgumentTypeAtIndex:i];
 
--(void)setReturnValue:(void *)pointerToValue {
-   byteCopy(pointerToValue,_returnValue,_returnSize);
-}
+        if (type[0] == '@') {
+            id object;
 
+            [self getArgument:&object atIndex:i];
+            [object retain];
+        } else if (type[0] == '*') {
+            char *ptr;
+            char *copy;
 
--(void)getArgument:(void *)pointerToValue atIndex:(NSInteger)index
-{
-    NSUInteger naturalSize = _argumentSizes[index];
-    byteCopy(_argumentFrame + _argumentOffsets[index], pointerToValue, naturalSize);
-}
-
--(void)setArgument:(void *)pointerToValue atIndex:(NSInteger)index
-{
-    NSUInteger naturalSize = _argumentSizes[index];
-    byteCopy(pointerToValue, _argumentFrame + _argumentOffsets[index], naturalSize);
-}
-
--(void)retainArguments {
-   if(_retainArguments)
-    return;
-
-   _retainArguments=YES;
-
-   NSInteger i,count=[_signature numberOfArguments];
-
-   for(i=0;i<count;i++){
-    const char *type=[_signature getArgumentTypeAtIndex:i];
-
-    switch(type[0]){
-     case '@': {
-      id object;
-
-      [self getArgument:&object atIndex:i];
-      [object retain];
-      break;
-     }
-
-     case '*': {
-      char *ptr;
-      char *copy;
-
-      [self getArgument:&ptr atIndex:i];
-      copy=NSZoneMalloc(NULL,strlen(ptr)+1);
-      strcpy(copy,ptr);
-      [self setArgument:&copy atIndex:i];
-      break;
-     }
-
-     default:
-      break;
+            [self getArgument:&ptr atIndex:i];
+            copy = NSZoneMalloc(NULL, strlen(ptr) + 1);
+            strcpy(copy, ptr);
+            [self setArgument:&copy atIndex:i];
+        }
     }
-   }
 }
 
--(BOOL)argumentsRetained {
-   return _retainArguments;
+- (BOOL)argumentsRetained {
+    return _retainArguments;
 }
 
--(SEL)selector {
-   SEL selector;
+- (SEL)selector {
+    SEL selector;
 
-   [self getArgument:&selector atIndex:1];
-   return selector;
+    [self getArgument:&selector atIndex:1];
+    return selector;
 }
 
--(void)setSelector:(SEL)selector {
-   [self setArgument:&selector atIndex:1];
+- (void)setSelector:(SEL)selector {
+    [self setArgument:&selector atIndex:1];
 }
 
--target {
-   id target;
+- (id)target {
+    id target;
 
-   [self getArgument:&target atIndex:0];
-   return target;
+    [self getArgument:&target atIndex:0];
+    return target;
 }
 
--(void)setTarget:target {
-   [self setArgument:&target atIndex:0];
+- (void)setTarget:(id)target {
+    [self setArgument:&target atIndex:0];
 }
 
-static const char *skipQualifiers(const char *type) {
-   while(*type=='r' || *type=='n' || *type=='N' || *type=='o' ||
-         *type=='O' || *type=='R' || *type=='V')
-    type++;
-   return type;
-}
+- (void)invoke {
+    id target = [self target];
+    SEL selector = [self selector];
 
--(void)invoke {
-   id target=[self target];
-   SEL selector;
+    NSMethodFrameArgInfo *returnInfo = [_signature _argInfo:-1];
 
-   [self getArgument:&selector atIndex:1];
-
-   if(target==nil){
-    if(_returnValue!=NULL)
-     memset(_returnValue,0,_returnSize);
-    return;
-   }
-
-   const char *returnType=skipQualifiers([_signature methodReturnType]);
-   const char *argType;
-
-   if(returnType[0]=='{' || returnType[0]=='(' || returnType[0]=='[')
-    [NSException raise:NSInvalidArgumentException
-                format:@"NSInvocation: struct/union/array return values are not supported"];
-
-   uint64_t gp[8]={0,0,0,0,0,0,0,0};
-   double   fp[8]={0,0,0,0,0,0,0,0};
-   NSInteger count=[_signature numberOfArguments];
-   NSInteger i;
-   int gpCount=0, fpCount=0;
-   BOOL spilledGp=NO, spilledFp=NO;
-   uint8_t *stack=NSZoneMalloc(NULL,(_argumentFrameSize>0)?_argumentFrameSize:1);
-   NSUInteger stackSize=0;
-
-   for(i=0;i<count;i++){
-    argType=skipQualifiers([_signature getArgumentTypeAtIndex:i]);
-
-    if(argType[0]=='{' || argType[0]=='(' || argType[0]=='['){
-     NSZoneFree(NULL,stack);
-     [NSException raise:NSInvalidArgumentException
-                 format:@"NSInvocation: struct/union/array arguments are not supported"];
+    if (target == nil) {
+        if (returnInfo->size > 0)
+            memset((uint8_t *)_retdata + returnInfo->offset, 0, returnInfo->size);
+        return;
     }
 
-    NSUInteger size=_argumentSizes[i];
-    if(size>sizeof(uint64_t))
-     size=sizeof(uint64_t);
+    const char *returnType = [_signature methodReturnType];
 
-    void *src=_argumentFrame+_argumentOffsets[i];
+    if (returnType[0] == '{' || returnType[0] == '(' || returnType[0] == '[')
+        [NSException raise:NSInvalidArgumentException
+                    format:@"NSInvocation: struct/union/array return values are not supported"];
 
-    if(argType[0]=='f' || argType[0]=='d'){
-     if(fpCount<8 && !spilledFp){
-      memcpy(&fp[fpCount],src,size);
-      fpCount++;
-     } else {
-      spilledFp=YES;
-      memcpy(stack+stackSize,src,size);
-      stackSize+=8;
-     }
-    } else {
-     if(gpCount<8 && !spilledGp){
-      memcpy(&gp[gpCount],src,size);
-      gpCount++;
-     } else {
-      spilledGp=YES;
-      memcpy(stack+stackSize,src,size);
-      stackSize+=8;
-     }
+    uint64_t gp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    double   fp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+    NSInteger count = [_signature numberOfArguments];
+    NSUInteger frameLength = [_signature frameLength];
+    NSUInteger stackBytes = (frameLength > NSFRAME_STACK) ? frameLength - NSFRAME_STACK : 0;
+    uint8_t *stack = NSZoneMalloc(NULL, stackBytes ? stackBytes : 1);
+    NSInteger i;
+
+    if (stackBytes > 0)
+        memcpy(stack, (uint8_t *)_frame + NSFRAME_STACK, stackBytes);
+
+    for (i = 0; i < count; i++) {
+        NSMethodFrameArgInfo *info = [_signature _argInfo:i];
+        const char *type = info->type;
+
+        if (type[0] == '{' || type[0] == '(' || type[0] == '[') {
+            NSZoneFree(NULL, stack);
+            [NSException raise:NSInvalidArgumentException
+                        format:@"NSInvocation: struct/union/array arguments are not supported"];
+        }
+
+        uint8_t *src = (uint8_t *)_frame + info->offset;
+        NSUInteger size = info->size > 8 ? 8 : info->size;
+
+        if (info->offset >= NSFRAME_FP_BASE && info->offset < NSFRAME_FP_LIMIT)
+            memcpy(&fp[(info->offset - NSFRAME_FP_BASE) / 16], src, size);
+        else if (info->offset < NSFRAME_GP_LIMIT)
+            memcpy(&gp[info->offset / 8], src, size);
     }
-   }
 
-   IMP fn=[target methodForSelector:selector];
-   uint64_t result[2]={0,0};
+    IMP fn = [target methodForSelector:selector];
+    uint64_t result[2] = {0, 0};
 
-   NSInvocationPerformCall((void *)fn,gp,fp,stack,stackSize,result);
+    NSInvocationPerformCall((void *)fn, gp, fp, stack, stackBytes, result);
 
-   NSZoneFree(NULL,stack);
+    NSZoneFree(NULL, stack);
 
-   if(returnType[0]=='f' || returnType[0]=='d')
-    byteCopy((uint8_t *)result+8,_returnValue,_returnSize);
-   else
-    byteCopy(result,_returnValue,_returnSize);
+    if (returnInfo->offset >= NSFRAME_FP_BASE && returnInfo->offset < NSFRAME_FP_LIMIT)
+        memcpy((uint8_t *)_retdata + returnInfo->offset, (uint8_t *)result + 8, returnInfo->size);
+    else
+        memcpy((uint8_t *)_retdata + returnInfo->offset, (uint8_t *)result, returnInfo->size);
 }
 
--(void)invokeWithTarget:target {
-   [self setTarget:target];
-   [self invoke];
+- (void)invokeWithTarget:(id)target {
+    [self setTarget:target];
+    [self invoke];
 }
 
--(id)description
-{
-   return [NSString stringWithFormat:@"<%@ with signature %@>", [super description], [_signature description]];
++ (NSInvocation *)_invocationWithMethodSignature:(NSMethodSignature *)signature
+                                           frame:(void *)frame {
+    if (signature == nil) {
+        [NSException raise:NSInvalidArgumentException
+                    format:@"nil signature in NSInvocation creation"];
+        return nil;
+    }
+
+    NSUInteger frameLength = [signature frameLength];
+    NSUInteger size = frameLength + NSINVOCATION_BUFFER_HEADROOM;
+    NSInvocation *invocation = [self alloc];
+    void *buffer = NSZoneCalloc(NULL, size, 1);
+
+    invocation->_signature = [signature retain];
+    invocation->_container = nil;
+    invocation->_retdata = buffer;
+    invocation->_frame = (uint8_t *)buffer + NSINVOCATION_BUFFER_HEADROOM;
+    invocation->_magic = NSINVOCATION_MAGIC;
+    invocation->_retainedArgs = 0;
+    invocation->_stackAllocated = 0;
+    invocation->_returnSize = [signature methodReturnLength];
+    invocation->_bufferSize = size;
+    invocation->_retainArguments = NO;
+
+    if (frame != NULL && frameLength > 0)
+        memmove(invocation->_frame, frame, frameLength);
+
+    invocation->_pac_signature = [invocation _ns_computeInvocationChecksum];
+
+    return [invocation autorelease];
+}
+
+- (id)_initWithMethodSignature:(NSMethodSignature *)signature
+                         frame:(void *)frame
+                        buffer:(void *)buffer
+                          size:(NSUInteger)size {
+    if (signature == nil)
+        return nil;
+
+    NSUInteger frameLength = [signature frameLength];
+
+    if (buffer == NULL || size < frameLength + NSINVOCATION_BUFFER_HEADROOM)
+        return nil;
+
+    _signature = [signature retain];
+    _container = nil;
+    _retdata = buffer;
+    bzero(buffer, size);
+    _frame = (uint8_t *)buffer + NSINVOCATION_BUFFER_HEADROOM;
+    _magic = NSINVOCATION_MAGIC;
+    _retainedArgs = 0;
+    _stackAllocated = 1;
+    _returnSize = [signature methodReturnLength];
+    _bufferSize = size;
+    _retainArguments = NO;
+
+    if (frame != NULL && frameLength > 0)
+        memmove(_frame, frame, frameLength);
+
+    _pac_signature = [self _ns_computeInvocationChecksum];
+
+    return self;
+}
+
+- (id)description {
+    return [NSString stringWithFormat:@"<%@ with signature %@>", [super description], [_signature description]];
 }
 
 @end
 
 @implementation NSObject (NSForwarding)
 
--(NSMethodSignature *)methodSignatureForSelector:(SEL)selector {
-   Method method=class_getInstanceMethod(object_getClass(self),selector);
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)selector {
+    Method method = class_getInstanceMethod(object_getClass(self), selector);
 
-   if(method==NULL)
+    if (method == NULL)
+        return nil;
+
+    return [NSMethodSignature signatureWithObjCTypes:method_getTypeEncoding(method)];
+}
+
++ (NSMethodSignature *)instanceMethodSignatureForSelector:(SEL)selector {
+    Method method = class_getInstanceMethod(self, selector);
+
+    if (method == NULL)
+        return nil;
+
+    return [NSMethodSignature signatureWithObjCTypes:method_getTypeEncoding(method)];
+}
+
+- (void)forwardInvocation:(NSInvocation *)invocation {
+    [NSException raise:NSInvalidArgumentException
+                format:@"*** -[%@ %@]: selector not recognized",
+                       NSStringFromClass(object_getClass(self)),
+                       NSStringFromSelector([invocation selector])];
+}
+
+- (id)forwardingTargetForSelector:(SEL)selector {
     return nil;
-
-   return [NSMethodSignature signatureWithObjCTypes:method_getTypeEncoding(method)];
-}
-
-+(NSMethodSignature *)instanceMethodSignatureForSelector:(SEL)selector {
-   Method method=class_getInstanceMethod(self,selector);
-
-   if(method==NULL)
-    return nil;
-
-   return [NSMethodSignature signatureWithObjCTypes:method_getTypeEncoding(method)];
-}
-
--(void)forwardInvocation:(NSInvocation *)invocation {
-   [NSException raise:NSInvalidArgumentException
-               format:@"*** -[%@ %@]: selector not recognized",
-                      NSStringFromClass(object_getClass(self)),
-                      NSStringFromSelector([invocation selector])];
-}
-
--(id)forwardingTargetForSelector:(SEL)selector {
-   return nil;
 }
 
 @end

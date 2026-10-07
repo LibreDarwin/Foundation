@@ -10,21 +10,41 @@
 
 @class NSMethodSignature;
 
+/*
+ * The first nine ivars reproduce the instance layout CoreFoundation reads
+ * directly when it drives forwarding (offsets are relative to the object
+ * pointer, i.e. after NSObject's isa):
+ *
+ *     _frame          +0x08   argument frame
+ *     _retdata        +0x10   return-value / backing buffer
+ *     _signature      +0x18
+ *     _container      +0x20
+ *     _replacedByPointerBacking +0x28
+ *     _pac_signature  +0x30
+ *     _magic          +0x38
+ *     _retainedArgs   +0x3c
+ *     _stackAllocated +0x3d
+ *
+ * Anything after those is private to this implementation.
+ */
 @interface NSInvocation : NSObject <NSCoding> {
-    NSMethodSignature *_signature;
+    void *_frame;                        /* +0x08 */
+    void *_retdata;                      /* +0x10 */
+    NSMethodSignature *_signature;       /* +0x18 */
+    id _container;                       /* +0x20 */
+    void *_replacedByPointerBacking;     /* +0x28 */
+    unsigned long long _pac_signature;   /* +0x30 */
+    unsigned _magic;                     /* +0x38 */
+    unsigned char _retainedArgs;         /* +0x3c */
+    unsigned char _stackAllocated;       /* +0x3d */
 
     NSUInteger _returnSize;
-    uint8_t *_returnValue;
-
-    NSUInteger _argumentFrameSize;
-    NSUInteger *_argumentSizes;
-    NSUInteger *_argumentOffsets;
-    uint8_t *_argumentFrame;
-
+    NSUInteger _bufferSize;
     BOOL _retainArguments;
 }
 
 + (NSInvocation *)invocationWithMethodSignature:(NSMethodSignature *)signature;
++ (NSInvocation *)invocationWithMethodSignature:(NSMethodSignature *)signature arguments:(void *)arguments;
 
 - (NSMethodSignature *)methodSignature;
 
@@ -40,10 +60,18 @@
 - (SEL)selector;
 - (void)setSelector:(SEL)selector;
 
-- target;
-- (void)setTarget:target;
+- (id)target;
+- (void)setTarget:(id)target;
 
 - (void)invoke;
-- (void)invokeWithTarget:target;
+- (void)invokeWithTarget:(id)target;
+
+/* Private, CoreFoundation-compatible entry points. */
++ (NSInvocation *)_invocationWithMethodSignature:(NSMethodSignature *)signature
+                                           frame:(void *)frame;
+- (id)_initWithMethodSignature:(NSMethodSignature *)signature
+                         frame:(void *)frame
+                        buffer:(void *)buffer
+                          size:(NSUInteger)size;
 
 @end
