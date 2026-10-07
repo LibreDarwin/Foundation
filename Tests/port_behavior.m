@@ -4012,6 +4012,50 @@ int main(void) {
         p("so dec errinfo", soLoadErr == nil ? @"nil" : [NSString stringWithFormat:@"%@", soLoadErr]);
     }
 
+    /* ---------- NSPredicate family ---------- */
+    NSDictionary *pdPerson = @{@"name": @"Alice", @"age": @30, @"dept": @"eng"};
+    NSDictionary *pdPerson2 = @{@"name": @"bob", @"age": @25, @"dept": @"eng"};
+    NSDictionary *pdPerson3 = @{@"name": @"Carol", @"age": @40, @"dept": @"sales"};
+    NSArray *pdPeople = @[pdPerson, pdPerson2, pdPerson3];
+    NSPredicate *pdAge25 = [NSPredicate predicateWithFormat:@"age == 25"];
+    p("pd cmp == true", [NSString stringWithFormat:@"%d", [pdAge25 evaluateWithObject:pdPerson2]]);
+    p("pd cmp == false", [NSString stringWithFormat:@"%d", [pdAge25 evaluateWithObject:pdPerson]]);
+    p("pd cmp fmt", pdAge25.predicateFormat);
+    p("pd cmp > num", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"age > 28"] evaluateWithObject:pdPerson]]);
+    p("pd cmp >= num", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"age >= 30"] evaluateWithObject:pdPerson]]);
+    p("pd cmp < num", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"age < 30"] evaluateWithObject:pdPerson2]]);
+    p("pd cmp <= num", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"age <= 30"] evaluateWithObject:pdPerson]]);
+    p("pd cmp != num", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"age != 30"] evaluateWithObject:pdPerson2]]);
+    p("pd cmp str eq", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"name == 'Alice'"] evaluateWithObject:pdPerson]]);
+    p("pd cmp str ne", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"name != 'Alice'"] evaluateWithObject:pdPerson2]]);
+    p("pd cmp doesNotEqual", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"name <> 'x'"] evaluateWithObject:pdPerson]]);
+    p("pd fmt str quotes", [[NSPredicate predicateWithFormat:@"name == 'Alice'"] predicateFormat]);
+    p("pd fmt var $X", [[NSPredicate predicateWithFormat:@"age > $X"] predicateFormat]);
+    NSPredicate *pdSub = [NSPredicate predicateWithFormat:@"name == %@", @"Alice"];
+    p("pd substitution %@ fmt", pdSub.predicateFormat);
+    p("pd substitution %@ eval", [NSString stringWithFormat:@"%d", [pdSub evaluateWithObject:pdPerson]]);
+    p("pd substitution %@ miss", [NSString stringWithFormat:@"%d", [pdSub evaluateWithObject:pdPerson2]]);
+    NSPredicate *pdKey = [NSPredicate predicateWithFormat:@"%K == %@", @"name", @"Alice"];
+    p("pd %K fmt", pdKey.predicateFormat);
+    p("pd %K eval", [NSString stringWithFormat:@"%d", [pdKey evaluateWithObject:pdPerson]]);
+    NSPredicate *pdVar = [NSPredicate predicateWithFormat:@"age > $MINAGE"];
+    NSDictionary *pdBinds = @{@"MINAGE": @28};
+    p("pd var subst eval", [NSString stringWithFormat:@"%d", [pdVar evaluateWithObject:pdPerson substitutionVariables:pdBinds]]);
+    p("pd var subst eval lower", [NSString stringWithFormat:@"%d", [pdVar evaluateWithObject:pdPerson2 substitutionVariables:pdBinds]]);
+    NSPredicate *pdVarTail = [NSPredicate predicateWithFormat:@"age > $MINAGE"];
+    p("pd var copy subst fmt", [[pdVarTail predicateWithSubstitutionVariables:pdBinds] predicateFormat]);
+    p("pd and", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"age > 20 AND dept == 'eng'"] evaluateWithObject:pdPerson2]]);
+    p("pd and false", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"age > 20 AND dept == 'sales'"] evaluateWithObject:pdPerson2]]);
+    p("pd or", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"age < 26 OR dept == 'sales'"] evaluateWithObject:pdPerson2]]);
+    p("pd or false", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"age < 26 OR dept == 'sales'"] evaluateWithObject:pdPerson]]);
+    p("pd not", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"NOT age == 30"] evaluateWithObject:pdPerson2]]);
+    p("pd not false", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"NOT age == 30"] evaluateWithObject:pdPerson]]);
+    p("pd compound fmt", [[NSPredicate predicateWithFormat:@"age > 20 AND name == 'bob'"] predicateFormat]);
+    p("pd compound parens", [[NSPredicate predicateWithFormat:@"(age > 20 AND name == 'bob') OR age == 40"] predicateFormat]);
+    p("pd any modifier", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"ANY age == 25"] evaluateWithObject:pdPeople]]);
+    p("pd any modifier none", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"ANY age == 99"] evaluateWithObject:pdPeople]]);
+    p("pd all modifier", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"ALL age < 100"] evaluateWithObject:pdPeople]]);
+    p("pd all modifier none", [NSString stringWithFormat:@"%d", [[NSPredicate predicateWithFormat:@"ALL age > 100"] evaluateWithObject:pdPeople]]);
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
     port_behavior_pool();
 

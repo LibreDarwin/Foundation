@@ -1709,6 +1709,39 @@ so dec count                               | 2
 so dec ptr0                                | abc
 so dec err                                 | nil
 so dec errinfo                             | nil
+pd cmp == true                             | 1
+pd cmp == false                            | 0
+pd cmp fmt                                 | age == 25
+pd cmp > num                               | 1
+pd cmp >= num                              | 1
+pd cmp < num                               | 1
+pd cmp <= num                              | 1
+pd cmp != num                              | 1
+pd cmp str eq                              | 1
+pd cmp str ne                              | 1
+pd cmp doesNotEqual                        | 1
+pd fmt str quotes                          | name == "Alice"
+pd fmt var $X                              | age > $X
+pd substitution %@ fmt                     | name == "Alice"
+pd substitution %@ eval                    | 1
+pd substitution %@ miss                    | 0
+pd %K fmt                                  | name == "Alice"
+pd %K eval                                 | 1
+pd var subst eval                          | 1
+pd var subst eval lower                    | 0
+pd var copy subst fmt                      | age > 28
+pd and                                     | 1
+pd and false                               | 0
+pd or                                      | 1
+pd or false                                | 0
+pd not                                     | 1
+pd not false                               | 0
+pd compound fmt                            | age > 20 AND name == "bob"
+pd compound parens                         | (age > 20 AND name == "bob") OR age == 40
+pd any modifier                            | 1
+pd any modifier none                       | 0
+pd all modifier                            | 1
+pd all modifier none                       | 0
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1
