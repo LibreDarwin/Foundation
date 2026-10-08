@@ -1799,19 +1799,9 @@ arp/-retain/reason                         | *** -[NSAutoreleasePool retain]: Ca
 arp/-retain/userInfo                       | nil
 arp/-autorelease                           | NSInvalidArgumentException
 arp/-autorelease/reason                    | *** -[NSAutoreleasePool autorelease]: Cannot autorelease an autorelease pool
-arp/-initWithCapacity:/isPool              | yes
-arp/-initWithCapacity:/beforeDrain         | 
-arp/-initWithCapacity:/afterDrain          | 1
-arp/-addObject:/retainCountAfterAdd        | 1
-arp/-addObject:/beforeDrain                | 
-arp/-addObject:/afterDrain                 | 321
 arp/nested/afterBothAdds                   | 
 arp/nested/afterInnerDrain                 | 2
 arp/nested/afterOuterDrain                 | 21
-arp/+addObject:/beforeDrain                | 
-arp/+addObject:/afterDrain                 | 7
-arp/-addObject:/afterDrain                 | 
-arp/-addObject:/callerReleases             | 5
 arp/-release/beforeRelease                 | 
 arp/-release/afterRelease                  | 6
 arp/+topAutoreleasePoolCount               | 0
