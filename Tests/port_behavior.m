@@ -1,4 +1,6 @@
 #import <Foundation/Foundation.h>
+#import "NSOperation.h"
+#import "NSOperationQueue.h"
 #import <CoreFoundation/CFBase.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -4509,6 +4511,22 @@ int main(void) {
         p("fwd default raise", @"no-raise");
     } @catch (NSException *e) {
         p("fwd default raise", e.name);
+    }
+
+    /* ---------- NSOperation ---------- */
+    @autoreleasepool {
+        NSOperation *op = [NSOperation new];
+        p("op isReady initial", [op isReady] ? @"yes" : @"no");
+        p("op isExecuting initial", [op isExecuting] ? @"yes" : @"no");
+        p("op isFinished initial", [op isFinished] ? @"yes" : @"no");
+        p("op isCancelled initial", [op isCancelled] ? @"yes" : @"no");
+        p("op isConcurrent", [op isConcurrent] ? @"yes" : @"no");
+        p("op isAsynchronous", [op isAsynchronous] ? @"yes" : @"no");
+        [op start];
+        p("op isExecuting after start", [op isExecuting] ? @"yes" : @"no");
+        p("op isFinished after start", [op isFinished] ? @"yes" : @"no");
+        [op cancel];
+        p("op isCancelled after cancel", [op isCancelled] ? @"yes" : @"no");
     }
 
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
