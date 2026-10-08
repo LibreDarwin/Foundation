@@ -459,6 +459,22 @@ static void asCtBrief(const char *label, NSAttributedString *a) {
     _name = name;
     [self didChangeValueForKey:@"name"];
 }
+
+/* A KVO target that uses automatic notification (default behavior). */
+@interface PKVOTargetAuto : NSObject
+@property (nonatomic, strong) NSString *name;
+@property (nonatomic, strong) NSMutableArray *items;
+@property (nonatomic, strong) NSMutableSet *tags;
+@end
+
+@implementation PKVOTargetAuto
++ (NSSet *)keyPathsForValuesAffectingDisplay {
+    return [NSSet setWithObject:@"name"];
+}
+- (NSString *)display {
+    return [@"D:" stringByAppendingString:self.name ?: @"-"];
+}
+@end
 @end
 
 @interface PKVOObserver : NSObject
@@ -4317,6 +4333,91 @@ int main(void) {
     [kt didChangeValueForKey:@"tags" withSetMutation:NSKeyValueMinusSetMutation usingObjects:[NSSet setWithObject:@"x"]];
     p("kvo set minus", kvoDrain(ko));
     [kt removeObserver:ko forKeyPath:@"tags"];
+
+    /* ---------- Key-Value Observing (automatic) ---------- */
+    PKVOTargetAuto *kta = [PKVOTargetAuto new];
+    kta.name = @"a";
+    NSMutableArray *kvoItemsAuto = [NSMutableArray array];
+    [kvoItemsAuto addObject:@"a"];
+    [kvoItemsAuto addObject:@"b"];
+    [kvoItemsAuto addObject:@"c"];
+    kta.items = kvoItemsAuto;
+    NSMutableSet *kvoTagsAuto = [[NSMutableSet alloc] initWithCapacity:4];
+    [kvoTagsAuto addObject:@"x"];
+    [kvoTagsAuto addObject:@"y"];
+    kta.tags = kvoTagsAuto;
+    PKVOObserver *koAuto = [PKVOObserver new];
+
+    p("kvo auto obsInfo before", kta.observationInfo == NULL ? @"NULL" : @"nonnull");
+    [kta addObserver:koAuto forKeyPath:@"name" options:(NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld) context:NULL];
+    p("kvo auto obsInfo after", kta.observationInfo != NULL ? @"nonnull" : @"NULL");
+    kta.name = @"b";
+    p("kvo auto set new+old", kvoDrain(koAuto));
+    [kta removeObserver:koAuto forKeyPath:@"name"];
+    p("kvo auto obsInfo removed", [kta observationInfo] == NULL ? @"NULL" : @"nonnull");
+
+    [kta addObserver:koAuto forKeyPath:@"name" options:NSKeyValueObservingOptionNew context:NULL];
+    kta.name = @"c";
+    p("kvo auto set new only", kvoDrain(koAuto));
+    [kta removeObserver:koAuto forKeyPath:@"name"];
+
+    [kta addObserver:koAuto forKeyPath:@"name" options:NSKeyValueObservingOptionOld context:NULL];
+    kta.name = @"d";
+    p("kvo auto set old only", kvoDrain(koAuto));
+    [kta removeObserver:koAuto forKeyPath:@"name"];
+
+    [kta addObserver:koAuto forKeyPath:@"name"
+            options:(NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld | NSKeyValueObservingOptionPrior)
+            context:NULL];
+    kta.name = @"e";
+    p("kvo auto set prior", kvoDrain(koAuto));
+    [kta removeObserver:koAuto forKeyPath:@"name"];
+
+    [kta addObserver:koAuto forKeyPath:@"name"
+            options:(NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld)
+            context:NULL];
+    p("kvo auto initial", kvoDrain(koAuto));
+    [kta removeObserver:koAuto forKeyPath:@"name"];
+
+    [kta addObserver:koAuto forKeyPath:@"display" options:NSKeyValueObservingOptionNew context:NULL];
+    kta.name = @"f";
+    p("kvo auto dependent", kvoDrain(koAuto));
+    [kta removeObserver:koAuto forKeyPath:@"display"];
+
+    koAuto.markedContext = (void *)0x1234;
+    [kta addObserver:koAuto forKeyPath:@"name" options:NSKeyValueObservingOptionNew context:koAuto.markedContext];
+    kta.name = @"g";
+    p("kvo auto context", kvoDrain(koAuto));
+    [kta removeObserver:koAuto forKeyPath:@"name" context:koAuto.markedContext];
+    koAuto.markedContext = NULL;
+
+    [kta addObserver:koAuto forKeyPath:@"items"
+            options:(NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld) context:NULL];
+    [kta willChange:NSKeyValueChangeInsertion valuesAtIndexes:[NSIndexSet indexSetWithIndex:3] forKey:@"items"];
+    [kta.items addObject:@"Z"];
+    [kta didChange:NSKeyValueChangeInsertion valuesAtIndexes:[NSIndexSet indexSetWithIndex:3] forKey:@"items"];
+    p("kvo auto ordered insert", kvoDrain(koAuto));
+    [kta willChange:NSKeyValueChangeRemoval valuesAtIndexes:[NSIndexSet indexSetWithIndex:0] forKey:@"items"];
+    [kta.items removeObjectAtIndex:0];
+    [kta didChange:NSKeyValueChangeRemoval valuesAtIndexes:[NSIndexSet indexSetWithIndex:0] forKey:@"items"];
+    p("kvo auto ordered remove", kvoDrain(koAuto));
+    [kta willChange:NSKeyValueChangeReplacement valuesAtIndexes:[NSIndexSet indexSetWithIndex:0] forKey:@"items"];
+    [kta.items replaceObjectAtIndex:0 withObject:@"Q"];
+    [kta didChange:NSKeyValueChangeReplacement valuesAtIndexes:[NSIndexSet indexSetWithIndex:0] forKey:@"items"];
+    p("kvo auto ordered replace", kvoDrain(koAuto));
+    [kta removeObserver:koAuto forKeyPath:@"items"];
+
+    [kta addObserver:koAuto forKeyPath:@"tags"
+            options:(NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld) context:NULL];
+    [kta willChangeValueForKey:@"tags" withSetMutation:NSKeyValueUnionSetMutation usingObjects:[NSSet setWithObject:@"z"]];
+    [kta.tags addObject:@"z"];
+    [kta didChangeValueForKey:@"tags" withSetMutation:NSKeyValueUnionSetMutation usingObjects:[NSSet setWithObject:@"z"]];
+    p("kvo auto set union", kvoDrain(koAuto));
+    [kta willChangeValueForKey:@"tags" withSetMutation:NSKeyValueMinusSetMutation usingObjects:[NSSet setWithObject:@"x"]];
+    [kta.tags removeObject:@"x"];
+    [kta didChangeValueForKey:@"tags" withSetMutation:NSKeyValueMinusSetMutation usingObjects:[NSSet setWithObject:@"x"]];
+    p("kvo auto set minus", kvoDrain(koAuto));
+    [kta removeObserver:koAuto forKeyPath:@"tags"];
 
     /* ---------- NSMethodSignature ---------- */
     NSMethodSignature *msig = [NSMethodSignature signatureWithObjCTypes:"i@:ii"];

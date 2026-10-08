@@ -75,6 +75,28 @@ enum {
 @implementation _NSKVOInfo
 @end
 
+
+static NSString *_NSKVONotifyingClassNameForClass(Class cls) {
+    return [NSString stringWithFormat:@"NSKVONotifying_%@", NSStringFromClass(cls)];
+}
+
+static void _NSKVOInjectSetter(Class kvoClass, Class originalClass, SEL setterSel, SEL getterSel, NSString *keyPath) {
+    Method origMethod = class_getInstanceMethod(originalClass, setterSel);
+    if (origMethod == NULL) {
+        return;
+    }
+    const char *types = method_getTypeEncoding(origMethod);
+    IMP origIMP = method_getImplementation(origMethod);
+    
+    IMP newIMP = imp_implementationWithBlock(^(id self, id newValue) {
+        [self willChangeValueForKey:keyPath];
+        ((void (*)(id, SEL, id))origIMP)(self, setterSel, newValue);
+        [self didChangeValueForKey:keyPath];
+    });
+    class_addMethod(kvoClass, setterSel, newIMP, types);
+}
+
+
 static _NSKVOInfo *NSKVOInfoForObject(id object, BOOL create) {
     _NSKVOInfo *info = objc_getAssociatedObject(object, &kNSKVOInfoKey);
     if (info == nil && create) {
@@ -85,6 +107,59 @@ static _NSKVOInfo *NSKVOInfoForObject(id object, BOOL create) {
     }
     return info;
 }
+
+
+static Class _NSKVOClassForObject(id object) {
+    Class cls = object_getClass(object);
+    if ([NSStringFromClass(cls) hasPrefix:@"NSKVONotifying_"]) {
+        return cls;
+    }
+    return NULL;
+}
+
+static Class _NSKVOEnsureSubclass(id object, NSString *keyPath) {
+    Class cls = object_getClass(object);
+    NSString *className = NSStringFromClass(cls);
+    if ([className hasPrefix:@"NSKVONotifying_"]) {
+        return cls;
+    }
+    // Check if auto-notifies for this key
+    if (![[cls class] automaticallyNotifiesObserversForKey:keyPath]) {
+        return cls;
+    }
+    NSString *kvoClassName = _NSKVONotifyingClassNameForClass(cls);
+    Class kvoClass = objc_getClass([kvoClassName UTF8String]);
+    if (kvoClass == Nil) {
+        kvoClass = objc_allocateClassPair(cls, [kvoClassName UTF8String], 0);
+        if (kvoClass == Nil) {
+            return cls;
+        }
+        // Override -class to return original class
+        Method classMethod = class_getInstanceMethod([NSObject class], @selector(class));
+        IMP classIMP = imp_implementationWithBlock(^(id self) {
+            return class_getSuperclass(object_getClass(self));
+        });
+        const char *classTypes = method_getTypeEncoding(classMethod);
+        class_addMethod(kvoClass, @selector(class), classIMP, classTypes);
+        // Override -dealloc to be careful? Not strictly necessary for basic cases
+        objc_registerClassPair(kvoClass);
+    }
+    // Swizzle setter if it's a simple property setter
+    // Try common setter names: set<Key>: set<Key>:
+    NSString *capitalized = nil;
+    if ([keyPath length] > 0) {
+        capitalized = [NSString stringWithFormat:@"%@%@", [[keyPath substringToIndex:1] uppercaseString], [keyPath substringFromIndex:1]];
+    }
+    SEL setterSel = NSSelectorFromString([NSString stringWithFormat:@"set%@:", capitalized]);
+    SEL getterSel = NSSelectorFromString(keyPath);
+    // Only inject if setter exists on original class
+    if (class_getInstanceMethod(cls, setterSel)) {
+        _NSKVOInjectSetter(kvoClass, cls, setterSel, getterSel, keyPath);
+    }
+    object_setClass(object, kvoClass);
+    return kvoClass;
+}
+
 
 static BOOL NSKVOHasObservers(id object, NSString *keyPath) {
     _NSKVOInfo *info = NSKVOInfoForObject(object, NO);
@@ -246,6 +321,9 @@ static NSArray *NSKVOSubarrayAtIndexes(NSArray *array, NSIndexSet *indexes) {
                            @"must not be nil."];
     }
 
+    // Ensure automatic KVO subclass if applicable
+    _NSKVOEnsureSubclass(self, keyPath);
+    
     _NSKVOInfo *info = NSKVOInfoForObject(self, YES);
     _NSKVORegistration *reg = [[_NSKVORegistration alloc] init];
     reg.observer = observer;
