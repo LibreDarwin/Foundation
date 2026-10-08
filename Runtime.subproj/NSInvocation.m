@@ -518,15 +518,6 @@ static uint64_t NSPACGA(uint64_t modifier, uint64_t data) {
     return [NSMethodSignature signatureWithObjCTypes:method_getTypeEncoding(method)];
 }
 
-+ (NSMethodSignature *)instanceMethodSignatureForSelector:(SEL)selector {
-    Method method = class_getInstanceMethod(self, selector);
-
-    if (method == NULL)
-        return nil;
-
-    return [NSMethodSignature signatureWithObjCTypes:method_getTypeEncoding(method)];
-}
-
 - (void)forwardInvocation:(NSInvocation *)invocation {
     [NSException raise:NSInvalidArgumentException
                 format:@"*** -[%@ %@]: selector not recognized",

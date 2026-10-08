@@ -28,6 +28,7 @@
  * Anything after those is private to this implementation.
  */
 @interface NSInvocation : NSObject <NSCoding> {
+    /* CF-compatible layout (must match Apple NSInvocation on arm64) */
     void *_frame;                        /* +0x08 */
     void *_retdata;                      /* +0x10 */
     NSMethodSignature *_signature;       /* +0x18 */
@@ -37,11 +38,13 @@
     unsigned _magic;                     /* +0x38 */
     unsigned char _retainedArgs;         /* +0x3c */
     unsigned char _stackAllocated;       /* +0x3d */
-
+    unsigned char _reserved0;            /* +0x3e */
+    unsigned char _reserved1;            /* +0x3f */
     NSUInteger _returnSize;
     NSUInteger _bufferSize;
     BOOL _retainArguments;
 }
+__attribute__((aligned(8)));
 
 + (NSInvocation *)invocationWithMethodSignature:(NSMethodSignature *)signature;
 + (NSInvocation *)invocationWithMethodSignature:(NSMethodSignature *)signature arguments:(void *)arguments;
