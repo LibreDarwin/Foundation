@@ -15,7 +15,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #import <Foundation/NSThread.h>
 #import <Foundation/NSAutoreleasePool.h>
 #import <Foundation/NSLock.h>
-#import <Foundation/NSMutableArray.h>
+#import "Collections.subproj/NSArray.h"
 #import <Foundation/NSDebug.h>
 
 #import <Foundation/NSRaise.h>

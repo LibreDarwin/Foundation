@@ -227,7 +227,9 @@ GATE_SRCS = String.subproj/NSString.m \
             Predicate.subproj/NSPredicate.m \
             Predicate.subproj/NSComparisonPredicate.m \
             Predicate.subproj/NSCompoundPredicate.m \
-            Predicate.subproj/NSExpression.m
+            Predicate.subproj/NSExpression.m \
+            ./NSOperation.m \
+            ./NSOperationQueue.m
 
 # Sources written for non-ARC (they cast raw CF objects without __bridge).
 # The bmake compile rules match with :M; the GNU rules use MRC_OBJ_PAT.
@@ -247,7 +249,9 @@ MRC_SOURCES = ./Collections.subproj/NSMapTable.m \
               ./Runtime.subproj/NSProcessInfo.m \
               ./Runtime.subproj/NSUserDefaults.m \
               ./Runtime.subproj/NSValue.m \
-              ./Runtime.subproj/NSZone.m
+              ./Runtime.subproj/NSZone.m \
+              ./NSOperation.m \
+              ./NSOperationQueue.m
 
 # The gate compiles a subset of GATE_SRCS with -fno-objc-arc as well.
 MRC_GATE_PAT = Collections.subproj/NSData.m|Collections.subproj/NSMapTable.m|Collections.subproj/NSHashTable.m|Collections.subproj/NSPointerFunctions.m|Runtime.subproj/NSAutoreleasePool.m|Runtime.subproj/NSException.m|Runtime.subproj/NSObjCRuntime.m|Runtime.subproj/NSValue.m|Runtime.subproj/NSZone.m|Runtime.subproj/NSInvocation.m|Runtime.subproj/NSMethodSignature.m

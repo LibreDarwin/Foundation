@@ -13,7 +13,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #import "NSOperation.h"
 #import <Foundation/NSString.h>
 #import <Foundation/NSMethodSignature.h>
-#import <Foundation/NSMutableArray.h>
+#import "Collections.subproj/NSArray.h"
 #import <Foundation/NSRaise.h>
 #import <Foundation/NSKeyValueObserving.h>
 #import <Foundation/NSInvocation.h>
