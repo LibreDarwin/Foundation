@@ -4529,6 +4529,32 @@ int main(void) {
         p("op isCancelled after cancel", [op isCancelled] ? @"yes" : @"no");
     }
 
+
+    /* ---------- NSOperationQueue ---------- */
+    @autoreleasepool {
+        NSOperationQueue *q = [NSOperationQueue new];
+        p("oq maxConcurrent default", [NSString stringWithFormat:@"%ld", (long)[q maxConcurrentOperationCount]]);
+        [q setMaxConcurrentOperationCount:2];
+        p("oq maxConcurrent set", [NSString stringWithFormat:@"%ld", (long)[q maxConcurrentOperationCount]]);
+        p("oq name default", [q name] == nil ? @"nil" : [q name]);
+        [q setName:@"testq"];
+        p("oq name set", [q name]);
+        p("oq ops count initial", [NSString stringWithFormat:@"%lu", (unsigned long)[[q operations] count]]);
+        NSOperation *op1 = [NSOperation new];
+        NSOperation *op2 = [NSOperation new];
+        [q addOperation:op1];
+        [q addOperation:op2];
+        p("oq ops count after add", [NSString stringWithFormat:@"%lu", (unsigned long)[[q operations] count]]);
+        [q waitUntilAllOperationsAreFinished];
+        p("oq ops count after wait", [NSString stringWithFormat:@"%lu", (unsigned long)[[q operations] count]]);
+        p("oq suspended initial", [q isSuspended] ? @"yes" : @"no");
+        [q setSuspended:YES];
+        p("oq suspended after set", [q isSuspended] ? @"yes" : @"no");
+        [q setSuspended:NO];
+        [q cancelAllOperations];
+        p("oq cancelled all", @"ok");
+    }
+
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
     port_behavior_pool();
 
