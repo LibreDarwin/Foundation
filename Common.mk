@@ -228,6 +228,11 @@ GATE_SRCS = String.subproj/NSString.m \
             Predicate.subproj/NSComparisonPredicate.m \
             Predicate.subproj/NSCompoundPredicate.m \
             Predicate.subproj/NSExpression.m \
+            Lock.subproj/NSLock.m \
+            Lock.subproj/NSRecursiveLock.m \
+            Lock.subproj/NSCondition.m \
+            Lock.subproj/NSConditionLock.m \
+            Thread.subproj/NSThread.m \
             ./NSOperation.m \
             ./NSOperationQueue.m
 
@@ -254,7 +259,7 @@ MRC_SOURCES = ./Collections.subproj/NSMapTable.m \
               ./NSOperationQueue.m
 
 # The gate compiles a subset of GATE_SRCS with -fno-objc-arc as well.
-MRC_GATE_PAT = Collections.subproj/NSData.m|Collections.subproj/NSMapTable.m|Collections.subproj/NSHashTable.m|Collections.subproj/NSPointerFunctions.m|Runtime.subproj/NSAutoreleasePool.m|Runtime.subproj/NSException.m|Runtime.subproj/NSObjCRuntime.m|Runtime.subproj/NSValue.m|Runtime.subproj/NSZone.m|Runtime.subproj/NSInvocation.m|Runtime.subproj/NSMethodSignature.m
+MRC_GATE_PAT = Collections.subproj/NSData.m|Collections.subproj/NSMapTable.m|Collections.subproj/NSHashTable.m|Collections.subproj/NSPointerFunctions.m|Runtime.subproj/NSAutoreleasePool.m|Runtime.subproj/NSException.m|Runtime.subproj/NSObjCRuntime.m|Runtime.subproj/NSValue.m|Runtime.subproj/NSZone.m|Runtime.subproj/NSInvocation.m|Runtime.subproj/NSMethodSignature.m|\./NSOperation.m|\./NSOperationQueue.m
 
 # The gate executable links against Apple's CoreFoundation for its CF_* C
 # symbols only.  It must link with the Apple SDK sysroot, not ${RN}: the

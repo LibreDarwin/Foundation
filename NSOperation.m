@@ -21,8 +21,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 @implementation NSOperation
 
 -(void)main {
-	NSLog( @"NSOperation is an abstract class, implement -[%@ %@]", [self class], NSStringFromSelector( _cmd ) );
-	[self doesNotRecognizeSelector: _cmd];
+	// Apple's -[NSOperation main] is a no-op on the base class: starting a
+	// bare NSOperation succeeds and marks the operation finished without
+	// running any work.  Subclasses (and concurrent operations) override.
 }
 
 -(NSArray *)dependencies {

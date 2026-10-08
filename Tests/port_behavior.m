@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
-#import "NSOperation.h"
-#import "NSOperationQueue.h"
+#import <Foundation/NSOperation.h>
+#import <Foundation/NSOperationQueue.h>
 #import <CoreFoundation/CFBase.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -461,6 +461,7 @@ static void asCtBrief(const char *label, NSAttributedString *a) {
     _name = name;
     [self didChangeValueForKey:@"name"];
 }
+@end
 
 /* A KVO target that uses automatic notification (default behavior). */
 @interface PKVOTargetAuto : NSObject
@@ -476,7 +477,6 @@ static void asCtBrief(const char *label, NSAttributedString *a) {
 - (NSString *)display {
     return [@"D:" stringByAppendingString:self.name ?: @"-"];
 }
-@end
 @end
 
 @interface PKVOObserver : NSObject
@@ -4521,8 +4521,12 @@ int main(void) {
         p("op isFinished initial", [op isFinished] ? @"yes" : @"no");
         p("op isCancelled initial", [op isCancelled] ? @"yes" : @"no");
         p("op isConcurrent", [op isConcurrent] ? @"yes" : @"no");
-        p("op isAsynchronous", [op isAsynchronous] ? @"yes" : @"no");
-        [op start];
+        @try {
+            [op start];
+            p("op start bare", @"ok");
+        } @catch (NSException *e) {
+            p("op start bare", e.name);
+        }
         p("op isExecuting after start", [op isExecuting] ? @"yes" : @"no");
         p("op isFinished after start", [op isFinished] ? @"yes" : @"no");
         [op cancel];
@@ -4560,14 +4564,24 @@ int main(void) {
         NSOperation *a = [NSOperation new];
         NSOperation *b = [NSOperation new];
         [b addDependency:a];
-        p("op deps after add", [[NSString stringWithFormat:@"%lu", (unsigned long)[[b dependencies] count]]]);
+        p("op deps after add", [NSString stringWithFormat:@"%lu", (unsigned long)[[b dependencies] count]]);
         [b removeDependency:a];
-        p("op deps after remove", [[NSString stringWithFormat:@"%lu", (unsigned long)[[b dependencies] count]]]);
+        p("op deps after remove", [NSString stringWithFormat:@"%lu", (unsigned long)[[b dependencies] count]]);
         p("op queuePriority initial", [NSString stringWithFormat:@"%ld", (long)[a queuePriority]]);
         p("op isReady", [a isReady] ? @"yes" : @"no");
-        [a setCompletionBlock:^{}];
-        [a completionBlock]; // exercise
-        p("op completionBlock set", @"ok");
+    }
+
+    /* ---------- NSOperationQueue extended ---------- */
+    @autoreleasepool {
+        NSOperationQueue *q2 = [NSOperationQueue new];
+        NSOperation *oa = [NSOperation new];
+        NSOperation *ob = [NSOperation new];
+        [q2 addOperations:@[oa, ob] waitUntilFinished:YES];
+        p("oq addOps wait count", [NSString stringWithFormat:@"%lu", (unsigned long)[[q2 operations] count]]);
+        p("oq currentQueue", [NSOperationQueue currentQueue] == nil ? @"nil" : @"non-nil");
+        p("oq mainQueue", [NSOperationQueue mainQueue] == nil ? @"nil" : @"non-nil");
+        p("oq mainQueue name", [[NSOperationQueue mainQueue] name]);
+        p("oq mainQueue maxConc", [NSString stringWithFormat:@"%ld", (long)[[NSOperationQueue mainQueue] maxConcurrentOperationCount]]);
     }
 
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */

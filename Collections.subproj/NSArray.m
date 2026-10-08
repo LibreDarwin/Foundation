@@ -311,6 +311,18 @@ static CFComparisonResult NSNSArrayDispatchDescriptors(const void *object1, cons
     CFArrayRemoveValueAtIndex(NSARRAY_CF(CFMutableArrayRef, self), (CFIndex)index);
 }
 
+/* Removes every occurrence equal to object, walking backwards so a removal
+ * never invalidates an index we have not visited yet. */
+- (void)removeObject:(id)object {
+    CFMutableArrayRef array = NSARRAY_CF(CFMutableArrayRef, self);
+    CFIndex n = CFArrayGetCount(array);
+    while (n-- > 0) {
+        if (CFEqual(CFArrayGetValueAtIndex(array, n), NSARRAY_CF(const void *, object))) {
+            CFArrayRemoveValueAtIndex(array, n);
+        }
+    }
+}
+
 /* An empty receiver raises (via the same CF bounds path as removeObjectAtIndex:)
  * on index NSUIntegerMax, matching Apple's NSRangeException. */
 - (void)removeLastObject {
