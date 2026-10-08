@@ -4555,6 +4555,21 @@ int main(void) {
         p("oq cancelled all", @"ok");
     }
 
+    /* ---------- NSOperation extended ---------- */
+    @autoreleasepool {
+        NSOperation *a = [NSOperation new];
+        NSOperation *b = [NSOperation new];
+        [b addDependency:a];
+        p("op deps after add", [[NSString stringWithFormat:@"%lu", (unsigned long)[[b dependencies] count]]]);
+        [b removeDependency:a];
+        p("op deps after remove", [[NSString stringWithFormat:@"%lu", (unsigned long)[[b dependencies] count]]]);
+        p("op queuePriority initial", [NSString stringWithFormat:@"%ld", (long)[a queuePriority]]);
+        p("op isReady", [a isReady] ? @"yes" : @"no");
+        [a setCompletionBlock:^{}];
+        [a completionBlock]; // exercise
+        p("op completionBlock set", @"ok");
+    }
+
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
     port_behavior_pool();
 
