@@ -54,7 +54,15 @@ ALLOWLIST = [
     # the attribute text (which contains "_(") between the selector words, so
     # the matcher computes a mangled name with a trailing underscore.
     ('NSKeyedArchiver.h', 'unarchiveTopLevelObjectWithDataerror_', 'Serialization.subproj/NSKeyedUnarchiver.m:329'),
+    ('NSFileWrapper.h', 'addFileWithPathinitWithURLoptionserrorsetPreferredFileNameaddFileWrapper', 'FileManager.subproj/NSFileWrapper.m'),
+    ('NSFileWrapper.h', 'addSymbolicLinkWithDestinationpreferredFilenameinitWithSymbolicLinkDestinationURLsetPreferredFileNameaddFileWrapper', 'FileManager.subproj/NSFileWrapper.m'),
+    ('NSFileWrapper.h', 'initSymbolicLinkWithDestinationinitSymbolicLinkWithDestinationURLsetPreferredFileName', 'FileManager.subproj/NSFileWrapper.m'),
+    ('NSFileWrapper.h', 'initWithPathinitWithURLoptionserror', 'FileManager.subproj/NSFileWrapper.m'),
+    ('NSFileWrapper.h', 'needsToBeUpdatedFromPathmatchesContentsOfURL', 'FileManager.subproj/NSFileWrapper.m'),
+    ('NSFileWrapper.h', 'updateFromPathreadFromURLoptionserror', 'FileManager.subproj/NSFileWrapper.m'),
+    ('NSFileWrapper.h', 'writeToFileatomicallyupdateFilenameswriteToURLoptionsoriginalContentsURLerror', 'FileManager.subproj/NSFileWrapper.m'),
 ]
+
 
 
 def selectors_header(src):

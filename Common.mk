@@ -245,6 +245,7 @@ MRC_SOURCES = ./Collections.subproj/NSMapTable.m \
               ./FileManager.subproj/NSFileHandle.m \
               ./FileManager.subproj/NSFileManager.m \
               ./FileManager.subproj/NSPathUtilities.m \
+              ./FileManager.subproj/NSFileWrapper.m \
               ./Runtime.subproj/NSAutoreleasePool.m \
               ./Runtime.subproj/NSBundle.m \
               ./Runtime.subproj/NSException.m \

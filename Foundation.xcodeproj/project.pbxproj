@@ -13,9 +13,11 @@
 		CA336FB86E7D7FE25F1AE396 /* Collections.subproj/NSEnumerator.m in Sources */ = {isa = PBXBuildFile; fileRef = 3ECE4359CB2F523890B09843 /* Collections.subproj/NSEnumerator.m */; };
 		CE1229667BD0DE63630831B9 /* Collections.subproj/NSEnumerator_array.m in Sources */ = {isa = PBXBuildFile; fileRef = F88722F89828AEBCF57AAF0E /* Collections.subproj/NSEnumerator_array.m */; };
 		D1756E75DEFCADC640BA83D7 /* Collections.subproj/NSHashTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 4AD4625CA382AE8A057D07FA /* Collections.subproj/NSHashTable.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		B9A7B401009BAAB807F281CA /* Collections.subproj/NSIndexPath.m in Sources */ = {isa = PBXBuildFile; fileRef = 90BAFE76C42024076AF93021 /* Collections.subproj/NSIndexPath.m */; };
 		83D7C2CF0A6684F05A89ABF1 /* Collections.subproj/NSIndexSet.m in Sources */ = {isa = PBXBuildFile; fileRef = 0B80FCA92BA36CD0D6BC1CC0 /* Collections.subproj/NSIndexSet.m */; };
 		86ADD6E3BA5AD61102F1A0F6 /* Collections.subproj/NSMapTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 3EDA3B8B4620B4CA8D455C30 /* Collections.subproj/NSMapTable.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		CA0E858B8F548856CAACBA9B /* Collections.subproj/NSOrderedSet.m in Sources */ = {isa = PBXBuildFile; fileRef = D78285491D83710379449060 /* Collections.subproj/NSOrderedSet.m */; };
+		A7D2A4EDE3BE8A6F22892A66 /* Collections.subproj/NSPointerArray.m in Sources */ = {isa = PBXBuildFile; fileRef = F261A0CD00168B2159E56F05 /* Collections.subproj/NSPointerArray.m */; };
 		4687F95733156FA0D27A44F1 /* Collections.subproj/NSPointerFunctions.m in Sources */ = {isa = PBXBuildFile; fileRef = 6B6F580482A65B7F9A032575 /* Collections.subproj/NSPointerFunctions.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		A0B616910FBB95825B965061 /* Collections.subproj/NSSet.m in Sources */ = {isa = PBXBuildFile; fileRef = 9F07A8C41CC1C23B3B127542 /* Collections.subproj/NSSet.m */; };
 		C209B1196FEF24C22DBECEE2 /* Date.subproj/NSCalendar.m in Sources */ = {isa = PBXBuildFile; fileRef = A9B8D866BCA53F02D07FCA2B /* Date.subproj/NSCalendar.m */; };
@@ -26,6 +28,7 @@
 		71A15F22A32617A943A4AD34 /* Date.subproj/NSTimeZone.m in Sources */ = {isa = PBXBuildFile; fileRef = 672CC657F91374C41B0421D1 /* Date.subproj/NSTimeZone.m */; };
 		C03F7CD48C1D830EE6C18EEE /* FileManager.subproj/NSFileHandle.m in Sources */ = {isa = PBXBuildFile; fileRef = 38D13E0FD6D35BFB1006412D /* FileManager.subproj/NSFileHandle.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		F2A6B19A2FC2895E20C3FC64 /* FileManager.subproj/NSFileManager.m in Sources */ = {isa = PBXBuildFile; fileRef = E148A198ABFD594FF0ACCB12 /* FileManager.subproj/NSFileManager.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		A45C25D6E66B5ADAA8B58E92 /* FileManager.subproj/NSFileWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 5023A9C2596456BE50DBE639 /* FileManager.subproj/NSFileWrapper.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		AF99A0FF3978557812572972 /* FileManager.subproj/NSPathUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 51743FE7FE226E35679D47AB /* FileManager.subproj/NSPathUtilities.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		397828BF6B1267D0069909CD /* FileManager.subproj/NSPipe.m in Sources */ = {isa = PBXBuildFile; fileRef = D3B8B15854C86942D8CA07F2 /* FileManager.subproj/NSPipe.m */; };
 		E5C022E63F6958CF69AAD57D /* FileManager.subproj/NSTask.m in Sources */ = {isa = PBXBuildFile; fileRef = 368EF80883EE7E8BC2ACE3D2 /* FileManager.subproj/NSTask.m */; };
@@ -40,6 +43,10 @@
 		549185E3265A5741D8A6F720 /* Numeric.subproj/NSDecimalNumber.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4AE57DF87210AD4D752A7C /* Numeric.subproj/NSDecimalNumber.m */; };
 		10C8FD372CFA9346269B6E5F /* Numeric.subproj/NSNumber.m in Sources */ = {isa = PBXBuildFile; fileRef = A491D2EB350202A3AF96798A /* Numeric.subproj/NSNumber.m */; };
 		FDB6882ECEADA094F6EB0421 /* Numeric.subproj/NSNumberFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 95C4061E9403C74177E7ECB0 /* Numeric.subproj/NSNumberFormatter.m */; };
+		1012CB713E365CB677E9DB90 /* Predicate.subproj/NSComparisonPredicate.m in Sources */ = {isa = PBXBuildFile; fileRef = 7D543FAF014A0CAE462D39D7 /* Predicate.subproj/NSComparisonPredicate.m */; };
+		9E8E1C7196266CEC8C0772D5 /* Predicate.subproj/NSCompoundPredicate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0264AA6FA0E7986354389A47 /* Predicate.subproj/NSCompoundPredicate.m */; };
+		3843DBE267374C3BAF5DE679 /* Predicate.subproj/NSExpression.m in Sources */ = {isa = PBXBuildFile; fileRef = AA3744DC0A76BFAD85046B9B /* Predicate.subproj/NSExpression.m */; };
+		1EC152D7C0085DB986E672E5 /* Predicate.subproj/NSPredicate.m in Sources */ = {isa = PBXBuildFile; fileRef = 3104FFC03689AAC9E0B0E2C2 /* Predicate.subproj/NSPredicate.m */; };
 		1ED7476E9F4D38349058A23E /* RunLoop.subproj/NSRunLoop.m in Sources */ = {isa = PBXBuildFile; fileRef = F2AB46CD397DA2DDBB793D68 /* RunLoop.subproj/NSRunLoop.m */; };
 		6DFD9EB2A2C227F2C3F7E411 /* RunLoop.subproj/NSTimer.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E86CC7506DAB0A09731A44A /* RunLoop.subproj/NSTimer.m */; };
 		070337FF4EE8EC74EEF72709 /* Runtime.subproj/NSAutoreleasePool.m in Sources */ = {isa = PBXBuildFile; fileRef = B196A00B12ECF722AB38904E /* Runtime.subproj/NSAutoreleasePool.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
@@ -48,16 +55,21 @@
 		FD7F2CB194F941B2D90796F9 /* Runtime.subproj/NSError.m in Sources */ = {isa = PBXBuildFile; fileRef = A49F3975B15721140B95CE7B /* Runtime.subproj/NSError.m */; };
 		5895BB2ECC821F01FAB45CD8 /* Runtime.subproj/NSException.m in Sources */ = {isa = PBXBuildFile; fileRef = 48F02C13F72ED0CB305435D0 /* Runtime.subproj/NSException.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		8BF90D520A50EFE255101C18 /* Runtime.subproj/NSGeometry.m in Sources */ = {isa = PBXBuildFile; fileRef = BF2FA7A8505CDECBE36B65E1 /* Runtime.subproj/NSGeometry.m */; };
+		973912A3A14A7B05AF09EB77 /* Runtime.subproj/NSInvocation.m in Sources */ = {isa = PBXBuildFile; fileRef = 887C1008EF1FC015DD74098C /* Runtime.subproj/NSInvocation.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		8E906C75A5205AE59CC535F3 /* Runtime.subproj/NSJSONSerialization.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A4B797D0334295C17D5DACB /* Runtime.subproj/NSJSONSerialization.m */; };
 		357C5FC9D0C7BD0D541025FF /* Runtime.subproj/NSKeyValueCoding.m in Sources */ = {isa = PBXBuildFile; fileRef = 6E6CCE71A1726C8F4BEF7B4D /* Runtime.subproj/NSKeyValueCoding.m */; };
+		1C295F0F538C4A51EA54494B /* Runtime.subproj/NSKeyValueObserving.m in Sources */ = {isa = PBXBuildFile; fileRef = F3D1BD844B58B96C63DB89AD /* Runtime.subproj/NSKeyValueObserving.m */; };
 		65E22ADD91420C4B78D79800 /* Runtime.subproj/NSLog.m in Sources */ = {isa = PBXBuildFile; fileRef = 6B1F0ABACE882120316D90F1 /* Runtime.subproj/NSLog.m */; };
+		41717726657188E5CCD75235 /* Runtime.subproj/NSMethodSignature.m in Sources */ = {isa = PBXBuildFile; fileRef = BFBC173E8520F35267354927 /* Runtime.subproj/NSMethodSignature.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		1CB6F8331AB64F8C76D41D59 /* Runtime.subproj/NSNull.m in Sources */ = {isa = PBXBuildFile; fileRef = E414B3B15E6387F61FE0D9F8 /* Runtime.subproj/NSNull.m */; };
 		308076393842E9766D98D800 /* Runtime.subproj/NSObjCRuntime.m in Sources */ = {isa = PBXBuildFile; fileRef = 0059C2F35AE8B9251290B02E /* Runtime.subproj/NSObjCRuntime.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		FF060930BA9AB747493D2252 /* Runtime.subproj/NSProcessInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = ACEB3155D72D99F49F45D4C9 /* Runtime.subproj/NSProcessInfo.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		AE1F9E12910C991E224EC3AB /* Runtime.subproj/NSPropertyList.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B556609E276A9AE2DA58D04 /* Runtime.subproj/NSPropertyList.m */; };
 		739E6CDD1B3C25601C6C8514 /* Runtime.subproj/NSRange.m in Sources */ = {isa = PBXBuildFile; fileRef = D761E15C000E532A6D58016E /* Runtime.subproj/NSRange.m */; };
+		CA862DDC8B0959982114D1CC /* Runtime.subproj/NSUUID.m in Sources */ = {isa = PBXBuildFile; fileRef = 0DF704C6B106DAD427715718 /* Runtime.subproj/NSUUID.m */; };
 		3CA31790F3601B5A606791A9 /* Runtime.subproj/NSUserDefaults.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E7BC2D775B97145B9000141 /* Runtime.subproj/NSUserDefaults.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		F31802ADFFBA2F7EF105D108 /* Runtime.subproj/NSValue.m in Sources */ = {isa = PBXBuildFile; fileRef = F7B847F112E59005525323F1 /* Runtime.subproj/NSValue.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		568B034D67BEAE00ABE1991A /* Runtime.subproj/NSValueTransformer.m in Sources */ = {isa = PBXBuildFile; fileRef = 84C0D80137C435686382A106 /* Runtime.subproj/NSValueTransformer.m */; };
 		4744083B112A14AB1D886066 /* Runtime.subproj/NSZone.m in Sources */ = {isa = PBXBuildFile; fileRef = BBE651918A1CB0F3B8630C22 /* Runtime.subproj/NSZone.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		6E2E7398081A83671D47074A /* Serialization.subproj/NSCoder.m in Sources */ = {isa = PBXBuildFile; fileRef = C8550A20E5BF46B196BF17AE /* Serialization.subproj/NSCoder.m */; };
 		84F4B8A3429797D55DB8C731 /* Serialization.subproj/NSKeyedArchiver.m in Sources */ = {isa = PBXBuildFile; fileRef = 9DDDE238F31081563BBADF40 /* Serialization.subproj/NSKeyedArchiver.m */; };
@@ -67,8 +79,11 @@
 		8949471AD63039D5F7918ADE /* String.subproj/NSAttributedString.m in Sources */ = {isa = PBXBuildFile; fileRef = 49FFA5E6D1C0C4F21687508C /* String.subproj/NSAttributedString.m */; };
 		B19585A0C19B611A58AE0B57 /* String.subproj/NSCFString.m in Sources */ = {isa = PBXBuildFile; fileRef = CEE64D496D76AF52CDC3972A /* String.subproj/NSCFString.m */; };
 		C4FF184689279D96A23F8E17 /* String.subproj/NSCharacterSet.m in Sources */ = {isa = PBXBuildFile; fileRef = E51BA621FCC8422FFF82688E /* String.subproj/NSCharacterSet.m */; };
+		4997F1D1498C2F14863FEC44 /* String.subproj/NSRegularExpression.m in Sources */ = {isa = PBXBuildFile; fileRef = F3C60B1DFF475A4F7B0C44A5 /* String.subproj/NSRegularExpression.m */; };
 		89AA223502D77B3E58F19B3D /* String.subproj/NSScanner.m in Sources */ = {isa = PBXBuildFile; fileRef = 271103993389B12DEFA08672 /* String.subproj/NSScanner.m */; };
 		3D3EDE4E19612D9889675808 /* String.subproj/NSString.m in Sources */ = {isa = PBXBuildFile; fileRef = 031F2A2700816F35322E1482 /* String.subproj/NSString.m */; };
+		015E2F3A57080A2554306BF1 /* String.subproj/NSTextAttachment.m in Sources */ = {isa = PBXBuildFile; fileRef = D79F9BD0F39C33E4B4396BFB /* String.subproj/NSTextAttachment.m */; };
+		94D8F244996C1137B7D94C32 /* String.subproj/NSTextCheckingResult.m in Sources */ = {isa = PBXBuildFile; fileRef = F06211ED86920A142ECFE5E5 /* String.subproj/NSTextCheckingResult.m */; };
 		8F5FB139C72338EF41566DDA /* Thread.subproj/NSThread.m in Sources */ = {isa = PBXBuildFile; fileRef = EE79D13FA4BE13D56F4B5F68 /* Thread.subproj/NSThread.m */; };
 		5BC39902416EB257968B8497 /* URL.subproj/NSURL.m in Sources */ = {isa = PBXBuildFile; fileRef = EB427A3670E54EE5375DFD51 /* URL.subproj/NSURL.m */; };
 		081AA637F7A7C840D11D3A2E /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E18A122D5A2AD703C145E408 /* CoreFoundation.framework */; };
@@ -82,9 +97,11 @@
 		3ECE4359CB2F523890B09843 /* Collections.subproj/NSEnumerator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSEnumerator.m"; path = "Collections.subproj/NSEnumerator.m"; sourceTree = "<group>"; };
 		F88722F89828AEBCF57AAF0E /* Collections.subproj/NSEnumerator_array.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSEnumerator_array.m"; path = "Collections.subproj/NSEnumerator_array.m"; sourceTree = "<group>"; };
 		4AD4625CA382AE8A057D07FA /* Collections.subproj/NSHashTable.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSHashTable.m"; path = "Collections.subproj/NSHashTable.m"; sourceTree = "<group>"; };
+		90BAFE76C42024076AF93021 /* Collections.subproj/NSIndexPath.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSIndexPath.m"; path = "Collections.subproj/NSIndexPath.m"; sourceTree = "<group>"; };
 		0B80FCA92BA36CD0D6BC1CC0 /* Collections.subproj/NSIndexSet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSIndexSet.m"; path = "Collections.subproj/NSIndexSet.m"; sourceTree = "<group>"; };
 		3EDA3B8B4620B4CA8D455C30 /* Collections.subproj/NSMapTable.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSMapTable.m"; path = "Collections.subproj/NSMapTable.m"; sourceTree = "<group>"; };
 		D78285491D83710379449060 /* Collections.subproj/NSOrderedSet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSOrderedSet.m"; path = "Collections.subproj/NSOrderedSet.m"; sourceTree = "<group>"; };
+		F261A0CD00168B2159E56F05 /* Collections.subproj/NSPointerArray.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPointerArray.m"; path = "Collections.subproj/NSPointerArray.m"; sourceTree = "<group>"; };
 		6B6F580482A65B7F9A032575 /* Collections.subproj/NSPointerFunctions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPointerFunctions.m"; path = "Collections.subproj/NSPointerFunctions.m"; sourceTree = "<group>"; };
 		9F07A8C41CC1C23B3B127542 /* Collections.subproj/NSSet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSSet.m"; path = "Collections.subproj/NSSet.m"; sourceTree = "<group>"; };
 		A9B8D866BCA53F02D07FCA2B /* Date.subproj/NSCalendar.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCalendar.m"; path = "Date.subproj/NSCalendar.m"; sourceTree = "<group>"; };
@@ -95,6 +112,7 @@
 		672CC657F91374C41B0421D1 /* Date.subproj/NSTimeZone.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSTimeZone.m"; path = "Date.subproj/NSTimeZone.m"; sourceTree = "<group>"; };
 		38D13E0FD6D35BFB1006412D /* FileManager.subproj/NSFileHandle.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSFileHandle.m"; path = "FileManager.subproj/NSFileHandle.m"; sourceTree = "<group>"; };
 		E148A198ABFD594FF0ACCB12 /* FileManager.subproj/NSFileManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSFileManager.m"; path = "FileManager.subproj/NSFileManager.m"; sourceTree = "<group>"; };
+		5023A9C2596456BE50DBE639 /* FileManager.subproj/NSFileWrapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSFileWrapper.m"; path = "FileManager.subproj/NSFileWrapper.m"; sourceTree = "<group>"; };
 		51743FE7FE226E35679D47AB /* FileManager.subproj/NSPathUtilities.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPathUtilities.m"; path = "FileManager.subproj/NSPathUtilities.m"; sourceTree = "<group>"; };
 		D3B8B15854C86942D8CA07F2 /* FileManager.subproj/NSPipe.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPipe.m"; path = "FileManager.subproj/NSPipe.m"; sourceTree = "<group>"; };
 		368EF80883EE7E8BC2ACE3D2 /* FileManager.subproj/NSTask.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSTask.m"; path = "FileManager.subproj/NSTask.m"; sourceTree = "<group>"; };
@@ -109,6 +127,10 @@
 		3C4AE57DF87210AD4D752A7C /* Numeric.subproj/NSDecimalNumber.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDecimalNumber.m"; path = "Numeric.subproj/NSDecimalNumber.m"; sourceTree = "<group>"; };
 		A491D2EB350202A3AF96798A /* Numeric.subproj/NSNumber.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSNumber.m"; path = "Numeric.subproj/NSNumber.m"; sourceTree = "<group>"; };
 		95C4061E9403C74177E7ECB0 /* Numeric.subproj/NSNumberFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSNumberFormatter.m"; path = "Numeric.subproj/NSNumberFormatter.m"; sourceTree = "<group>"; };
+		7D543FAF014A0CAE462D39D7 /* Predicate.subproj/NSComparisonPredicate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSComparisonPredicate.m"; path = "Predicate.subproj/NSComparisonPredicate.m"; sourceTree = "<group>"; };
+		0264AA6FA0E7986354389A47 /* Predicate.subproj/NSCompoundPredicate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCompoundPredicate.m"; path = "Predicate.subproj/NSCompoundPredicate.m"; sourceTree = "<group>"; };
+		AA3744DC0A76BFAD85046B9B /* Predicate.subproj/NSExpression.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSExpression.m"; path = "Predicate.subproj/NSExpression.m"; sourceTree = "<group>"; };
+		3104FFC03689AAC9E0B0E2C2 /* Predicate.subproj/NSPredicate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPredicate.m"; path = "Predicate.subproj/NSPredicate.m"; sourceTree = "<group>"; };
 		F2AB46CD397DA2DDBB793D68 /* RunLoop.subproj/NSRunLoop.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSRunLoop.m"; path = "RunLoop.subproj/NSRunLoop.m"; sourceTree = "<group>"; };
 		5E86CC7506DAB0A09731A44A /* RunLoop.subproj/NSTimer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSTimer.m"; path = "RunLoop.subproj/NSTimer.m"; sourceTree = "<group>"; };
 		B196A00B12ECF722AB38904E /* Runtime.subproj/NSAutoreleasePool.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSAutoreleasePool.m"; path = "Runtime.subproj/NSAutoreleasePool.m"; sourceTree = "<group>"; };
@@ -117,16 +139,21 @@
 		A49F3975B15721140B95CE7B /* Runtime.subproj/NSError.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSError.m"; path = "Runtime.subproj/NSError.m"; sourceTree = "<group>"; };
 		48F02C13F72ED0CB305435D0 /* Runtime.subproj/NSException.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSException.m"; path = "Runtime.subproj/NSException.m"; sourceTree = "<group>"; };
 		BF2FA7A8505CDECBE36B65E1 /* Runtime.subproj/NSGeometry.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSGeometry.m"; path = "Runtime.subproj/NSGeometry.m"; sourceTree = "<group>"; };
+		887C1008EF1FC015DD74098C /* Runtime.subproj/NSInvocation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSInvocation.m"; path = "Runtime.subproj/NSInvocation.m"; sourceTree = "<group>"; };
 		1A4B797D0334295C17D5DACB /* Runtime.subproj/NSJSONSerialization.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSJSONSerialization.m"; path = "Runtime.subproj/NSJSONSerialization.m"; sourceTree = "<group>"; };
 		6E6CCE71A1726C8F4BEF7B4D /* Runtime.subproj/NSKeyValueCoding.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSKeyValueCoding.m"; path = "Runtime.subproj/NSKeyValueCoding.m"; sourceTree = "<group>"; };
+		F3D1BD844B58B96C63DB89AD /* Runtime.subproj/NSKeyValueObserving.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSKeyValueObserving.m"; path = "Runtime.subproj/NSKeyValueObserving.m"; sourceTree = "<group>"; };
 		6B1F0ABACE882120316D90F1 /* Runtime.subproj/NSLog.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSLog.m"; path = "Runtime.subproj/NSLog.m"; sourceTree = "<group>"; };
+		BFBC173E8520F35267354927 /* Runtime.subproj/NSMethodSignature.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSMethodSignature.m"; path = "Runtime.subproj/NSMethodSignature.m"; sourceTree = "<group>"; };
 		E414B3B15E6387F61FE0D9F8 /* Runtime.subproj/NSNull.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSNull.m"; path = "Runtime.subproj/NSNull.m"; sourceTree = "<group>"; };
 		0059C2F35AE8B9251290B02E /* Runtime.subproj/NSObjCRuntime.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSObjCRuntime.m"; path = "Runtime.subproj/NSObjCRuntime.m"; sourceTree = "<group>"; };
 		ACEB3155D72D99F49F45D4C9 /* Runtime.subproj/NSProcessInfo.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSProcessInfo.m"; path = "Runtime.subproj/NSProcessInfo.m"; sourceTree = "<group>"; };
 		7B556609E276A9AE2DA58D04 /* Runtime.subproj/NSPropertyList.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPropertyList.m"; path = "Runtime.subproj/NSPropertyList.m"; sourceTree = "<group>"; };
 		D761E15C000E532A6D58016E /* Runtime.subproj/NSRange.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSRange.m"; path = "Runtime.subproj/NSRange.m"; sourceTree = "<group>"; };
+		0DF704C6B106DAD427715718 /* Runtime.subproj/NSUUID.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSUUID.m"; path = "Runtime.subproj/NSUUID.m"; sourceTree = "<group>"; };
 		7E7BC2D775B97145B9000141 /* Runtime.subproj/NSUserDefaults.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSUserDefaults.m"; path = "Runtime.subproj/NSUserDefaults.m"; sourceTree = "<group>"; };
 		F7B847F112E59005525323F1 /* Runtime.subproj/NSValue.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSValue.m"; path = "Runtime.subproj/NSValue.m"; sourceTree = "<group>"; };
+		84C0D80137C435686382A106 /* Runtime.subproj/NSValueTransformer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSValueTransformer.m"; path = "Runtime.subproj/NSValueTransformer.m"; sourceTree = "<group>"; };
 		BBE651918A1CB0F3B8630C22 /* Runtime.subproj/NSZone.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSZone.m"; path = "Runtime.subproj/NSZone.m"; sourceTree = "<group>"; };
 		C8550A20E5BF46B196BF17AE /* Serialization.subproj/NSCoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCoder.m"; path = "Serialization.subproj/NSCoder.m"; sourceTree = "<group>"; };
 		9DDDE238F31081563BBADF40 /* Serialization.subproj/NSKeyedArchiver.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSKeyedArchiver.m"; path = "Serialization.subproj/NSKeyedArchiver.m"; sourceTree = "<group>"; };
@@ -136,8 +163,11 @@
 		49FFA5E6D1C0C4F21687508C /* String.subproj/NSAttributedString.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSAttributedString.m"; path = "String.subproj/NSAttributedString.m"; sourceTree = "<group>"; };
 		CEE64D496D76AF52CDC3972A /* String.subproj/NSCFString.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCFString.m"; path = "String.subproj/NSCFString.m"; sourceTree = "<group>"; };
 		E51BA621FCC8422FFF82688E /* String.subproj/NSCharacterSet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCharacterSet.m"; path = "String.subproj/NSCharacterSet.m"; sourceTree = "<group>"; };
+		F3C60B1DFF475A4F7B0C44A5 /* String.subproj/NSRegularExpression.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSRegularExpression.m"; path = "String.subproj/NSRegularExpression.m"; sourceTree = "<group>"; };
 		271103993389B12DEFA08672 /* String.subproj/NSScanner.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSScanner.m"; path = "String.subproj/NSScanner.m"; sourceTree = "<group>"; };
 		031F2A2700816F35322E1482 /* String.subproj/NSString.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSString.m"; path = "String.subproj/NSString.m"; sourceTree = "<group>"; };
+		D79F9BD0F39C33E4B4396BFB /* String.subproj/NSTextAttachment.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSTextAttachment.m"; path = "String.subproj/NSTextAttachment.m"; sourceTree = "<group>"; };
+		F06211ED86920A142ECFE5E5 /* String.subproj/NSTextCheckingResult.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSTextCheckingResult.m"; path = "String.subproj/NSTextCheckingResult.m"; sourceTree = "<group>"; };
 		EE79D13FA4BE13D56F4B5F68 /* Thread.subproj/NSThread.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSThread.m"; path = "Thread.subproj/NSThread.m"; sourceTree = "<group>"; };
 		EB427A3670E54EE5375DFD51 /* URL.subproj/NSURL.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSURL.m"; path = "URL.subproj/NSURL.m"; sourceTree = "<group>"; };
 		5816D3EA598B7642519B3F78 /* Foundation.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Foundation.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -180,9 +210,11 @@
 				3ECE4359CB2F523890B09843 /* Collections.subproj/NSEnumerator.m */,
 				F88722F89828AEBCF57AAF0E /* Collections.subproj/NSEnumerator_array.m */,
 				4AD4625CA382AE8A057D07FA /* Collections.subproj/NSHashTable.m */,
+				90BAFE76C42024076AF93021 /* Collections.subproj/NSIndexPath.m */,
 				0B80FCA92BA36CD0D6BC1CC0 /* Collections.subproj/NSIndexSet.m */,
 				3EDA3B8B4620B4CA8D455C30 /* Collections.subproj/NSMapTable.m */,
 				D78285491D83710379449060 /* Collections.subproj/NSOrderedSet.m */,
+				F261A0CD00168B2159E56F05 /* Collections.subproj/NSPointerArray.m */,
 				6B6F580482A65B7F9A032575 /* Collections.subproj/NSPointerFunctions.m */,
 				9F07A8C41CC1C23B3B127542 /* Collections.subproj/NSSet.m */,
 				A9B8D866BCA53F02D07FCA2B /* Date.subproj/NSCalendar.m */,
@@ -193,6 +225,7 @@
 				672CC657F91374C41B0421D1 /* Date.subproj/NSTimeZone.m */,
 				38D13E0FD6D35BFB1006412D /* FileManager.subproj/NSFileHandle.m */,
 				E148A198ABFD594FF0ACCB12 /* FileManager.subproj/NSFileManager.m */,
+				5023A9C2596456BE50DBE639 /* FileManager.subproj/NSFileWrapper.m */,
 				51743FE7FE226E35679D47AB /* FileManager.subproj/NSPathUtilities.m */,
 				D3B8B15854C86942D8CA07F2 /* FileManager.subproj/NSPipe.m */,
 				368EF80883EE7E8BC2ACE3D2 /* FileManager.subproj/NSTask.m */,
@@ -207,6 +240,10 @@
 				3C4AE57DF87210AD4D752A7C /* Numeric.subproj/NSDecimalNumber.m */,
 				A491D2EB350202A3AF96798A /* Numeric.subproj/NSNumber.m */,
 				95C4061E9403C74177E7ECB0 /* Numeric.subproj/NSNumberFormatter.m */,
+				7D543FAF014A0CAE462D39D7 /* Predicate.subproj/NSComparisonPredicate.m */,
+				0264AA6FA0E7986354389A47 /* Predicate.subproj/NSCompoundPredicate.m */,
+				AA3744DC0A76BFAD85046B9B /* Predicate.subproj/NSExpression.m */,
+				3104FFC03689AAC9E0B0E2C2 /* Predicate.subproj/NSPredicate.m */,
 				F2AB46CD397DA2DDBB793D68 /* RunLoop.subproj/NSRunLoop.m */,
 				5E86CC7506DAB0A09731A44A /* RunLoop.subproj/NSTimer.m */,
 				B196A00B12ECF722AB38904E /* Runtime.subproj/NSAutoreleasePool.m */,
@@ -215,16 +252,21 @@
 				A49F3975B15721140B95CE7B /* Runtime.subproj/NSError.m */,
 				48F02C13F72ED0CB305435D0 /* Runtime.subproj/NSException.m */,
 				BF2FA7A8505CDECBE36B65E1 /* Runtime.subproj/NSGeometry.m */,
+				887C1008EF1FC015DD74098C /* Runtime.subproj/NSInvocation.m */,
 				1A4B797D0334295C17D5DACB /* Runtime.subproj/NSJSONSerialization.m */,
 				6E6CCE71A1726C8F4BEF7B4D /* Runtime.subproj/NSKeyValueCoding.m */,
+				F3D1BD844B58B96C63DB89AD /* Runtime.subproj/NSKeyValueObserving.m */,
 				6B1F0ABACE882120316D90F1 /* Runtime.subproj/NSLog.m */,
+				BFBC173E8520F35267354927 /* Runtime.subproj/NSMethodSignature.m */,
 				E414B3B15E6387F61FE0D9F8 /* Runtime.subproj/NSNull.m */,
 				0059C2F35AE8B9251290B02E /* Runtime.subproj/NSObjCRuntime.m */,
 				ACEB3155D72D99F49F45D4C9 /* Runtime.subproj/NSProcessInfo.m */,
 				7B556609E276A9AE2DA58D04 /* Runtime.subproj/NSPropertyList.m */,
 				D761E15C000E532A6D58016E /* Runtime.subproj/NSRange.m */,
+				0DF704C6B106DAD427715718 /* Runtime.subproj/NSUUID.m */,
 				7E7BC2D775B97145B9000141 /* Runtime.subproj/NSUserDefaults.m */,
 				F7B847F112E59005525323F1 /* Runtime.subproj/NSValue.m */,
+				84C0D80137C435686382A106 /* Runtime.subproj/NSValueTransformer.m */,
 				BBE651918A1CB0F3B8630C22 /* Runtime.subproj/NSZone.m */,
 				C8550A20E5BF46B196BF17AE /* Serialization.subproj/NSCoder.m */,
 				9DDDE238F31081563BBADF40 /* Serialization.subproj/NSKeyedArchiver.m */,
@@ -234,8 +276,11 @@
 				49FFA5E6D1C0C4F21687508C /* String.subproj/NSAttributedString.m */,
 				CEE64D496D76AF52CDC3972A /* String.subproj/NSCFString.m */,
 				E51BA621FCC8422FFF82688E /* String.subproj/NSCharacterSet.m */,
+				F3C60B1DFF475A4F7B0C44A5 /* String.subproj/NSRegularExpression.m */,
 				271103993389B12DEFA08672 /* String.subproj/NSScanner.m */,
 				031F2A2700816F35322E1482 /* String.subproj/NSString.m */,
+				D79F9BD0F39C33E4B4396BFB /* String.subproj/NSTextAttachment.m */,
+				F06211ED86920A142ECFE5E5 /* String.subproj/NSTextCheckingResult.m */,
 				EE79D13FA4BE13D56F4B5F68 /* Thread.subproj/NSThread.m */,
 				EB427A3670E54EE5375DFD51 /* URL.subproj/NSURL.m */,
 			);
@@ -329,9 +374,11 @@
 				CA336FB86E7D7FE25F1AE396 /* Collections.subproj/NSEnumerator.m in Sources */,
 				CE1229667BD0DE63630831B9 /* Collections.subproj/NSEnumerator_array.m in Sources */,
 				D1756E75DEFCADC640BA83D7 /* Collections.subproj/NSHashTable.m in Sources */,
+				B9A7B401009BAAB807F281CA /* Collections.subproj/NSIndexPath.m in Sources */,
 				83D7C2CF0A6684F05A89ABF1 /* Collections.subproj/NSIndexSet.m in Sources */,
 				86ADD6E3BA5AD61102F1A0F6 /* Collections.subproj/NSMapTable.m in Sources */,
 				CA0E858B8F548856CAACBA9B /* Collections.subproj/NSOrderedSet.m in Sources */,
+				A7D2A4EDE3BE8A6F22892A66 /* Collections.subproj/NSPointerArray.m in Sources */,
 				4687F95733156FA0D27A44F1 /* Collections.subproj/NSPointerFunctions.m in Sources */,
 				A0B616910FBB95825B965061 /* Collections.subproj/NSSet.m in Sources */,
 				C209B1196FEF24C22DBECEE2 /* Date.subproj/NSCalendar.m in Sources */,
@@ -342,6 +389,7 @@
 				71A15F22A32617A943A4AD34 /* Date.subproj/NSTimeZone.m in Sources */,
 				C03F7CD48C1D830EE6C18EEE /* FileManager.subproj/NSFileHandle.m in Sources */,
 				F2A6B19A2FC2895E20C3FC64 /* FileManager.subproj/NSFileManager.m in Sources */,
+				A45C25D6E66B5ADAA8B58E92 /* FileManager.subproj/NSFileWrapper.m in Sources */,
 				AF99A0FF3978557812572972 /* FileManager.subproj/NSPathUtilities.m in Sources */,
 				397828BF6B1267D0069909CD /* FileManager.subproj/NSPipe.m in Sources */,
 				E5C022E63F6958CF69AAD57D /* FileManager.subproj/NSTask.m in Sources */,
@@ -356,6 +404,10 @@
 				549185E3265A5741D8A6F720 /* Numeric.subproj/NSDecimalNumber.m in Sources */,
 				10C8FD372CFA9346269B6E5F /* Numeric.subproj/NSNumber.m in Sources */,
 				FDB6882ECEADA094F6EB0421 /* Numeric.subproj/NSNumberFormatter.m in Sources */,
+				1012CB713E365CB677E9DB90 /* Predicate.subproj/NSComparisonPredicate.m in Sources */,
+				9E8E1C7196266CEC8C0772D5 /* Predicate.subproj/NSCompoundPredicate.m in Sources */,
+				3843DBE267374C3BAF5DE679 /* Predicate.subproj/NSExpression.m in Sources */,
+				1EC152D7C0085DB986E672E5 /* Predicate.subproj/NSPredicate.m in Sources */,
 				1ED7476E9F4D38349058A23E /* RunLoop.subproj/NSRunLoop.m in Sources */,
 				6DFD9EB2A2C227F2C3F7E411 /* RunLoop.subproj/NSTimer.m in Sources */,
 				070337FF4EE8EC74EEF72709 /* Runtime.subproj/NSAutoreleasePool.m in Sources */,
@@ -364,16 +416,21 @@
 				FD7F2CB194F941B2D90796F9 /* Runtime.subproj/NSError.m in Sources */,
 				5895BB2ECC821F01FAB45CD8 /* Runtime.subproj/NSException.m in Sources */,
 				8BF90D520A50EFE255101C18 /* Runtime.subproj/NSGeometry.m in Sources */,
+				973912A3A14A7B05AF09EB77 /* Runtime.subproj/NSInvocation.m in Sources */,
 				8E906C75A5205AE59CC535F3 /* Runtime.subproj/NSJSONSerialization.m in Sources */,
 				357C5FC9D0C7BD0D541025FF /* Runtime.subproj/NSKeyValueCoding.m in Sources */,
+				1C295F0F538C4A51EA54494B /* Runtime.subproj/NSKeyValueObserving.m in Sources */,
 				65E22ADD91420C4B78D79800 /* Runtime.subproj/NSLog.m in Sources */,
+				41717726657188E5CCD75235 /* Runtime.subproj/NSMethodSignature.m in Sources */,
 				1CB6F8331AB64F8C76D41D59 /* Runtime.subproj/NSNull.m in Sources */,
 				308076393842E9766D98D800 /* Runtime.subproj/NSObjCRuntime.m in Sources */,
 				FF060930BA9AB747493D2252 /* Runtime.subproj/NSProcessInfo.m in Sources */,
 				AE1F9E12910C991E224EC3AB /* Runtime.subproj/NSPropertyList.m in Sources */,
 				739E6CDD1B3C25601C6C8514 /* Runtime.subproj/NSRange.m in Sources */,
+				CA862DDC8B0959982114D1CC /* Runtime.subproj/NSUUID.m in Sources */,
 				3CA31790F3601B5A606791A9 /* Runtime.subproj/NSUserDefaults.m in Sources */,
 				F31802ADFFBA2F7EF105D108 /* Runtime.subproj/NSValue.m in Sources */,
+				568B034D67BEAE00ABE1991A /* Runtime.subproj/NSValueTransformer.m in Sources */,
 				4744083B112A14AB1D886066 /* Runtime.subproj/NSZone.m in Sources */,
 				6E2E7398081A83671D47074A /* Serialization.subproj/NSCoder.m in Sources */,
 				84F4B8A3429797D55DB8C731 /* Serialization.subproj/NSKeyedArchiver.m in Sources */,
@@ -383,8 +440,11 @@
 				8949471AD63039D5F7918ADE /* String.subproj/NSAttributedString.m in Sources */,
 				B19585A0C19B611A58AE0B57 /* String.subproj/NSCFString.m in Sources */,
 				C4FF184689279D96A23F8E17 /* String.subproj/NSCharacterSet.m in Sources */,
+				4997F1D1498C2F14863FEC44 /* String.subproj/NSRegularExpression.m in Sources */,
 				89AA223502D77B3E58F19B3D /* String.subproj/NSScanner.m in Sources */,
 				3D3EDE4E19612D9889675808 /* String.subproj/NSString.m in Sources */,
+				015E2F3A57080A2554306BF1 /* String.subproj/NSTextAttachment.m in Sources */,
+				94D8F244996C1137B7D94C32 /* String.subproj/NSTextCheckingResult.m in Sources */,
 				8F5FB139C72338EF41566DDA /* Thread.subproj/NSThread.m in Sources */,
 				5BC39902416EB257968B8497 /* URL.subproj/NSURL.m in Sources */,
 			);
