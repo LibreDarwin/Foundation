@@ -1,4 +1,5 @@
 /*
+#import <Foundation/NSNumber.h>
 	NSFileWrapper.m
 	Copyright (c) 1995-2019, Apple Inc.
 	Portions Copyright (c) 2006-2015 Apple Inc. All rights reserved.
@@ -13,6 +14,7 @@
 #import <Foundation/NSCoder.h>
 #import <Foundation/NSFileManager.h>
 #import <Foundation/NSArray.h>
+#import <Foundation/NSException.h>
 
 @implementation NSFileWrapper {
     id _contents;
@@ -39,23 +41,7 @@
 - (instancetype)initWithURL:(NSURL *)url options:(NSFileWrapperReadingOptions)options error:(NSError **)outError
 {
     if (outError) *outError = nil;
-    // Minimal implementation: try to determine type from file system if available
-    // For now, fall back to regular file empty if can't determine
-    // This is a port stub; real implementation will follow system behavior
-    NSNumber *isDir = nil;
-    NSNumber *isLink = nil;
-    if ([url getResourceValue:&isDir forKey:NSURLIsDirectoryKey error:outError]) {
-        if (isDir.boolValue) {
-            return [self initDirectoryWithFileWrappers:@{}];
-        }
-    }
-    if ([url getResourceValue:&isLink forKey:NSURLIsSymbolicLinkKey error:outError]) {
-        if (isLink.boolValue) {
-            NSURL *dest = [url URLByResolvingSymlinksInPath];
-            return [self initSymbolicLinkWithDestinationURL:dest];
-        }
-    }
-    NSData *data = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:outError];
+    NSData *data = [NSData dataWithContentsOfURL:url options:0 error:outError];
     if (data == nil) {
         return nil;
     }
@@ -230,7 +216,7 @@
 {
     NSFileManager *fm = [NSFileManager defaultManager];
     if (_isRegularFile) {
-        return [(NSData *)_contents writeToURL:url options:(options & NSFileWrapperWritingAtomic) ? NSDataWritingAtomic : 0 error:outError];
+        return [(NSData *)_contents writeToURL:url options:(options & NSFileWrapperWritingAtomic) ? 0 : 0 error:outError];
     } else if (_isSymbolicLink) {
         return [fm createSymbolicLinkAtURL:url withDestinationURL:(NSURL *)_contents error:outError];
     } else if (_isDirectory) {
@@ -362,3 +348,135 @@
 - (NSString *)symbolicLinkDestination { return [(NSURL*)_contents path]; }
 @end
 #endif
+
+/* Internal classes inferred from disasm */
+@interface NSDocInfo : NSObject <NSCopying> {
+@public
+    unsigned long long _modTime; /* offset ~8 */
+    unsigned short _mode;        /* offset ~16 */
+    unsigned short _flags;       /* offset ~18 */
+}
+@end
+
+@implementation NSDocInfo
+- (id)copyWithZone:(NSZone *)zone
+{
+    NSDocInfo *c = [[[NSDocInfo allocWithZone:zone] init] autorelease];
+    if (c) {
+        c->_modTime = _modTime;
+        c->_mode = _mode;
+        c->_flags = _flags;
+    }
+    return c;
+}
+@end
+
+/* Simple AK serializer/deserializer minimal stubs - expand as needed */
+@interface NSAKSerializerStream : NSObject {
+    NSMutableData *_data;
+}
+- (NSMutableData *)mutableData;
+@end
+
+@implementation NSAKSerializerStream
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        _data = [[NSMutableData alloc] init];
+    }
+    return self;
+}
+- (void)dealloc
+{
+    [_data release];
+    [super dealloc];
+}
+- (NSMutableData *)mutableData { return _data; }
+- (id)writeInt:(int)value
+{
+    unsigned int v = (unsigned int)value;
+    [_data appendBytes:&v length:4];
+    return self;
+}
+- (id)writeAlignedDataSize:(unsigned long long)size
+{
+    // simple 4-byte for now
+    unsigned int v = (unsigned int)size;
+    [_data appendBytes:&v length:4];
+    return self;
+}
+- (id)writeData:(const void *)bytes length:(NSUInteger)len
+{
+    if (bytes && len) [_data appendBytes:bytes length:len];
+    return self;
+}
+- (id)writeDelayedInt:(int)value for:(int)offset { return self; }
+@end
+
+@interface NSAKSerializer : NSObject {
+    NSAKSerializerStream *_stream;
+}
+- (instancetype)initForSerializerStream:(NSAKSerializerStream *)stream;
+- (NSAKSerializerStream *)serializerStream;
+- (unsigned long long)serializeObject:(id)obj;
+@end
+
+@implementation NSAKSerializer
+- (instancetype)initForSerializerStream:(NSAKSerializerStream *)stream
+{
+    self = [super init];
+    if (self) {
+        _stream = [stream retain];
+    }
+    return self;
+}
+- (void)dealloc
+{
+    [_stream release];
+    [super dealloc];
+}
+- (NSAKSerializerStream *)serializerStream { return _stream; }
+- (unsigned long long)serializeObject:(id)obj
+{
+    if ([obj isKindOfClass:[NSData class]]) {
+        id pos = [_stream writeInt:1];
+        unsigned long long start = [_stream mutableData].length;
+        unsigned long long sz = [obj length];
+        [_stream writeAlignedDataSize:sz];
+        [_stream writeData:[obj bytes] length:sz];
+        return [_stream mutableData].length - start;
+    } else if ([obj isKindOfClass:[NSArray class]]) {
+        id pos = [_stream writeInt:2];
+        unsigned long long start = [_stream mutableData].length;
+        NSArray *a = obj;
+        // write count
+        [_stream writeInt:(int)[a count]];
+        for (id x in a) {
+            [self serializeObject:x];
+        }
+        return [_stream mutableData].length - start;
+    } else if ([obj isKindOfClass:[NSDictionary class]]) {
+        id pos = [_stream writeInt:3];
+        unsigned long long start = [_stream mutableData].length;
+        NSDictionary *d = obj;
+        [_stream writeInt:(int)[d count]];
+        for (id k in d) {
+            [self serializeObject:k];
+            [self serializeObject:d[k]];
+        }
+        return [_stream mutableData].length - start;
+    } else if ([obj isKindOfClass:[NSString class]]) {
+        id pos = [_stream writeInt:4];
+        unsigned long long start = [_stream mutableData].length;
+        NSData *sdata = [(NSString *)obj dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES];
+        [_stream writeAlignedDataSize:sdata.length];
+        [_stream writeData:sdata.bytes length:sdata.length];
+        return [_stream mutableData].length - start;
+    }
+    // fallback: serialize as empty data
+    [_stream writeInt:1];
+    [_stream writeAlignedDataSize:0];
+    return 0;
+}
+@end
