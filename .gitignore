@@ -3,3 +3,4 @@ local/
 build/
 __pycache__/
 *.pyc
+.slim/deepwork/

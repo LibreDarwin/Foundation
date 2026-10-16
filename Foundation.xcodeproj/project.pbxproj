@@ -26,8 +26,10 @@
 		B89DD242653A31E8E4E71EA4 /* Date.subproj/NSDateFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = A50F11204C5E6986FDFDE7F7 /* Date.subproj/NSDateFormatter.m */; };
 		AA67EE6069F0D5F5FD4B9A59 /* Date.subproj/NSISO8601DateFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 462E6143ABDF9AC51D56585A /* Date.subproj/NSISO8601DateFormatter.m */; };
 		71A15F22A32617A943A4AD34 /* Date.subproj/NSTimeZone.m in Sources */ = {isa = PBXBuildFile; fileRef = 672CC657F91374C41B0421D1 /* Date.subproj/NSTimeZone.m */; };
+		21D7EF124DA8511C498C08C1 /* FileManager.subproj/NSFileCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 21A52B029F64EDAC5510FC06 /* FileManager.subproj/NSFileCoordinator.m */; };
 		C03F7CD48C1D830EE6C18EEE /* FileManager.subproj/NSFileHandle.m in Sources */ = {isa = PBXBuildFile; fileRef = 38D13E0FD6D35BFB1006412D /* FileManager.subproj/NSFileHandle.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		F2A6B19A2FC2895E20C3FC64 /* FileManager.subproj/NSFileManager.m in Sources */ = {isa = PBXBuildFile; fileRef = E148A198ABFD594FF0ACCB12 /* FileManager.subproj/NSFileManager.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		1748DC5D593E14C959FF8716 /* FileManager.subproj/NSFileVersion.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C7E8D58DC95592CEEA7BC21 /* FileManager.subproj/NSFileVersion.m */; };
 		A45C25D6E66B5ADAA8B58E92 /* FileManager.subproj/NSFileWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 5023A9C2596456BE50DBE639 /* FileManager.subproj/NSFileWrapper.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		AF99A0FF3978557812572972 /* FileManager.subproj/NSPathUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 51743FE7FE226E35679D47AB /* FileManager.subproj/NSPathUtilities.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		397828BF6B1267D0069909CD /* FileManager.subproj/NSPipe.m in Sources */ = {isa = PBXBuildFile; fileRef = D3B8B15854C86942D8CA07F2 /* FileManager.subproj/NSPipe.m */; };
@@ -110,8 +112,10 @@
 		A50F11204C5E6986FDFDE7F7 /* Date.subproj/NSDateFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDateFormatter.m"; path = "Date.subproj/NSDateFormatter.m"; sourceTree = "<group>"; };
 		462E6143ABDF9AC51D56585A /* Date.subproj/NSISO8601DateFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSISO8601DateFormatter.m"; path = "Date.subproj/NSISO8601DateFormatter.m"; sourceTree = "<group>"; };
 		672CC657F91374C41B0421D1 /* Date.subproj/NSTimeZone.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSTimeZone.m"; path = "Date.subproj/NSTimeZone.m"; sourceTree = "<group>"; };
+		21A52B029F64EDAC5510FC06 /* FileManager.subproj/NSFileCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSFileCoordinator.m"; path = "FileManager.subproj/NSFileCoordinator.m"; sourceTree = "<group>"; };
 		38D13E0FD6D35BFB1006412D /* FileManager.subproj/NSFileHandle.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSFileHandle.m"; path = "FileManager.subproj/NSFileHandle.m"; sourceTree = "<group>"; };
 		E148A198ABFD594FF0ACCB12 /* FileManager.subproj/NSFileManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSFileManager.m"; path = "FileManager.subproj/NSFileManager.m"; sourceTree = "<group>"; };
+		4C7E8D58DC95592CEEA7BC21 /* FileManager.subproj/NSFileVersion.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSFileVersion.m"; path = "FileManager.subproj/NSFileVersion.m"; sourceTree = "<group>"; };
 		5023A9C2596456BE50DBE639 /* FileManager.subproj/NSFileWrapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSFileWrapper.m"; path = "FileManager.subproj/NSFileWrapper.m"; sourceTree = "<group>"; };
 		51743FE7FE226E35679D47AB /* FileManager.subproj/NSPathUtilities.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPathUtilities.m"; path = "FileManager.subproj/NSPathUtilities.m"; sourceTree = "<group>"; };
 		D3B8B15854C86942D8CA07F2 /* FileManager.subproj/NSPipe.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPipe.m"; path = "FileManager.subproj/NSPipe.m"; sourceTree = "<group>"; };
@@ -223,8 +227,10 @@
 				A50F11204C5E6986FDFDE7F7 /* Date.subproj/NSDateFormatter.m */,
 				462E6143ABDF9AC51D56585A /* Date.subproj/NSISO8601DateFormatter.m */,
 				672CC657F91374C41B0421D1 /* Date.subproj/NSTimeZone.m */,
+				21A52B029F64EDAC5510FC06 /* FileManager.subproj/NSFileCoordinator.m */,
 				38D13E0FD6D35BFB1006412D /* FileManager.subproj/NSFileHandle.m */,
 				E148A198ABFD594FF0ACCB12 /* FileManager.subproj/NSFileManager.m */,
+				4C7E8D58DC95592CEEA7BC21 /* FileManager.subproj/NSFileVersion.m */,
 				5023A9C2596456BE50DBE639 /* FileManager.subproj/NSFileWrapper.m */,
 				51743FE7FE226E35679D47AB /* FileManager.subproj/NSPathUtilities.m */,
 				D3B8B15854C86942D8CA07F2 /* FileManager.subproj/NSPipe.m */,
@@ -387,8 +393,10 @@
 				B89DD242653A31E8E4E71EA4 /* Date.subproj/NSDateFormatter.m in Sources */,
 				AA67EE6069F0D5F5FD4B9A59 /* Date.subproj/NSISO8601DateFormatter.m in Sources */,
 				71A15F22A32617A943A4AD34 /* Date.subproj/NSTimeZone.m in Sources */,
+				21D7EF124DA8511C498C08C1 /* FileManager.subproj/NSFileCoordinator.m in Sources */,
 				C03F7CD48C1D830EE6C18EEE /* FileManager.subproj/NSFileHandle.m in Sources */,
 				F2A6B19A2FC2895E20C3FC64 /* FileManager.subproj/NSFileManager.m in Sources */,
+				1748DC5D593E14C959FF8716 /* FileManager.subproj/NSFileVersion.m in Sources */,
 				A45C25D6E66B5ADAA8B58E92 /* FileManager.subproj/NSFileWrapper.m in Sources */,
 				AF99A0FF3978557812572972 /* FileManager.subproj/NSPathUtilities.m in Sources */,
 				397828BF6B1267D0069909CD /* FileManager.subproj/NSPipe.m in Sources */,
