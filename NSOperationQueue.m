@@ -15,11 +15,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #import <Foundation/NSThread.h>
 #import <Foundation/NSAutoreleasePool.h>
 #import <Foundation/NSLock.h>
+#import <Foundation/NSValue.h>
 #import "Collections.subproj/NSArray.h"
 #import <Foundation/NSDebug.h>
 
 #import <Foundation/NSRaise.h>
 #include <string.h>
+#include <pthread.h>
+
+/* Thread-local key under which a queue records itself while it is running one
+ * of its operations, so +currentQueue can hand it back.  The value is an
+ * NSValue wrapping the queue pointer (non-retaining) to avoid a
+ * queue -> _thread -> threadDictionary -> queue retain cycle. */
+static NSString * const NSOperationQueueCurrentQueueKey = @"NSOperationQueueCurrentQueueKey";
 
 @implementation NSOperationQueue
 
@@ -29,6 +37,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 		suspendedCondition = [[NSCondition alloc] init];
 		allWorkDone = [[NSCondition alloc] init];
 		isSuspended = NO;
+		_maxConcurrentOperationCount = NSOperationQueueDefaultMaxConcurrentOperationCount;
 		_operations = [[NSMutableArray alloc] init];
 		_thread = [[NSThread alloc] initWithTarget: self selector: @selector( _workThread ) object: nil];
 		[_thread start];
@@ -97,13 +106,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 }
 
 - (NSInteger)maxConcurrentOperationCount {
-	NSUnimplementedMethod();
-	return NSOperationQueueDefaultMaxConcurrentOperationCount;
+	return _maxConcurrentOperationCount;
 }
 
 - (void)setMaxConcurrentOperationCount:(NSInteger)count {
-// FIXME: implement but dont warn
-//	NSUnimplementedMethod();
+	_maxConcurrentOperationCount = count;
 }
 
 - (NSString *)name {
@@ -169,6 +176,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 	NSAutoreleasePool *outerPool = [[NSAutoreleasePool alloc] init];
 	
 	NSThread *thread = [NSThread currentThread];
+	[[thread threadDictionary] setObject: [NSValue valueWithPointer: self]
+	                              forKey: NSOperationQueueCurrentQueueKey];
 	
 	BOOL didRun = NO;
 	while( ![thread isCancelled] )
@@ -224,14 +233,27 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 + (id)currentQueue
 {
-	NSUnimplementedMethod();
-	return nil;
+	/* On the main thread the current queue is the main queue.  Elsewhere it
+	 * is the queue that launched the operation running on this thread, which
+	 * -_workThread recorded in the thread dictionary. */
+	if (pthread_main_np() != 0)
+		return [self mainQueue];
+
+	NSValue *value = [[[NSThread currentThread] threadDictionary] objectForKey: NSOperationQueueCurrentQueueKey];
+	return value ? (id)[value pointerValue] : nil;
 }
 
 + (id)mainQueue
 {
-	NSUnimplementedMethod();
-	return nil;
+	static NSOperationQueue *mainQueue = nil;
+	@synchronized(self) {
+		if (mainQueue == nil) {
+			mainQueue = [[NSOperationQueue alloc] init];
+			[mainQueue setName: @"NSOperationQueue Main Queue"];
+			[mainQueue setMaxConcurrentOperationCount: 1];
+		}
+	}
+	return mainQueue;
 }
 
 @end

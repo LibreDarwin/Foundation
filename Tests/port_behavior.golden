@@ -1815,7 +1815,7 @@ op isExecuting after start                 | no
 op isFinished after start                  | yes
 op isCancelled after cancel                | yes
 oq maxConcurrent default                   | -1
-oq maxConcurrent set                       | -1
+oq maxConcurrent set                       | 2
 oq name default                            | nil
 oq name set                                | testq
 oq ops count initial                       | 0
@@ -1829,10 +1829,10 @@ op deps after remove                       | 0
 op queuePriority initial                   | 0
 op isReady                                 | yes
 oq addOps wait count                       | 0
-oq currentQueue                            | nil
-oq mainQueue                               | nil
-oq mainQueue name                          | (null)
-oq mainQueue maxConc                       | 0
+oq currentQueue                            | non-nil
+oq mainQueue                               | non-nil
+oq mainQueue name                          | NSOperationQueue Main Queue
+oq mainQueue maxConc                       | 1
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1

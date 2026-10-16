@@ -33,6 +33,7 @@ enum {
 
     void *queues[NSOperationQueuePriority_Count];
     NSString *_name;
+    NSInteger _maxConcurrentOperationCount;
 }
 
 - (id)init;
