@@ -4584,6 +4584,90 @@ int main(void) {
         p("oq mainQueue maxConc", [NSString stringWithFormat:@"%ld", (long)[[NSOperationQueue mainQueue] maxConcurrentOperationCount]]);
     }
 
+    /* ---------- NSFormatter / NSByteCountFormatter / NSListFormatter ---------- */
+    @autoreleasepool {
+        NSFormatter *fmt = [[NSFormatter alloc] init];
+        catchProbe("fmt base stringForObjectValue", ^id { return [fmt stringForObjectValue:@"x"]; });
+        p("fmt base attributed", [fmt attributedStringForObjectValue:@"x" withDefaultAttributes:@{}] == nil ? @"nil" : @"non-nil");
+        catchProbe("fmt base editingString", ^id { return [fmt editingStringForObjectValue:@"x"]; });
+        catchProbe("fmt base getObjectValue", ^id {
+            id o = nil;
+            NSString *e = nil;
+            BOOL ok = [fmt getObjectValue:&o forString:@"x" errorDescription:&e];
+            return [NSString stringWithFormat:@"%d", ok];
+        });
+        p("fmt base isPartial", [fmt isPartialStringValid:@"abc" newEditingString:NULL errorDescription:NULL] ? @"yes" : @"no");
+    }
+
+    @autoreleasepool {
+        long long dec[] = { 0, 1, 999, 1000, 1024, 1000000, 1000000000 };
+        const char *decLabels[] = { "bcf dec 0", "bcf dec 1", "bcf dec 999",
+                                    "bcf dec 1000", "bcf dec 1024", "bcf dec 1e6", "bcf dec 1e9" };
+        for (int i = 0; i < 7; i++) {
+            p(decLabels[i], [NSByteCountFormatter stringFromByteCount:dec[i]
+                                                          countStyle:NSByteCountFormatterCountStyleDecimal]);
+        }
+        long long bin[] = { 0, 1, 1024, 1048576, 1073741824 };
+        const char *binLabels[] = { "bcf bin 0", "bcf bin 1", "bcf bin 1024", "bcf bin 1Mi", "bcf bin 1Gi" };
+        for (int i = 0; i < 5; i++) {
+            p(binLabels[i], [NSByteCountFormatter stringFromByteCount:bin[i]
+                                                          countStyle:NSByteCountFormatterCountStyleBinary]);
+        }
+
+        NSByteCountFormatter *bcf = [[NSByteCountFormatter alloc] init];
+        p("bcf default countStyle", [NSString stringWithFormat:@"%ld", (long)bcf.countStyle]);
+        p("bcf default allowedUnits", [NSString stringWithFormat:@"%lu", (unsigned long)bcf.allowedUnits]);
+        p("bcf default includesUnit", bcf.includesUnit ? @"yes" : @"no");
+        p("bcf default includesCount", bcf.includesCount ? @"yes" : @"no");
+        p("bcf default allowsNonnumeric", bcf.allowsNonnumericFormatting ? @"yes" : @"no");
+        p("bcf default actualByteCount", bcf.includesActualByteCount ? @"yes" : @"no");
+        p("bcf default adaptive", bcf.isAdaptive ? @"yes" : @"no");
+        p("bcf default zeroPads", bcf.zeroPadsFractionDigits ? @"yes" : @"no");
+        p("bcf default context", [NSString stringWithFormat:@"%ld", (long)bcf.formattingContext]);
+        bcf.countStyle = NSByteCountFormatterCountStyleDecimal;
+        p("bcf inst 1000", [bcf stringFromByteCount:1000]);
+        p("bcf sofv 1000", [bcf stringForObjectValue:@(1000)]);
+        p("bcf sofv str", [bcf stringForObjectValue:@"x"] == nil ? @"nil" : @"non-nil");
+        bcf.includesUnit = NO;
+        p("bcf count-only", [bcf stringFromByteCount:1000]);
+        bcf.includesUnit = YES;
+        bcf.includesCount = NO;
+        p("bcf unit-only", [bcf stringFromByteCount:1000]);
+        bcf.includesUnit = NO;
+        bcf.includesCount = NO;
+        p("bcf neither", [bcf stringFromByteCount:1000]);
+    }
+
+    @autoreleasepool {
+        NSListFormatter *lf = [[NSListFormatter alloc] init];
+        p("lf locale eq current", [lf.locale.localeIdentifier isEqualToString:[NSLocale currentLocale].localeIdentifier] ? @"1" : @"0");
+        p("lf itemFormatter", lf.itemFormatter == nil ? @"nil" : @"non-nil");
+        p("lf nil", [lf stringFromItems:nil]);
+        p("lf one", [lf stringFromItems:@[@"a"]]);
+        p("lf two", [lf stringFromItems:@[@"a", @"b"]]);
+        p("lf three", [lf stringFromItems:@[@"a", @"b", @"c"]]);
+        p("lf four", [lf stringFromItems:@[@"a", @"b", @"c", @"d"]]);
+        p("lf empty", [lf stringFromItems:@[]]);
+        p("lf sofv array", [lf stringForObjectValue:@[@"x", @"y", @"z"]]);
+        p("lf sofv nonarray", [lf stringForObjectValue:@"nope"] == nil ? @"nil" : @"non-nil");
+        p("lf sofv nil", [lf stringForObjectValue:nil] == nil ? @"nil" : @"non-nil");
+        p("lf join three", [NSListFormatter localizedStringByJoiningStrings:@[@"a", @"b", @"c"]]);
+        lf.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+        p("lf en three", [lf stringFromItems:@[@"a", @"b", @"c"]]);
+        lf.locale = [NSLocale localeWithLocaleIdentifier:@"de_DE"];
+        p("lf de three", [lf stringFromItems:@[@"a", @"b", @"c"]]);
+        lf.locale = [NSLocale localeWithLocaleIdentifier:@"fr_FR"];
+        p("lf fr three", [lf stringFromItems:@[@"a", @"b", @"c"]]);
+        lf.locale = nil;
+        p("lf locale reset eq current", [lf.locale.localeIdentifier isEqualToString:[NSLocale currentLocale].localeIdentifier] ? @"1" : @"0");
+        NSNumberFormatter *lfNumber = [[NSNumberFormatter alloc] init];
+        lfNumber.numberStyle = NSNumberFormatterDecimalStyle;
+        lfNumber.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+        lf.itemFormatter = (NSFormatter *)lfNumber;
+        lf.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+        p("lf itemfmt nums", [lf stringFromItems:@[@1234, @5]]);
+    }
+
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
     port_behavior_pool();
 

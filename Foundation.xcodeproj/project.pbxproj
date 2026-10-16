@@ -34,6 +34,9 @@
 		AF99A0FF3978557812572972 /* FileManager.subproj/NSPathUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 51743FE7FE226E35679D47AB /* FileManager.subproj/NSPathUtilities.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		397828BF6B1267D0069909CD /* FileManager.subproj/NSPipe.m in Sources */ = {isa = PBXBuildFile; fileRef = D3B8B15854C86942D8CA07F2 /* FileManager.subproj/NSPipe.m */; };
 		E5C022E63F6958CF69AAD57D /* FileManager.subproj/NSTask.m in Sources */ = {isa = PBXBuildFile; fileRef = 368EF80883EE7E8BC2ACE3D2 /* FileManager.subproj/NSTask.m */; };
+		E134E2B48370191A7DDF1296 /* Formatter.subproj/NSByteCountFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = A522FFF9FC99FBF266DABBDE /* Formatter.subproj/NSByteCountFormatter.m */; };
+		925ED7D3EE49AD42E9035760 /* Formatter.subproj/NSFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 0E495D7F5E48F184AC885B5C /* Formatter.subproj/NSFormatter.m */; };
+		F7B2116CD58FC95D552EC05D /* Formatter.subproj/NSListFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 88D62CFF9475B2F5C1895CA8 /* Formatter.subproj/NSListFormatter.m */; };
 		A6AF7169E3BF6296F28CF097 /* Locale.subproj/NSLocale.m in Sources */ = {isa = PBXBuildFile; fileRef = ABB97F09F43ED1E038F0957F /* Locale.subproj/NSLocale.m */; };
 		5C77888F78B2D291DFA23CEC /* Lock.subproj/NSCondition.m in Sources */ = {isa = PBXBuildFile; fileRef = 0277C84CA580ACC5EB2A04C4 /* Lock.subproj/NSCondition.m */; };
 		4906CD4C6E66473E9F7C89D9 /* Lock.subproj/NSConditionLock.m in Sources */ = {isa = PBXBuildFile; fileRef = 1CD2C42138105F4BA8EDA001 /* Lock.subproj/NSConditionLock.m */; };
@@ -120,6 +123,9 @@
 		51743FE7FE226E35679D47AB /* FileManager.subproj/NSPathUtilities.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPathUtilities.m"; path = "FileManager.subproj/NSPathUtilities.m"; sourceTree = "<group>"; };
 		D3B8B15854C86942D8CA07F2 /* FileManager.subproj/NSPipe.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPipe.m"; path = "FileManager.subproj/NSPipe.m"; sourceTree = "<group>"; };
 		368EF80883EE7E8BC2ACE3D2 /* FileManager.subproj/NSTask.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSTask.m"; path = "FileManager.subproj/NSTask.m"; sourceTree = "<group>"; };
+		A522FFF9FC99FBF266DABBDE /* Formatter.subproj/NSByteCountFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSByteCountFormatter.m"; path = "Formatter.subproj/NSByteCountFormatter.m"; sourceTree = "<group>"; };
+		0E495D7F5E48F184AC885B5C /* Formatter.subproj/NSFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSFormatter.m"; path = "Formatter.subproj/NSFormatter.m"; sourceTree = "<group>"; };
+		88D62CFF9475B2F5C1895CA8 /* Formatter.subproj/NSListFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSListFormatter.m"; path = "Formatter.subproj/NSListFormatter.m"; sourceTree = "<group>"; };
 		ABB97F09F43ED1E038F0957F /* Locale.subproj/NSLocale.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSLocale.m"; path = "Locale.subproj/NSLocale.m"; sourceTree = "<group>"; };
 		0277C84CA580ACC5EB2A04C4 /* Lock.subproj/NSCondition.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCondition.m"; path = "Lock.subproj/NSCondition.m"; sourceTree = "<group>"; };
 		1CD2C42138105F4BA8EDA001 /* Lock.subproj/NSConditionLock.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSConditionLock.m"; path = "Lock.subproj/NSConditionLock.m"; sourceTree = "<group>"; };
@@ -235,6 +241,9 @@
 				51743FE7FE226E35679D47AB /* FileManager.subproj/NSPathUtilities.m */,
 				D3B8B15854C86942D8CA07F2 /* FileManager.subproj/NSPipe.m */,
 				368EF80883EE7E8BC2ACE3D2 /* FileManager.subproj/NSTask.m */,
+				A522FFF9FC99FBF266DABBDE /* Formatter.subproj/NSByteCountFormatter.m */,
+				0E495D7F5E48F184AC885B5C /* Formatter.subproj/NSFormatter.m */,
+				88D62CFF9475B2F5C1895CA8 /* Formatter.subproj/NSListFormatter.m */,
 				ABB97F09F43ED1E038F0957F /* Locale.subproj/NSLocale.m */,
 				0277C84CA580ACC5EB2A04C4 /* Lock.subproj/NSCondition.m */,
 				1CD2C42138105F4BA8EDA001 /* Lock.subproj/NSConditionLock.m */,
@@ -401,6 +410,9 @@
 				AF99A0FF3978557812572972 /* FileManager.subproj/NSPathUtilities.m in Sources */,
 				397828BF6B1267D0069909CD /* FileManager.subproj/NSPipe.m in Sources */,
 				E5C022E63F6958CF69AAD57D /* FileManager.subproj/NSTask.m in Sources */,
+				E134E2B48370191A7DDF1296 /* Formatter.subproj/NSByteCountFormatter.m in Sources */,
+				925ED7D3EE49AD42E9035760 /* Formatter.subproj/NSFormatter.m in Sources */,
+				F7B2116CD58FC95D552EC05D /* Formatter.subproj/NSListFormatter.m in Sources */,
 				A6AF7169E3BF6296F28CF097 /* Locale.subproj/NSLocale.m in Sources */,
 				5C77888F78B2D291DFA23CEC /* Lock.subproj/NSCondition.m in Sources */,
 				4906CD4C6E66473E9F7C89D9 /* Lock.subproj/NSConditionLock.m in Sources */,

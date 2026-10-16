@@ -1833,6 +1833,55 @@ oq currentQueue                            | non-nil
 oq mainQueue                               | non-nil
 oq mainQueue name                          | NSOperationQueue Main Queue
 oq mainQueue maxConc                       | 1
+fmt base stringForObjectValue              | raise NSInvalidArgumentException
+fmt base attributed                        | nil
+fmt base editingString                     | raise NSInvalidArgumentException
+fmt base getObjectValue                    | raise NSInvalidArgumentException
+fmt base isPartial                         | yes
+bcf dec 0                                  | Zero KB
+bcf dec 1                                  | 1 byte
+bcf dec 999                                | 999 bytes
+bcf dec 1000                               | 1 KB
+bcf dec 1024                               | 1 KB
+bcf dec 1e6                                | 1 MB
+bcf dec 1e9                                | 1 GB
+bcf bin 0                                  | Zero KB
+bcf bin 1                                  | 1 byte
+bcf bin 1024                               | 1 KB
+bcf bin 1Mi                                | 1 MB
+bcf bin 1Gi                                | 1 GB
+bcf default countStyle                     | 0
+bcf default allowedUnits                   | 0
+bcf default includesUnit                   | yes
+bcf default includesCount                  | yes
+bcf default allowsNonnumeric               | yes
+bcf default actualByteCount                | no
+bcf default adaptive                       | yes
+bcf default zeroPads                       | no
+bcf default context                        | 0
+bcf inst 1000                              | 1 KB
+bcf sofv 1000                              | 1 KB
+bcf sofv str                               | nil
+bcf count-only                             | 1
+bcf unit-only                              | KB
+bcf neither                                | 1 KB
+lf locale eq current                       | 1
+lf itemFormatter                           | nil
+lf nil                                     | (null)
+lf one                                     | a
+lf two                                     | a and b
+lf three                                   | a, b, and c
+lf four                                    | a, b, c, and d
+lf empty                                   | 
+lf sofv array                              | x, y, and z
+lf sofv nonarray                           | nil
+lf sofv nil                                | nil
+lf join three                              | a, b, and c
+lf en three                                | a, b, and c
+lf de three                                | a, b und c
+lf fr three                                | a, b et c
+lf locale reset eq current                 | 1
+lf itemfmt nums                            | 1,234 and 5
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1
