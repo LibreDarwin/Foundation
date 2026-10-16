@@ -11,6 +11,7 @@
 
 #import <Foundation/NSFormatter.h>
 #import <Foundation/NSObjCRuntime.h>
+#import <Foundation/NSMeasurement.h>
 
 @class NSString;
 
@@ -45,6 +46,11 @@ typedef NS_ENUM(NSInteger, NSByteCountFormatterCountStyle) {
                        countStyle:(NSByteCountFormatterCountStyle)countStyle;
 
 - (NSString *)stringFromByteCount:(long long)byteCount;
+
++ (NSString *)stringFromMeasurement:(NSMeasurement *)measurement
+                        countStyle:(NSByteCountFormatterCountStyle)countStyle;
+
+- (NSString *)stringFromMeasurement:(NSMeasurement *)measurement;
 
 - (nullable NSString *)stringForObjectValue:(nullable id)obj;
 

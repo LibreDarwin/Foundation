@@ -18,6 +18,8 @@
 #import <Foundation/NSNumber.h>
 #import <Foundation/NSLocale.h>
 #import <Foundation/NSNumberFormatter.h>
+#import <Foundation/NSMeasurement.h>
+#import <Foundation/NSException.h>
 
 /* Index 0 is the byte unit (singular/plural handled separately). */
 static const char *kUnitSuffixes[] = { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
@@ -149,10 +151,68 @@ static const char *kUnitSuffixes[] = { "bytes", "KB", "MB", "GB", "TB", "PB", "E
 }
 
 - (NSString *)stringForObjectValue:(id)obj {
+    if ([obj isKindOfClass:[NSMeasurement class]]) {
+        return [self stringFromMeasurement:(NSMeasurement *)obj];
+    }
     if ([obj isKindOfClass:[NSNumber class]]) {
         return [self stringFromByteCount:(long long)[obj longLongValue]];
     }
     return nil;
+}
+
++ (NSString *)stringFromMeasurement:(NSMeasurement *)measurement
+                        countStyle:(NSByteCountFormatterCountStyle)countStyle {
+    NSByteCountFormatter *formatter = [[NSByteCountFormatter alloc] init];
+    formatter.countStyle = countStyle;
+    return [formatter stringFromMeasurement:measurement];
+}
+
+- (NSString *)stringFromMeasurement:(NSMeasurement *)measurement {
+    NSUnit *unit = [measurement unit];
+    if (![unit isKindOfClass:[NSDimension class]]) {
+        [NSException raise:NSInvalidArgumentException
+                    format:@"*** -[NSByteCountFormatter stringFromMeasurement:]: "
+                           @"unit %@ is not a dimension", unit];
+        return nil;
+    }
+    double bytesDouble = [(NSDimension *)unit converter]
+        ? [[(NSDimension *)unit converter] baseUnitValueFromValue:[measurement doubleValue]]
+        : [measurement doubleValue];
+
+    /* Restricting to bytes prints the exact byte count, integer-truncated. */
+    if (_allowedUnits == NSByteCountFormatterUseBytes) {
+        long long bytes = (long long)bytesDouble;
+        BOOL includeCount = _includesCount;
+        BOOL includeUnit = _includesUnit;
+        if (!includeCount && !includeUnit) { includeCount = YES; includeUnit = YES; }
+
+        NSString *countString;
+        NSString *unitString;
+        if (bytes == 0 && _allowsNonnumericFormatting) {
+            countString = @"Zero";
+            unitString = @"bytes";
+        } else {
+            NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init];
+            numberFormatter.locale = [NSLocale currentLocale];
+            numberFormatter.numberStyle = NSNumberFormatterDecimalStyle;
+            numberFormatter.usesGroupingSeparator = YES;
+            numberFormatter.minimumFractionDigits = 0;
+            numberFormatter.maximumFractionDigits = 0;
+            countString = [numberFormatter stringFromNumber:[NSNumber numberWithLongLong:bytes]];
+            if (countString == nil) countString = @"";
+            unitString = (bytes == 1) ? @"byte" : @"bytes";
+        }
+
+        if (includeCount && includeUnit) {
+            return [NSString stringWithFormat:@"%@ %@", countString, unitString];
+        }
+        if (includeCount) {
+            return countString;
+        }
+        return unitString;
+    }
+
+    return [self stringFromByteCount:(long long)bytesDouble];
 }
 
 @end

@@ -1882,6 +1882,52 @@ lf de three                                | a, b und c
 lf fr three                                | a, b et c
 lf locale reset eq current                 | 1
 lf itemfmt nums                            | 1,234 and 5
+un unit symbol                             | foo
+un unit copy isSame                        | 1
+un unit isEqual symbol                     | 1
+un unit hash eq                            | 1
+un conv fwd                                | 7.5
+un conv rev                                | 7.5
+un lin coef                                | 2
+un lin const                               | 3
+un lin fwd                                 | 11
+un lin rev                                 | 4
+un lin const default                       | 0
+un is base symbol                          | B
+un is base eq bytes                        | 1
+un is bytes sym                            | B
+un is bits coef                            | 0.125
+un is kilobytes coef                       | 1000
+un is kibibytes coef                       | 1024
+un is kilobits coef                        | 125
+un is mebibytes coef                       | 1.04858e+06
+un is bytes eq kibibytes                   | 0
+un is bytes eq bytes                       | 1
+meas unit sym                              | B
+meas double                                | 5
+meas copy isSame                           | 1
+meas canConv bits                          | 1
+meas canConv plain                         | 0
+meas conv 5B kB val                        | 0.005
+meas conv 5B kB unit                       | kB
+meas conv same isSame                      | 0
+meas add same val                          | 5
+meas add same unit                         | kB
+meas sub same val                          | -1
+meas sub same unit                         | kB
+meas add mixed val                         | 2000.12
+meas add mixed unit                        | B
+meas isEqual                               | 1
+meas conv mismatch                         | raise NSInvalidArgumentException
+bcfm class 1000 dec                        | 1 KB
+bcfm class 1024KiB bin                     | 1 MB
+bcfm class 1000kB dec                      | 1 MB
+bcfm class 0 dec                           | Zero KB
+bcfm inst 1000 B                           | 1 KB
+bcfm bytes 1234                            | 1.234 bytes
+bcfm bytes 0                               | Zero bytes
+bcfm bytes 1                               | 1 byte
+bcfm sofv meas                             | 1.000 bytes
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1

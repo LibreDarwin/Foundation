@@ -30,6 +30,10 @@
     #define NS_DESIGNATED_INITIALIZER __attribute__((objc_designated_initializer))
 #endif
 
+#ifndef NS_UNAVAILABLE
+    #define NS_UNAVAILABLE __attribute__((unavailable))
+#endif
+
 /* Ownership annotations: a +1 return from a method whose name does not begin
  * with alloc/new/copy, and the reverse. */
 #ifndef NS_RETURNS_RETAINED

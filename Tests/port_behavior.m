@@ -4668,6 +4668,82 @@ int main(void) {
         p("lf itemfmt nums", [lf stringFromItems:@[@1234, @5]]);
     }
 
+    /* ---------- NSUnit / NSMeasurement / NSByteCountFormatter measurement ---------- */
+    @autoreleasepool {
+        NSUnit *u1 = [[NSUnit alloc] initWithSymbol:@"foo"];
+        p("un unit symbol", u1.symbol);
+        p("un unit copy isSame", [u1 copy] == u1 ? @"1" : @"0");
+        NSUnit *u2 = [[NSUnit alloc] initWithSymbol:@"foo"];
+        p("un unit isEqual symbol", [u1 isEqual:u2] ? @"1" : @"0");
+        p("un unit hash eq", [u1 hash] == [u2 hash] ? @"1" : @"0");
+
+        NSUnitConverter *conv = [[NSUnitConverter alloc] init];
+        p("un conv fwd", [NSString stringWithFormat:@"%g", [conv baseUnitValueFromValue:7.5]]);
+        p("un conv rev", [NSString stringWithFormat:@"%g", [conv valueFromBaseUnitValue:7.5]]);
+
+        NSUnitConverterLinear *lin = [[NSUnitConverterLinear alloc] initWithCoefficient:2.0 constant:3.0];
+        p("un lin coef", [NSString stringWithFormat:@"%g", lin.coefficient]);
+        p("un lin const", [NSString stringWithFormat:@"%g", lin.constant]);
+        p("un lin fwd", [NSString stringWithFormat:@"%g", [lin baseUnitValueFromValue:4.0]]);
+        p("un lin rev", [NSString stringWithFormat:@"%g", [lin valueFromBaseUnitValue:11.0]]);
+        NSUnitConverterLinear *lin2 = [[NSUnitConverterLinear alloc] initWithCoefficient:5.0];
+        p("un lin const default", [NSString stringWithFormat:@"%g", lin2.constant]);
+
+        NSUnitInformationStorage *isb = NSUnitInformationStorage.bytes;
+        p("un is base symbol", [NSUnitInformationStorage baseUnit].symbol);
+        p("un is base eq bytes", [[NSUnitInformationStorage baseUnit] isEqual:isb] ? @"1" : @"0");
+        p("un is bytes sym", isb.symbol);
+        p("un is bits coef", [NSString stringWithFormat:@"%g", ((NSUnitConverterLinear *)NSUnitInformationStorage.bits.converter).coefficient]);
+        p("un is kilobytes coef", [NSString stringWithFormat:@"%g", ((NSUnitConverterLinear *)NSUnitInformationStorage.kilobytes.converter).coefficient]);
+        p("un is kibibytes coef", [NSString stringWithFormat:@"%g", ((NSUnitConverterLinear *)NSUnitInformationStorage.kibibytes.converter).coefficient]);
+        p("un is kilobits coef", [NSString stringWithFormat:@"%g", ((NSUnitConverterLinear *)NSUnitInformationStorage.kilobits.converter).coefficient]);
+        p("un is mebibytes coef", [NSString stringWithFormat:@"%g", ((NSUnitConverterLinear *)NSUnitInformationStorage.mebibytes.converter).coefficient]);
+        p("un is bytes eq kibibytes", [isb isEqual:NSUnitInformationStorage.kibibytes] ? @"1" : @"0");
+        p("un is bytes eq bytes", [isb isEqual:NSUnitInformationStorage.bytes] ? @"1" : @"0");
+
+        NSMeasurement *m5b = [[NSMeasurement alloc] initWithDoubleValue:5.0 unit:NSUnitInformationStorage.bytes];
+        p("meas unit sym", m5b.unit.symbol);
+        p("meas double", [NSString stringWithFormat:@"%g", m5b.doubleValue]);
+        p("meas copy isSame", [m5b copy] == m5b ? @"1" : @"0");
+        p("meas canConv bits", [m5b canBeConvertedToUnit:NSUnitInformationStorage.bits] ? @"1" : @"0");
+        p("meas canConv plain", [m5b canBeConvertedToUnit:[[NSUnit alloc] initWithSymbol:@"foo"]] ? @"1" : @"0");
+
+        NSMeasurement *convB = [m5b measurementByConvertingToUnit:NSUnitInformationStorage.kilobytes];
+        p("meas conv 5B kB val", [NSString stringWithFormat:@"%g", convB.doubleValue]);
+        p("meas conv 5B kB unit", convB.unit.symbol);
+        p("meas conv same isSame", [m5b measurementByConvertingToUnit:NSUnitInformationStorage.bytes] == m5b ? @"1" : @"0");
+
+        NSMeasurement *a = [[NSMeasurement alloc] initWithDoubleValue:2.0 unit:NSUnitInformationStorage.kilobytes];
+        NSMeasurement *b = [[NSMeasurement alloc] initWithDoubleValue:3.0 unit:NSUnitInformationStorage.kilobytes];
+        NSMeasurement *s = [a measurementByAddingMeasurement:b];
+        p("meas add same val", [NSString stringWithFormat:@"%g", s.doubleValue]);
+        p("meas add same unit", s.unit.symbol);
+        NSMeasurement *d = [a measurementBySubtractingMeasurement:b];
+        p("meas sub same val", [NSString stringWithFormat:@"%g", d.doubleValue]);
+        p("meas sub same unit", d.unit.symbol);
+        NSMeasurement *mix = [a measurementByAddingMeasurement:[[NSMeasurement alloc] initWithDoubleValue:1.0 unit:NSUnitInformationStorage.bits]];
+        p("meas add mixed val", [NSString stringWithFormat:@"%g", mix.doubleValue]);
+        p("meas add mixed unit", mix.unit.symbol);
+        p("meas isEqual", [a isEqual:[[NSMeasurement alloc] initWithDoubleValue:2.0 unit:NSUnitInformationStorage.kilobytes]] ? @"1" : @"0");
+        catchProbe("meas conv mismatch", ^id {
+            return [m5b measurementByConvertingToUnit:[[NSUnit alloc] initWithSymbol:@"foo"]];
+        });
+
+        p("bcfm class 1000 dec", [NSByteCountFormatter stringFromMeasurement:[[NSMeasurement alloc] initWithDoubleValue:1000.0 unit:NSUnitInformationStorage.bytes] countStyle:NSByteCountFormatterCountStyleDecimal]);
+        p("bcfm class 1024KiB bin", [NSByteCountFormatter stringFromMeasurement:[[NSMeasurement alloc] initWithDoubleValue:1024.0 unit:NSUnitInformationStorage.kibibytes] countStyle:NSByteCountFormatterCountStyleBinary]);
+        p("bcfm class 1000kB dec", [NSByteCountFormatter stringFromMeasurement:[[NSMeasurement alloc] initWithDoubleValue:1000.0 unit:NSUnitInformationStorage.kilobytes] countStyle:NSByteCountFormatterCountStyleDecimal]);
+        p("bcfm class 0 dec", [NSByteCountFormatter stringFromMeasurement:[[NSMeasurement alloc] initWithDoubleValue:0.0 unit:NSUnitInformationStorage.bytes] countStyle:NSByteCountFormatterCountStyleDecimal]);
+
+        NSByteCountFormatter *bcfm = [[NSByteCountFormatter alloc] init];
+        bcfm.countStyle = NSByteCountFormatterCountStyleDecimal;
+        p("bcfm inst 1000 B", [bcfm stringFromMeasurement:[[NSMeasurement alloc] initWithDoubleValue:1000.0 unit:NSUnitInformationStorage.bytes]]);
+        bcfm.allowedUnits = NSByteCountFormatterUseBytes;
+        p("bcfm bytes 1234", [bcfm stringFromMeasurement:[[NSMeasurement alloc] initWithDoubleValue:1234.0 unit:NSUnitInformationStorage.bytes]]);
+        p("bcfm bytes 0", [bcfm stringFromMeasurement:[[NSMeasurement alloc] initWithDoubleValue:0.0 unit:NSUnitInformationStorage.bytes]]);
+        p("bcfm bytes 1", [bcfm stringFromMeasurement:[[NSMeasurement alloc] initWithDoubleValue:1.0 unit:NSUnitInformationStorage.bytes]]);
+        p("bcfm sofv meas", [bcfm stringForObjectValue:[[NSMeasurement alloc] initWithDoubleValue:1000.0 unit:NSUnitInformationStorage.bytes]]);
+    }
+
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
     port_behavior_pool();
 
