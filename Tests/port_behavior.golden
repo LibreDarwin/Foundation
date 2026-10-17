@@ -1981,6 +1981,28 @@ mf obj 1000 B                              | 1,000 byte
 mf obj 1024 KiB                            | 1.049 MB
 mf obj nil                                 | (null)
 mf obj str                                 | (null)
+pnc empty desc                             | <NSPersonNameComponents: 0xPTR> {givenName = (null), familyName = (null), middleName = (null), namePrefix = (null), nameSuffix = (null), nickname = (null) phoneticRepresentation = (null) }
+pnc empty given nil                        | 1
+pnc full desc                              | <NSPersonNameComponents: 0xPTR> {givenName = John, familyName = Smith, middleName = Quincy, namePrefix = Dr, nameSuffix = Jr, nickname = Johnny phoneticRepresentation = (null) }
+pnc given                                  | John
+pnc family                                 | Smith
+pnc middle                                 | Quincy
+pnc prefix                                 | Dr
+pnc suffix                                 | Jr
+pnc nickname                               | Johnny
+pnc phonetic nil                           | 1
+pnc set copy                               | Bob
+pnc eq same                                | 1
+pnc eq nil-diff                            | 0
+pnc hash same                              | 1
+pnc copy class                             | NSPersonNameComponents
+pnc copy isEqual                           | 1
+pnc copy distinct                          | 0
+pnc mutableCopy                            | raise NSInvalidArgumentException
+pnc securecoding                           | 1
+pnc arch class                             | NSPersonNameComponents
+pnc arch isEqual                           | 1
+pnc arch desc                              | <NSPersonNameComponents: 0xPTR> {givenName = John, familyName = Smith, middleName = Quincy, namePrefix = Dr, nameSuffix = Jr, nickname = Johnny phoneticRepresentation = (null) }
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1

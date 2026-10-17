@@ -48,6 +48,7 @@
 		549185E3265A5741D8A6F720 /* Numeric.subproj/NSDecimalNumber.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4AE57DF87210AD4D752A7C /* Numeric.subproj/NSDecimalNumber.m */; };
 		10C8FD372CFA9346269B6E5F /* Numeric.subproj/NSNumber.m in Sources */ = {isa = PBXBuildFile; fileRef = A491D2EB350202A3AF96798A /* Numeric.subproj/NSNumber.m */; };
 		FDB6882ECEADA094F6EB0421 /* Numeric.subproj/NSNumberFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 95C4061E9403C74177E7ECB0 /* Numeric.subproj/NSNumberFormatter.m */; };
+		F72998071D8B22F08F2E419D /* PersonNameComponents.subproj/NSPersonNameComponents.m in Sources */ = {isa = PBXBuildFile; fileRef = 834AEB6D8F8DE0671651EC76 /* PersonNameComponents.subproj/NSPersonNameComponents.m */; };
 		1012CB713E365CB677E9DB90 /* Predicate.subproj/NSComparisonPredicate.m in Sources */ = {isa = PBXBuildFile; fileRef = 7D543FAF014A0CAE462D39D7 /* Predicate.subproj/NSComparisonPredicate.m */; };
 		9E8E1C7196266CEC8C0772D5 /* Predicate.subproj/NSCompoundPredicate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0264AA6FA0E7986354389A47 /* Predicate.subproj/NSCompoundPredicate.m */; };
 		3843DBE267374C3BAF5DE679 /* Predicate.subproj/NSExpression.m in Sources */ = {isa = PBXBuildFile; fileRef = AA3744DC0A76BFAD85046B9B /* Predicate.subproj/NSExpression.m */; };
@@ -140,6 +141,7 @@
 		3C4AE57DF87210AD4D752A7C /* Numeric.subproj/NSDecimalNumber.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDecimalNumber.m"; path = "Numeric.subproj/NSDecimalNumber.m"; sourceTree = "<group>"; };
 		A491D2EB350202A3AF96798A /* Numeric.subproj/NSNumber.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSNumber.m"; path = "Numeric.subproj/NSNumber.m"; sourceTree = "<group>"; };
 		95C4061E9403C74177E7ECB0 /* Numeric.subproj/NSNumberFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSNumberFormatter.m"; path = "Numeric.subproj/NSNumberFormatter.m"; sourceTree = "<group>"; };
+		834AEB6D8F8DE0671651EC76 /* PersonNameComponents.subproj/NSPersonNameComponents.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSPersonNameComponents.m"; path = "PersonNameComponents.subproj/NSPersonNameComponents.m"; sourceTree = "<group>"; };
 		7D543FAF014A0CAE462D39D7 /* Predicate.subproj/NSComparisonPredicate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSComparisonPredicate.m"; path = "Predicate.subproj/NSComparisonPredicate.m"; sourceTree = "<group>"; };
 		0264AA6FA0E7986354389A47 /* Predicate.subproj/NSCompoundPredicate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCompoundPredicate.m"; path = "Predicate.subproj/NSCompoundPredicate.m"; sourceTree = "<group>"; };
 		AA3744DC0A76BFAD85046B9B /* Predicate.subproj/NSExpression.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSExpression.m"; path = "Predicate.subproj/NSExpression.m"; sourceTree = "<group>"; };
@@ -261,6 +263,7 @@
 				3C4AE57DF87210AD4D752A7C /* Numeric.subproj/NSDecimalNumber.m */,
 				A491D2EB350202A3AF96798A /* Numeric.subproj/NSNumber.m */,
 				95C4061E9403C74177E7ECB0 /* Numeric.subproj/NSNumberFormatter.m */,
+				834AEB6D8F8DE0671651EC76 /* PersonNameComponents.subproj/NSPersonNameComponents.m */,
 				7D543FAF014A0CAE462D39D7 /* Predicate.subproj/NSComparisonPredicate.m */,
 				0264AA6FA0E7986354389A47 /* Predicate.subproj/NSCompoundPredicate.m */,
 				AA3744DC0A76BFAD85046B9B /* Predicate.subproj/NSExpression.m */,
@@ -433,6 +436,7 @@
 				549185E3265A5741D8A6F720 /* Numeric.subproj/NSDecimalNumber.m in Sources */,
 				10C8FD372CFA9346269B6E5F /* Numeric.subproj/NSNumber.m in Sources */,
 				FDB6882ECEADA094F6EB0421 /* Numeric.subproj/NSNumberFormatter.m in Sources */,
+				F72998071D8B22F08F2E419D /* PersonNameComponents.subproj/NSPersonNameComponents.m in Sources */,
 				1012CB713E365CB677E9DB90 /* Predicate.subproj/NSComparisonPredicate.m in Sources */,
 				9E8E1C7196266CEC8C0772D5 /* Predicate.subproj/NSCompoundPredicate.m in Sources */,
 				3843DBE267374C3BAF5DE679 /* Predicate.subproj/NSExpression.m in Sources */,

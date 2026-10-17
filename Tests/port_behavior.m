@@ -89,6 +89,34 @@ static void catchProbe(const char *label, id (^block)(void)) {
     }
 }
 
+/* An NSPersonNameComponents description embeds its heap pointer.  Scrub every
+ * 0x… run to "0xPTR" so the golden is stable and the port and Apple outputs can
+ * still be diffed byte-for-byte. */
+static NSString *pnScrub(NSString *s) {
+    if (s == nil) return nil;
+    NSMutableString *out = [NSMutableString string];
+    NSUInteger n = s.length, i = 0;
+    while (i < n) {
+        unichar c = [s characterAtIndex:i];
+        if (c == '0' && i + 1 < n && [s characterAtIndex:i + 1] == 'x') {
+            NSUInteger j = i + 2;
+            while (j < n) {
+                unichar d = [s characterAtIndex:j];
+                if (!((d >= '0' && d <= '9') || (d >= 'a' && d <= 'f') || (d >= 'A' && d <= 'F'))) break;
+                j++;
+            }
+            if (j > i + 2) { [out appendString:@"0xPTR"]; i = j; continue; }
+        }
+        [out appendFormat:@"%C", c];
+        i++;
+    }
+    return out;
+}
+
+static void pnDesc(const char *label, id obj) {
+    p(label, pnScrub(obj == nil ? @"(null)" : [obj description]));
+}
+
 /* NSMeasurementFormatter probes mirror p(): a nil result prints "(null)".
  * They must agree byte-for-byte with /tmp-captured Apple output. */
 static NSMeasurement *mfMeas(NSUnit *unit, double value) {
@@ -4861,6 +4889,61 @@ int main(void) {
         mfProbeObj("mf obj 1024 KiB", nt, mfMeas(KiB, 1024));
         mfProbeObj("mf obj nil", def, nil);
         mfProbeObj("mf obj str", def, @"hello");
+    }
+
+    /* ---------- NSPersonNameComponents (container) ---------- */
+    @autoreleasepool {
+        NSPersonNameComponents *en = [[NSPersonNameComponents alloc] init];
+        pnDesc("pnc empty desc", en);
+        p("pnc empty given nil", [NSString stringWithFormat:@"%d", en.givenName == nil]);
+
+        NSPersonNameComponents *pc = [[NSPersonNameComponents alloc] init];
+        pc.namePrefix = @"Dr";
+        pc.givenName = @"John";
+        pc.middleName = @"Quincy";
+        pc.familyName = @"Smith";
+        pc.nameSuffix = @"Jr";
+        pc.nickname = @"Johnny";
+        pnDesc("pnc full desc", pc);
+        p("pnc given", pc.givenName);
+        p("pnc family", pc.familyName);
+        p("pnc middle", pc.middleName);
+        p("pnc prefix", pc.namePrefix);
+        p("pnc suffix", pc.nameSuffix);
+        p("pnc nickname", pc.nickname);
+        p("pnc phonetic nil", [NSString stringWithFormat:@"%d", pc.phoneticRepresentation == nil]);
+
+        NSMutableString *ms = [[NSMutableString alloc] initWithString:@"Bob"];
+        NSPersonNameComponents *pcc = [[NSPersonNameComponents alloc] init];
+        pcc.givenName = ms;
+        [ms appendString:@"by"];
+        p("pnc set copy", pcc.givenName);
+
+        NSPersonNameComponents *pc2 = [[NSPersonNameComponents alloc] init];
+        pc2.namePrefix = @"Dr";
+        pc2.givenName = @"John";
+        pc2.middleName = @"Quincy";
+        pc2.familyName = @"Smith";
+        pc2.nameSuffix = @"Jr";
+        pc2.nickname = @"Johnny";
+        p("pnc eq same", [NSString stringWithFormat:@"%d", [pc isEqual:pc2]]);
+        pc2.nickname = nil;
+        p("pnc eq nil-diff", [NSString stringWithFormat:@"%d", [pc isEqual:pc2]]);
+        p("pnc hash same", [NSString stringWithFormat:@"%d", [pc hash] == [[pc copy] hash]]);
+
+        NSPersonNameComponents *cp = [pc copy];
+        p("pnc copy class", NSStringFromClass([cp class]));
+        p("pnc copy isEqual", [NSString stringWithFormat:@"%d", [pc isEqual:cp]]);
+        p("pnc copy distinct", [NSString stringWithFormat:@"%d", cp == pc]);
+
+        catchProbe("pnc mutableCopy", ^id { return [pc mutableCopy]; });
+
+        p("pnc securecoding", [NSString stringWithFormat:@"%d", [NSPersonNameComponents supportsSecureCoding]]);
+        NSData *pnArch = [NSKeyedArchiver archivedDataWithRootObject:pc];
+        id pnBack = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSPersonNameComponents class] fromData:pnArch error:NULL];
+        p("pnc arch class", NSStringFromClass([pnBack class]));
+        p("pnc arch isEqual", [NSString stringWithFormat:@"%d", [pc isEqual:pnBack]]);
+        pnDesc("pnc arch desc", pnBack);
     }
 
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */

@@ -462,14 +462,14 @@ static Class _PublicCodedClass(Class cls) {
         return Nil;
     }
     NSString *name = NSStringFromClass(cls);
-    if (![name hasPrefix:@"_"]) {
+    if (![name hasPrefix:@"__"]) {
         return cls;
     }
     for (Class superclass = class_getSuperclass(cls);
          superclass != Nil;
          superclass = class_getSuperclass(superclass)) {
         NSString *superName = NSStringFromClass(superclass);
-        if (![superName hasPrefix:@"_"]) {
+        if (![superName hasPrefix:@"__"]) {
             return superclass;
         }
     }
