@@ -90,9 +90,17 @@ CFLAGS  = -fobjc-arc -fblocks -fobjc-runtime=macosx \
 # -lobjc is explicit because -fobjc-arc had been supplying it implicitly;
 # without it the dylib would depend on libSystem re-exporting libobjc to
 # resolve its _objc_* undefineds.  CoreFoundation stays explicit too.
+# -licucore resolves the uameasfmt_*/unum_* symbols NSMeasurementFormatter
+# calls to localize units, matching Apple's Foundation (which links
+# /usr/lib/libicucore.A.dylib).  No ICU headers are needed: the handful of
+# entry points used are hand-declared in NSMeasurementFormatter.m.  The
+# Internal SDK ships no libicucore stub, so take it from the host Xcode SDK;
+# the .tbd records only the install name /usr/lib/libicucore.A.dylib, so the
+# resulting LC_LOAD_DYLIB is identical to Apple's Foundation.
+ICU_STUB_SDK = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
 LDFLAGS = -dynamiclib -fno-autolink -isysroot ${RN} \
           -F${RN}/System/Library/Frameworks -framework CoreFoundation \
-          -lobjc \
+          -L${ICU_STUB_SDK}/usr/lib -lobjc -licucore \
           -install_name @rpath/Foundation.framework/Versions/A/Foundation
 
 .PHONY: all build debug release verify umbrella pairing-instrument pairing-sweep behavior-gate config-check clean gitignore xcodeproj
@@ -201,6 +209,7 @@ GATE_SRCS = String.subproj/NSString.m \
             Formatter.subproj/NSListFormatter.m \
             Units.subproj/NSUnit.m \
             Units.subproj/NSMeasurement.m \
+            Units.subproj/NSMeasurementFormatter.m \
             Date.subproj/NSDate.m \
             Date.subproj/NSCalendar.m \
             Date.subproj/NSCalendarSearchCore.c \
@@ -286,10 +295,10 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	@${CC} ${OPT_FLAGS} ${CFLAGS} -DPORT_GATE -fno-objc-arc -c Tests/port_behavior_pool.m \
 	    -o build/${CONFIG}/gate/port_behavior_pool.o
 	@${CC} -isysroot ${BEHAVIOR_LINK_SDK} -o build/${CONFIG}/port_behavior \
-	    build/${CONFIG}/gate/*.o -framework CoreFoundation
+	    build/${CONFIG}/gate/*.o -framework CoreFoundation -licucore
 	@build/${CONFIG}/port_behavior > build/${CONFIG}/port_behavior.out
 	@diff Tests/port_behavior.golden build/${CONFIG}/port_behavior.out \
-	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 1888 probes)"
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 1941 probes)"
 
 verify: pairing-sweep behavior-gate
 

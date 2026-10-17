@@ -1,7 +1,16 @@
+/*
+ * Copyright (C) 2026, LibreDarwin.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #ifndef __NSUNIT_H
 #define __NSUNIT_H 1
 
 #import <Foundation/NSObject.h>
+#import <Foundation/NSObjCRuntime.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -34,6 +43,11 @@ NS_ASSUME_NONNULL_BEGIN
 @interface NSDimension : NSUnit <NSSecureCoding>
 
 @property (readonly, copy) NSUnitConverter *converter;
+
+/* The ICU measure-unit identifier (UMeasureUnit) this dimension maps to, or
+ * -1 when the unit has no ICU counterpart.  NSMeasurementFormatter translates
+ * a dimension to this value before asking ICU to localize it. */
+@property (readonly) NSInteger specifier;
 
 - (instancetype)initWithSymbol:(NSString *)symbol converter:(NSUnitConverter *)converter NS_DESIGNATED_INITIALIZER;
 

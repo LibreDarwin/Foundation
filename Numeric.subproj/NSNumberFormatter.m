@@ -21,6 +21,7 @@
 #include <CoreFoundation/CFNumber.h>
 #include <CoreFoundation/CFNumberFormatter.h>
 #include <CoreFoundation/CFString.h>
+#include <CoreFoundation/ForFoundationOnly.h>
 
 #if __has_feature(objc_arc)
 #define NNFORMATTER_TRANSFER(value) ((__bridge_transfer id)(value))
@@ -138,6 +139,12 @@
 - (NSString *)stringForObjectValue:(id)obj {
     if ([obj isKindOfClass:[NSNumber class]]) return [self stringFromNumber:obj];
     return nil;
+}
+
+/* The backing ICU UNumberFormat, so NSUnitFormatter can clone its settings
+ * into a measure formatter.  Returns NULL if none has been created yet. */
+- (void *)getFormatter {
+    return _CFNumberFormatterGetFormatter(_formatter);
 }
 
 - (NSNumber *)numberFromString:(NSString *)string {

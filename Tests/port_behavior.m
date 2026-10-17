@@ -89,6 +89,36 @@ static void catchProbe(const char *label, id (^block)(void)) {
     }
 }
 
+/* NSMeasurementFormatter probes mirror p(): a nil result prints "(null)".
+ * They must agree byte-for-byte with /tmp-captured Apple output. */
+static NSMeasurement *mfMeas(NSUnit *unit, double value) {
+    return [[NSMeasurement alloc] initWithDoubleValue:value unit:unit];
+}
+
+static void mfProbe(const char *label, NSMeasurementFormatter *f, NSMeasurement *m) {
+    @try {
+        p(label, [f stringFromMeasurement:m]);
+    } @catch (id e) {
+        p(label, [NSString stringWithFormat:@"raise %@", [e name]]);
+    }
+}
+
+static void mfProbeUnit(const char *label, NSMeasurementFormatter *f, NSUnit *u) {
+    @try {
+        p(label, [f stringFromUnit:u]);
+    } @catch (id e) {
+        p(label, [NSString stringWithFormat:@"raise %@", [e name]]);
+    }
+}
+
+static void mfProbeObj(const char *label, NSMeasurementFormatter *f, id o) {
+    @try {
+        p(label, [f stringForObjectValue:o]);
+    } @catch (id e) {
+        p(label, [NSString stringWithFormat:@"raise %@", [e name]]);
+    }
+}
+
 static NSString *sortedObjects(NSSet *set) {
     return sortedJoin(set.allObjects);
 }
@@ -4742,6 +4772,95 @@ int main(void) {
         p("bcfm bytes 0", [bcfm stringFromMeasurement:[[NSMeasurement alloc] initWithDoubleValue:0.0 unit:NSUnitInformationStorage.bytes]]);
         p("bcfm bytes 1", [bcfm stringFromMeasurement:[[NSMeasurement alloc] initWithDoubleValue:1.0 unit:NSUnitInformationStorage.bytes]]);
         p("bcfm sofv meas", [bcfm stringForObjectValue:[[NSMeasurement alloc] initWithDoubleValue:1000.0 unit:NSUnitInformationStorage.bytes]]);
+    }
+
+    /* ---------- NSMeasurementFormatter (ICU-backed, storage-scoped) ---------- */
+    @autoreleasepool {
+        NSLocale *us = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+
+        NSUnitInformationStorage *bytes = NSUnitInformationStorage.bytes;
+        NSUnitInformationStorage *kB = NSUnitInformationStorage.kilobytes;
+        NSUnitInformationStorage *KiB = NSUnitInformationStorage.kibibytes;
+        NSUnitInformationStorage *MB = NSUnitInformationStorage.megabytes;
+        NSUnitInformationStorage *bits = NSUnitInformationStorage.bits;
+        NSUnitInformationStorage *PB = NSUnitInformationStorage.petabytes;
+        NSUnitInformationStorage *Mb = NSUnitInformationStorage.megabits;
+
+        NSMeasurementFormatter *def = [[NSMeasurementFormatter alloc] init];
+        def.locale = us;
+        NSMeasurementFormatter *sh = [[NSMeasurementFormatter alloc] init];
+        sh.locale = us; sh.unitStyle = NSFormattingUnitStyleShort;
+        NSMeasurementFormatter *lg = [[NSMeasurementFormatter alloc] init];
+        lg.locale = us; lg.unitStyle = NSFormattingUnitStyleLong;
+        NSMeasurementFormatter *pv = [[NSMeasurementFormatter alloc] init];
+        pv.locale = us; pv.unitOptions = NSMeasurementFormatterUnitOptionsProvidedUnit;
+        NSMeasurementFormatter *nt = [[NSMeasurementFormatter alloc] init];
+        nt.locale = us; nt.unitOptions = NSMeasurementFormatterUnitOptionsNaturalScale;
+        NSMeasurementFormatter *bo = [[NSMeasurementFormatter alloc] init];
+        bo.locale = us; bo.unitOptions = NSMeasurementFormatterUnitOptionsProvidedUnit |
+                                          NSMeasurementFormatterUnitOptionsNaturalScale;
+
+        p("mf defaults style", [NSString stringWithFormat:@"%ld", (long)def.unitStyle]);
+        p("mf defaults opts", [NSString stringWithFormat:@"%lu", (unsigned long)def.unitOptions]);
+        p("mf nf class", NSStringFromClass([def.numberFormatter class]));
+        p("mf locale id", def.locale.localeIdentifier);
+
+        mfProbe("mf def 1000 B", def, mfMeas(bytes, 1000));
+        mfProbe("mf def 1024 B", def, mfMeas(bytes, 1024));
+        mfProbe("mf def 0 B", def, mfMeas(bytes, 0));
+        mfProbe("mf def 1 B", def, mfMeas(bytes, 1));
+        mfProbe("mf def 1000 kB", def, mfMeas(kB, 1000));
+        mfProbe("mf def 1 kB", def, mfMeas(kB, 1));
+        mfProbe("mf def 5 KiB", def, mfMeas(KiB, 5));
+        mfProbe("mf def 1024 KiB", def, mfMeas(KiB, 1024));
+        mfProbe("mf def 999 bits", def, mfMeas(bits, 999));
+        mfProbe("mf def 9999 bits", def, mfMeas(bits, 9999));
+        mfProbe("mf def -1500 B", def, mfMeas(bytes, -1500));
+        mfProbe("mf def 1000 PB", def, mfMeas(PB, 1000));
+
+        mfProbe("mf short 1000 B", sh, mfMeas(bytes, 1000));
+        mfProbe("mf short 5 KiB", sh, mfMeas(KiB, 5));
+        mfProbe("mf short 999 bits", sh, mfMeas(bits, 999));
+        mfProbe("mf short 1000 kB", sh, mfMeas(kB, 1000));
+
+        mfProbe("mf long 1000 B", lg, mfMeas(bytes, 1000));
+        mfProbe("mf long 5 KiB", lg, mfMeas(KiB, 5));
+        mfProbe("mf long 999 bits", lg, mfMeas(bits, 999));
+        mfProbe("mf long 1 B", lg, mfMeas(bytes, 1));
+
+        mfProbe("mf prov 5 KiB", pv, mfMeas(KiB, 5));
+        mfProbe("mf prov 1000 B", pv, mfMeas(bytes, 1000));
+        mfProbe("mf prov 999 bits", pv, mfMeas(bits, 999));
+        mfProbe("mf prov 1024 KiB", pv, mfMeas(KiB, 1024));
+
+        mfProbe("mf nat 1024 B", nt, mfMeas(bytes, 1024));
+        mfProbe("mf nat 5 KiB", nt, mfMeas(KiB, 5));
+        mfProbe("mf nat 1024 KiB", nt, mfMeas(KiB, 1024));
+        mfProbe("mf nat 999 bits", nt, mfMeas(bits, 999));
+        mfProbe("mf nat 9999 bits", nt, mfMeas(bits, 9999));
+        mfProbe("mf nat 1000 kB", nt, mfMeas(kB, 1000));
+        mfProbe("mf nat 1000 B", nt, mfMeas(bytes, 1000));
+        mfProbe("mf nat 5 MB", nt, mfMeas(MB, 5));
+        mfProbe("mf nat -1500 B", nt, mfMeas(bytes, -1500));
+        mfProbe("mf nat 0 B", nt, mfMeas(bytes, 0));
+
+        mfProbe("mf both 1024 KiB", bo, mfMeas(KiB, 1024));
+        mfProbe("mf both 1000 kB", bo, mfMeas(kB, 1000));
+        mfProbe("mf both 1000 PB", bo, mfMeas(PB, 1000));
+        mfProbe("mf both 5 KiB", bo, mfMeas(KiB, 5));
+        mfProbe("mf both 1000 B", bo, mfMeas(bytes, 1000));
+        mfProbe("mf both 10 Mb", bo, mfMeas(Mb, 10));
+
+        mfProbeUnit("mf unit bytes", def, bytes);
+        mfProbeUnit("mf unit KiB", def, KiB);
+        mfProbeUnit("mf unit kB", def, kB);
+        mfProbeUnit("mf unit bits", sh, bits);
+        mfProbeUnit("mf unit MB long", lg, MB);
+
+        mfProbeObj("mf obj 1000 B", def, mfMeas(bytes, 1000));
+        mfProbeObj("mf obj 1024 KiB", nt, mfMeas(KiB, 1024));
+        mfProbeObj("mf obj nil", def, nil);
+        mfProbeObj("mf obj str", def, @"hello");
     }
 
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */

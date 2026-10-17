@@ -92,6 +92,7 @@
 		8F5FB139C72338EF41566DDA /* Thread.subproj/NSThread.m in Sources */ = {isa = PBXBuildFile; fileRef = EE79D13FA4BE13D56F4B5F68 /* Thread.subproj/NSThread.m */; };
 		5BC39902416EB257968B8497 /* URL.subproj/NSURL.m in Sources */ = {isa = PBXBuildFile; fileRef = EB427A3670E54EE5375DFD51 /* URL.subproj/NSURL.m */; };
 		BAA66852C68FFD66C22E6DA6 /* Units.subproj/NSMeasurement.m in Sources */ = {isa = PBXBuildFile; fileRef = 3562F5741DD4A282AA37A575 /* Units.subproj/NSMeasurement.m */; };
+		B5E942EE48C890E01530506B /* Units.subproj/NSMeasurementFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = FAA326CD7453AB6AE3BED88C /* Units.subproj/NSMeasurementFormatter.m */; };
 		6B8B847F28897D7C8BA76792 /* Units.subproj/NSUnit.m in Sources */ = {isa = PBXBuildFile; fileRef = F729D9F1C8340AB1FD3FD32B /* Units.subproj/NSUnit.m */; };
 		081AA637F7A7C840D11D3A2E /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E18A122D5A2AD703C145E408 /* CoreFoundation.framework */; };
 /* End PBXBuildFile section */
@@ -183,6 +184,7 @@
 		EE79D13FA4BE13D56F4B5F68 /* Thread.subproj/NSThread.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSThread.m"; path = "Thread.subproj/NSThread.m"; sourceTree = "<group>"; };
 		EB427A3670E54EE5375DFD51 /* URL.subproj/NSURL.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSURL.m"; path = "URL.subproj/NSURL.m"; sourceTree = "<group>"; };
 		3562F5741DD4A282AA37A575 /* Units.subproj/NSMeasurement.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSMeasurement.m"; path = "Units.subproj/NSMeasurement.m"; sourceTree = "<group>"; };
+		FAA326CD7453AB6AE3BED88C /* Units.subproj/NSMeasurementFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSMeasurementFormatter.m"; path = "Units.subproj/NSMeasurementFormatter.m"; sourceTree = "<group>"; };
 		F729D9F1C8340AB1FD3FD32B /* Units.subproj/NSUnit.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSUnit.m"; path = "Units.subproj/NSUnit.m"; sourceTree = "<group>"; };
 		5816D3EA598B7642519B3F78 /* Foundation.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Foundation.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -303,6 +305,7 @@
 				EE79D13FA4BE13D56F4B5F68 /* Thread.subproj/NSThread.m */,
 				EB427A3670E54EE5375DFD51 /* URL.subproj/NSURL.m */,
 				3562F5741DD4A282AA37A575 /* Units.subproj/NSMeasurement.m */,
+				FAA326CD7453AB6AE3BED88C /* Units.subproj/NSMeasurementFormatter.m */,
 				F729D9F1C8340AB1FD3FD32B /* Units.subproj/NSUnit.m */,
 			);
 			name = Sources;
@@ -474,6 +477,7 @@
 				8F5FB139C72338EF41566DDA /* Thread.subproj/NSThread.m in Sources */,
 				5BC39902416EB257968B8497 /* URL.subproj/NSURL.m in Sources */,
 				BAA66852C68FFD66C22E6DA6 /* Units.subproj/NSMeasurement.m in Sources */,
+				B5E942EE48C890E01530506B /* Units.subproj/NSMeasurementFormatter.m in Sources */,
 				6B8B847F28897D7C8BA76792 /* Units.subproj/NSUnit.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
