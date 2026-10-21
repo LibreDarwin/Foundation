@@ -2003,6 +2003,646 @@ pnc securecoding                           | 1
 pnc arch class                             | NSPersonNameComponents
 pnc arch isEqual                           | 1
 pnc arch desc                              | <NSPersonNameComponents: 0xPTR> {givenName = John, familyName = Smith, middleName = Quincy, namePrefix = Dr, nameSuffix = Jr, nickname = Johnny phoneticRepresentation = (null) }
+pnc en_US Default full                     | Johnathan Appleseed
+pnc en_US Default gf                       | Charles Darwin
+pnc en_US Default gfm                      | Charles Darwin
+pnc en_US Default gfl                      | Charles Darwin
+pnc en_US Default famOnly                  | Darwin
+pnc en_US Default givenOnly                | Charles
+pnc en_US Default firstLast                | Yukio Mishima
+pnc en_US Short full                       | Johnny
+pnc en_US Short gf                         | Charles
+pnc en_US Short gfm                        | Charles
+pnc en_US Short gfl                        | Charles
+pnc en_US Short famOnly                    | Darwin
+pnc en_US Short givenOnly                  | Charles
+pnc en_US Short firstLast                  | Yukio
+pnc en_US Medium full                      | Johnathan Appleseed
+pnc en_US Medium gf                        | Charles Darwin
+pnc en_US Medium gfm                       | Charles Darwin
+pnc en_US Medium gfl                       | Charles Darwin
+pnc en_US Medium famOnly                   | Darwin
+pnc en_US Medium givenOnly                 | Charles
+pnc en_US Medium firstLast                 | Yukio Mishima
+pnc en_US Long full                        | Dr. Johnathan Maple Appleseed Esq.
+pnc en_US Long gf                          | Charles Darwin
+pnc en_US Long gfm                         | Charles Robert Darwin
+pnc en_US Long gfl                         | Charles Robert Darwin FRS
+pnc en_US Long famOnly                     | Darwin
+pnc en_US Long givenOnly                   | Charles
+pnc en_US Long firstLast                   | Yukio Mishima
+pnc en_US Abbrev full                      | JA
+pnc en_US Abbrev gf                        | CD
+pnc en_US Abbrev gfm                       | CD
+pnc en_US Abbrev gfl                       | CD
+pnc en_US Abbrev famOnly                   | D
+pnc en_US Abbrev givenOnly                 | C
+pnc en_US Abbrev firstLast                 | YM
+pnc en_GB Default full                     | Johnathan Appleseed
+pnc en_GB Default gf                       | Charles Darwin
+pnc en_GB Default gfm                      | Charles Darwin
+pnc en_GB Default gfl                      | Charles Darwin
+pnc en_GB Default famOnly                  | Darwin
+pnc en_GB Default givenOnly                | Charles
+pnc en_GB Default firstLast                | Yukio Mishima
+pnc en_GB Short full                       | Johnny
+pnc en_GB Short gf                         | Charles
+pnc en_GB Short gfm                        | Charles
+pnc en_GB Short gfl                        | Charles
+pnc en_GB Short famOnly                    | Darwin
+pnc en_GB Short givenOnly                  | Charles
+pnc en_GB Short firstLast                  | Yukio
+pnc en_GB Medium full                      | Johnathan Appleseed
+pnc en_GB Medium gf                        | Charles Darwin
+pnc en_GB Medium gfm                       | Charles Darwin
+pnc en_GB Medium gfl                       | Charles Darwin
+pnc en_GB Medium famOnly                   | Darwin
+pnc en_GB Medium givenOnly                 | Charles
+pnc en_GB Medium firstLast                 | Yukio Mishima
+pnc en_GB Long full                        | Dr. Johnathan Maple Appleseed Esq.
+pnc en_GB Long gf                          | Charles Darwin
+pnc en_GB Long gfm                         | Charles Robert Darwin
+pnc en_GB Long gfl                         | Charles Robert Darwin FRS
+pnc en_GB Long famOnly                     | Darwin
+pnc en_GB Long givenOnly                   | Charles
+pnc en_GB Long firstLast                   | Yukio Mishima
+pnc en_GB Abbrev full                      | JA
+pnc en_GB Abbrev gf                        | CD
+pnc en_GB Abbrev gfm                       | CD
+pnc en_GB Abbrev gfl                       | CD
+pnc en_GB Abbrev famOnly                   | D
+pnc en_GB Abbrev givenOnly                 | C
+pnc en_GB Abbrev firstLast                 | YM
+pnc en_AU Default full                     | Johnathan Appleseed
+pnc en_AU Default gf                       | Charles Darwin
+pnc en_AU Default gfm                      | Charles Darwin
+pnc en_AU Default gfl                      | Charles Darwin
+pnc en_AU Default famOnly                  | Darwin
+pnc en_AU Default givenOnly                | Charles
+pnc en_AU Default firstLast                | Yukio Mishima
+pnc en_AU Short full                       | Johnny
+pnc en_AU Short gf                         | Charles
+pnc en_AU Short gfm                        | Charles
+pnc en_AU Short gfl                        | Charles
+pnc en_AU Short famOnly                    | Darwin
+pnc en_AU Short givenOnly                  | Charles
+pnc en_AU Short firstLast                  | Yukio
+pnc en_AU Medium full                      | Johnathan Appleseed
+pnc en_AU Medium gf                        | Charles Darwin
+pnc en_AU Medium gfm                       | Charles Darwin
+pnc en_AU Medium gfl                       | Charles Darwin
+pnc en_AU Medium famOnly                   | Darwin
+pnc en_AU Medium givenOnly                 | Charles
+pnc en_AU Medium firstLast                 | Yukio Mishima
+pnc en_AU Long full                        | Dr. Johnathan Maple Appleseed Esq.
+pnc en_AU Long gf                          | Charles Darwin
+pnc en_AU Long gfm                         | Charles Robert Darwin
+pnc en_AU Long gfl                         | Charles Robert Darwin FRS
+pnc en_AU Long famOnly                     | Darwin
+pnc en_AU Long givenOnly                   | Charles
+pnc en_AU Long firstLast                   | Yukio Mishima
+pnc en_AU Abbrev full                      | JA
+pnc en_AU Abbrev gf                        | CD
+pnc en_AU Abbrev gfm                       | CD
+pnc en_AU Abbrev gfl                       | CD
+pnc en_AU Abbrev famOnly                   | D
+pnc en_AU Abbrev givenOnly                 | C
+pnc en_AU Abbrev firstLast                 | YM
+pnc de_DE Default full                     | Johnathan Appleseed
+pnc de_DE Default gf                       | Charles Darwin
+pnc de_DE Default gfm                      | Charles Darwin
+pnc de_DE Default gfl                      | Charles Darwin
+pnc de_DE Default famOnly                  | Darwin
+pnc de_DE Default givenOnly                | Charles
+pnc de_DE Default firstLast                | Yukio Mishima
+pnc de_DE Short full                       | Johnny
+pnc de_DE Short gf                         | Charles
+pnc de_DE Short gfm                        | Charles
+pnc de_DE Short gfl                        | Charles
+pnc de_DE Short famOnly                    | Darwin
+pnc de_DE Short givenOnly                  | Charles
+pnc de_DE Short firstLast                  | Yukio
+pnc de_DE Medium full                      | Johnathan Appleseed
+pnc de_DE Medium gf                        | Charles Darwin
+pnc de_DE Medium gfm                       | Charles Darwin
+pnc de_DE Medium gfl                       | Charles Darwin
+pnc de_DE Medium famOnly                   | Darwin
+pnc de_DE Medium givenOnly                 | Charles
+pnc de_DE Medium firstLast                 | Yukio Mishima
+pnc de_DE Long full                        | Dr. Johnathan Maple Appleseed Esq.
+pnc de_DE Long gf                          | Charles Darwin
+pnc de_DE Long gfm                         | Charles Robert Darwin
+pnc de_DE Long gfl                         | Charles Robert Darwin FRS
+pnc de_DE Long famOnly                     | Darwin
+pnc de_DE Long givenOnly                   | Charles
+pnc de_DE Long firstLast                   | Yukio Mishima
+pnc de_DE Abbrev full                      | JA
+pnc de_DE Abbrev gf                        | CD
+pnc de_DE Abbrev gfm                       | CD
+pnc de_DE Abbrev gfl                       | CD
+pnc de_DE Abbrev famOnly                   | D
+pnc de_DE Abbrev givenOnly                 | C
+pnc de_DE Abbrev firstLast                 | YM
+pnc fr_FR Default full                     | Johnathan Appleseed
+pnc fr_FR Default gf                       | Charles Darwin
+pnc fr_FR Default gfm                      | Charles Darwin
+pnc fr_FR Default gfl                      | Charles Darwin
+pnc fr_FR Default famOnly                  | Darwin
+pnc fr_FR Default givenOnly                | Charles
+pnc fr_FR Default firstLast                | Yukio Mishima
+pnc fr_FR Short full                       | Johnny
+pnc fr_FR Short gf                         | Charles
+pnc fr_FR Short gfm                        | Charles
+pnc fr_FR Short gfl                        | Charles
+pnc fr_FR Short famOnly                    | Darwin
+pnc fr_FR Short givenOnly                  | Charles
+pnc fr_FR Short firstLast                  | Yukio
+pnc fr_FR Medium full                      | Johnathan Appleseed
+pnc fr_FR Medium gf                        | Charles Darwin
+pnc fr_FR Medium gfm                       | Charles Darwin
+pnc fr_FR Medium gfl                       | Charles Darwin
+pnc fr_FR Medium famOnly                   | Darwin
+pnc fr_FR Medium givenOnly                 | Charles
+pnc fr_FR Medium firstLast                 | Yukio Mishima
+pnc fr_FR Long full                        | Dr. Johnathan Maple Appleseed Esq.
+pnc fr_FR Long gf                          | Charles Darwin
+pnc fr_FR Long gfm                         | Charles Robert Darwin
+pnc fr_FR Long gfl                         | Charles Robert Darwin FRS
+pnc fr_FR Long famOnly                     | Darwin
+pnc fr_FR Long givenOnly                   | Charles
+pnc fr_FR Long firstLast                   | Yukio Mishima
+pnc fr_FR Abbrev full                      | JA
+pnc fr_FR Abbrev gf                        | CD
+pnc fr_FR Abbrev gfm                       | CD
+pnc fr_FR Abbrev gfl                       | CD
+pnc fr_FR Abbrev famOnly                   | D
+pnc fr_FR Abbrev givenOnly                 | C
+pnc fr_FR Abbrev firstLast                 | YM
+pnc hu_HU Default full                     | Appleseed Johnathan
+pnc hu_HU Default gf                       | Darwin Charles
+pnc hu_HU Default gfm                      | Darwin Charles
+pnc hu_HU Default gfl                      | Darwin Charles
+pnc hu_HU Default famOnly                  | Darwin
+pnc hu_HU Default givenOnly                | Charles
+pnc hu_HU Default firstLast                | Mishima Yukio
+pnc hu_HU Short full                       | Johnny
+pnc hu_HU Short gf                         | Charles
+pnc hu_HU Short gfm                        | Charles
+pnc hu_HU Short gfl                        | Charles
+pnc hu_HU Short famOnly                    | Darwin
+pnc hu_HU Short givenOnly                  | Charles
+pnc hu_HU Short firstLast                  | Yukio
+pnc hu_HU Medium full                      | Appleseed Johnathan
+pnc hu_HU Medium gf                        | Darwin Charles
+pnc hu_HU Medium gfm                       | Darwin Charles
+pnc hu_HU Medium gfl                       | Darwin Charles
+pnc hu_HU Medium famOnly                   | Darwin
+pnc hu_HU Medium givenOnly                 | Charles
+pnc hu_HU Medium firstLast                 | Mishima Yukio
+pnc hu_HU Long full                        | Dr. Appleseed Johnathan Maple Esq.
+pnc hu_HU Long gf                          | Darwin Charles
+pnc hu_HU Long gfm                         | Darwin Charles Robert
+pnc hu_HU Long gfl                         | Darwin Charles Robert FRS
+pnc hu_HU Long famOnly                     | Darwin
+pnc hu_HU Long givenOnly                   | Charles
+pnc hu_HU Long firstLast                   | Mishima Yukio
+pnc hu_HU Abbrev full                      | AJ
+pnc hu_HU Abbrev gf                        | DC
+pnc hu_HU Abbrev gfm                       | DC
+pnc hu_HU Abbrev gfl                       | DC
+pnc hu_HU Abbrev famOnly                   | D
+pnc hu_HU Abbrev givenOnly                 | C
+pnc hu_HU Abbrev firstLast                 | MY
+pnc ja_JP Default full                     | Appleseed Johnathan
+pnc ja_JP Default gf                       | Darwin Charles
+pnc ja_JP Default gfm                      | Darwin Charles
+pnc ja_JP Default gfl                      | Darwin Charles
+pnc ja_JP Default famOnly                  | Darwin
+pnc ja_JP Default givenOnly                | Charles
+pnc ja_JP Default firstLast                | Mishima Yukio
+pnc ja_JP Short full                       | Johnny
+pnc ja_JP Short gf                         | Charles
+pnc ja_JP Short gfm                        | Charles
+pnc ja_JP Short gfl                        | Charles
+pnc ja_JP Short famOnly                    | Darwin
+pnc ja_JP Short givenOnly                  | Charles
+pnc ja_JP Short firstLast                  | Yukio
+pnc ja_JP Medium full                      | Appleseed Johnathan
+pnc ja_JP Medium gf                        | Darwin Charles
+pnc ja_JP Medium gfm                       | Darwin Charles
+pnc ja_JP Medium gfl                       | Darwin Charles
+pnc ja_JP Medium famOnly                   | Darwin
+pnc ja_JP Medium givenOnly                 | Charles
+pnc ja_JP Medium firstLast                 | Mishima Yukio
+pnc ja_JP Long full                        | Dr. Appleseed Johnathan Maple Esq.
+pnc ja_JP Long gf                          | Darwin Charles
+pnc ja_JP Long gfm                         | Darwin Charles Robert
+pnc ja_JP Long gfl                         | Darwin Charles Robert FRS
+pnc ja_JP Long famOnly                     | Darwin
+pnc ja_JP Long givenOnly                   | Charles
+pnc ja_JP Long firstLast                   | Mishima Yukio
+pnc ja_JP Abbrev full                      | AJ
+pnc ja_JP Abbrev gf                        | DC
+pnc ja_JP Abbrev gfm                       | DC
+pnc ja_JP Abbrev gfl                       | DC
+pnc ja_JP Abbrev famOnly                   | D
+pnc ja_JP Abbrev givenOnly                 | C
+pnc ja_JP Abbrev firstLast                 | MY
+pnc zh_CN Default full                     | Appleseed Johnathan
+pnc zh_CN Default gf                       | Darwin Charles
+pnc zh_CN Default gfm                      | Darwin Charles
+pnc zh_CN Default gfl                      | Darwin Charles
+pnc zh_CN Default famOnly                  | Darwin
+pnc zh_CN Default givenOnly                | Charles
+pnc zh_CN Default firstLast                | Mishima Yukio
+pnc zh_CN Short full                       | Johnny
+pnc zh_CN Short gf                         | Charles
+pnc zh_CN Short gfm                        | Charles
+pnc zh_CN Short gfl                        | Charles
+pnc zh_CN Short famOnly                    | Darwin
+pnc zh_CN Short givenOnly                  | Charles
+pnc zh_CN Short firstLast                  | Yukio
+pnc zh_CN Medium full                      | Appleseed Johnathan
+pnc zh_CN Medium gf                        | Darwin Charles
+pnc zh_CN Medium gfm                       | Darwin Charles
+pnc zh_CN Medium gfl                       | Darwin Charles
+pnc zh_CN Medium famOnly                   | Darwin
+pnc zh_CN Medium givenOnly                 | Charles
+pnc zh_CN Medium firstLast                 | Mishima Yukio
+pnc zh_CN Long full                        | Dr. Appleseed Johnathan Maple Esq.
+pnc zh_CN Long gf                          | Darwin Charles
+pnc zh_CN Long gfm                         | Darwin Charles Robert
+pnc zh_CN Long gfl                         | Darwin Charles Robert FRS
+pnc zh_CN Long famOnly                     | Darwin
+pnc zh_CN Long givenOnly                   | Charles
+pnc zh_CN Long firstLast                   | Mishima Yukio
+pnc zh_CN Abbrev full                      | AJ
+pnc zh_CN Abbrev gf                        | DC
+pnc zh_CN Abbrev gfm                       | DC
+pnc zh_CN Abbrev gfl                       | DC
+pnc zh_CN Abbrev famOnly                   | D
+pnc zh_CN Abbrev givenOnly                 | C
+pnc zh_CN Abbrev firstLast                 | MY
+pnc ko_KR Default full                     | Appleseed Johnathan
+pnc ko_KR Default gf                       | Darwin Charles
+pnc ko_KR Default gfm                      | Darwin Charles
+pnc ko_KR Default gfl                      | Darwin Charles
+pnc ko_KR Default famOnly                  | Darwin
+pnc ko_KR Default givenOnly                | Charles
+pnc ko_KR Default firstLast                | Mishima Yukio
+pnc ko_KR Short full                       | Johnny
+pnc ko_KR Short gf                         | Charles
+pnc ko_KR Short gfm                        | Charles
+pnc ko_KR Short gfl                        | Charles
+pnc ko_KR Short famOnly                    | Darwin
+pnc ko_KR Short givenOnly                  | Charles
+pnc ko_KR Short firstLast                  | Yukio
+pnc ko_KR Medium full                      | Appleseed Johnathan
+pnc ko_KR Medium gf                        | Darwin Charles
+pnc ko_KR Medium gfm                       | Darwin Charles
+pnc ko_KR Medium gfl                       | Darwin Charles
+pnc ko_KR Medium famOnly                   | Darwin
+pnc ko_KR Medium givenOnly                 | Charles
+pnc ko_KR Medium firstLast                 | Mishima Yukio
+pnc ko_KR Long full                        | Dr. Appleseed Johnathan Maple Esq.
+pnc ko_KR Long gf                          | Darwin Charles
+pnc ko_KR Long gfm                         | Darwin Charles Robert
+pnc ko_KR Long gfl                         | Darwin Charles Robert FRS
+pnc ko_KR Long famOnly                     | Darwin
+pnc ko_KR Long givenOnly                   | Charles
+pnc ko_KR Long firstLast                   | Mishima Yukio
+pnc ko_KR Abbrev full                      | AJ
+pnc ko_KR Abbrev gf                        | DC
+pnc ko_KR Abbrev gfm                       | DC
+pnc ko_KR Abbrev gfl                       | DC
+pnc ko_KR Abbrev famOnly                   | D
+pnc ko_KR Abbrev givenOnly                 | C
+pnc ko_KR Abbrev firstLast                 | MY
+pnc es_ES Default full                     | Johnathan Appleseed
+pnc es_ES Default gf                       | Charles Darwin
+pnc es_ES Default gfm                      | Charles Darwin
+pnc es_ES Default gfl                      | Charles Darwin
+pnc es_ES Default famOnly                  | Darwin
+pnc es_ES Default givenOnly                | Charles
+pnc es_ES Default firstLast                | Yukio Mishima
+pnc es_ES Short full                       | Johnny
+pnc es_ES Short gf                         | Charles
+pnc es_ES Short gfm                        | Charles
+pnc es_ES Short gfl                        | Charles
+pnc es_ES Short famOnly                    | Darwin
+pnc es_ES Short givenOnly                  | Charles
+pnc es_ES Short firstLast                  | Yukio
+pnc es_ES Medium full                      | Johnathan Appleseed
+pnc es_ES Medium gf                        | Charles Darwin
+pnc es_ES Medium gfm                       | Charles Darwin
+pnc es_ES Medium gfl                       | Charles Darwin
+pnc es_ES Medium famOnly                   | Darwin
+pnc es_ES Medium givenOnly                 | Charles
+pnc es_ES Medium firstLast                 | Yukio Mishima
+pnc es_ES Long full                        | Dr. Johnathan Maple Appleseed Esq.
+pnc es_ES Long gf                          | Charles Darwin
+pnc es_ES Long gfm                         | Charles Robert Darwin
+pnc es_ES Long gfl                         | Charles Robert Darwin FRS
+pnc es_ES Long famOnly                     | Darwin
+pnc es_ES Long givenOnly                   | Charles
+pnc es_ES Long firstLast                   | Yukio Mishima
+pnc es_ES Abbrev full                      | JA
+pnc es_ES Abbrev gf                        | CD
+pnc es_ES Abbrev gfm                       | CD
+pnc es_ES Abbrev gfl                       | CD
+pnc es_ES Abbrev famOnly                   | D
+pnc es_ES Abbrev givenOnly                 | C
+pnc es_ES Abbrev firstLast                 | YM
+pnc ru_RU Default full                     | Johnathan Appleseed
+pnc ru_RU Default gf                       | Charles Darwin
+pnc ru_RU Default gfm                      | Charles Darwin
+pnc ru_RU Default gfl                      | Charles Darwin
+pnc ru_RU Default famOnly                  | Darwin
+pnc ru_RU Default givenOnly                | Charles
+pnc ru_RU Default firstLast                | Yukio Mishima
+pnc ru_RU Short full                       | Johnny
+pnc ru_RU Short gf                         | Charles
+pnc ru_RU Short gfm                        | Charles
+pnc ru_RU Short gfl                        | Charles
+pnc ru_RU Short famOnly                    | Darwin
+pnc ru_RU Short givenOnly                  | Charles
+pnc ru_RU Short firstLast                  | Yukio
+pnc ru_RU Medium full                      | Johnathan Appleseed
+pnc ru_RU Medium gf                        | Charles Darwin
+pnc ru_RU Medium gfm                       | Charles Darwin
+pnc ru_RU Medium gfl                       | Charles Darwin
+pnc ru_RU Medium famOnly                   | Darwin
+pnc ru_RU Medium givenOnly                 | Charles
+pnc ru_RU Medium firstLast                 | Yukio Mishima
+pnc ru_RU Long full                        | Dr. Johnathan Maple Appleseed Esq.
+pnc ru_RU Long gf                          | Charles Darwin
+pnc ru_RU Long gfm                         | Charles Robert Darwin
+pnc ru_RU Long gfl                         | Charles Robert Darwin FRS
+pnc ru_RU Long famOnly                     | Darwin
+pnc ru_RU Long givenOnly                   | Charles
+pnc ru_RU Long firstLast                   | Yukio Mishima
+pnc ru_RU Abbrev full                      | JA
+pnc ru_RU Abbrev gf                        | CD
+pnc ru_RU Abbrev gfm                       | CD
+pnc ru_RU Abbrev gfl                       | CD
+pnc ru_RU Abbrev famOnly                   | D
+pnc ru_RU Abbrev givenOnly                 | C
+pnc ru_RU Abbrev firstLast                 | YM
+pnc ar_EG Default full                     | Johnathan Appleseed
+pnc ar_EG Default gf                       | Charles Darwin
+pnc ar_EG Default gfm                      | Charles Darwin
+pnc ar_EG Default gfl                      | Charles Darwin
+pnc ar_EG Default famOnly                  | Darwin
+pnc ar_EG Default givenOnly                | Charles
+pnc ar_EG Default firstLast                | Yukio Mishima
+pnc ar_EG Short full                       | Johnny
+pnc ar_EG Short gf                         | Charles
+pnc ar_EG Short gfm                        | Charles
+pnc ar_EG Short gfl                        | Charles
+pnc ar_EG Short famOnly                    | Darwin
+pnc ar_EG Short givenOnly                  | Charles
+pnc ar_EG Short firstLast                  | Yukio
+pnc ar_EG Medium full                      | Johnathan Appleseed
+pnc ar_EG Medium gf                        | Charles Darwin
+pnc ar_EG Medium gfm                       | Charles Darwin
+pnc ar_EG Medium gfl                       | Charles Darwin
+pnc ar_EG Medium famOnly                   | Darwin
+pnc ar_EG Medium givenOnly                 | Charles
+pnc ar_EG Medium firstLast                 | Yukio Mishima
+pnc ar_EG Long full                        | Dr. Johnathan Maple Appleseed Esq.
+pnc ar_EG Long gf                          | Charles Darwin
+pnc ar_EG Long gfm                         | Charles Robert Darwin
+pnc ar_EG Long gfl                         | Charles Robert Darwin FRS
+pnc ar_EG Long famOnly                     | Darwin
+pnc ar_EG Long givenOnly                   | Charles
+pnc ar_EG Long firstLast                   | Yukio Mishima
+pnc ar_EG Abbrev full                      | JA
+pnc ar_EG Abbrev gf                        | CD
+pnc ar_EG Abbrev gfm                       | CD
+pnc ar_EG Abbrev gfl                       | CD
+pnc ar_EG Abbrev famOnly                   | D
+pnc ar_EG Abbrev givenOnly                 | C
+pnc ar_EG Abbrev firstLast                 | YM
+pnc he_IL Default full                     | Johnathan Appleseed
+pnc he_IL Default gf                       | Charles Darwin
+pnc he_IL Default gfm                      | Charles Darwin
+pnc he_IL Default gfl                      | Charles Darwin
+pnc he_IL Default famOnly                  | Darwin
+pnc he_IL Default givenOnly                | Charles
+pnc he_IL Default firstLast                | Yukio Mishima
+pnc he_IL Short full                       | Johnny
+pnc he_IL Short gf                         | Charles
+pnc he_IL Short gfm                        | Charles
+pnc he_IL Short gfl                        | Charles
+pnc he_IL Short famOnly                    | Darwin
+pnc he_IL Short givenOnly                  | Charles
+pnc he_IL Short firstLast                  | Yukio
+pnc he_IL Medium full                      | Johnathan Appleseed
+pnc he_IL Medium gf                        | Charles Darwin
+pnc he_IL Medium gfm                       | Charles Darwin
+pnc he_IL Medium gfl                       | Charles Darwin
+pnc he_IL Medium famOnly                   | Darwin
+pnc he_IL Medium givenOnly                 | Charles
+pnc he_IL Medium firstLast                 | Yukio Mishima
+pnc he_IL Long full                        | Dr. Johnathan Maple Appleseed Esq.
+pnc he_IL Long gf                          | Charles Darwin
+pnc he_IL Long gfm                         | Charles Robert Darwin
+pnc he_IL Long gfl                         | Charles Robert Darwin FRS
+pnc he_IL Long famOnly                     | Darwin
+pnc he_IL Long givenOnly                   | Charles
+pnc he_IL Long firstLast                   | Yukio Mishima
+pnc he_IL Abbrev full                      | JA
+pnc he_IL Abbrev gf                        | CD
+pnc he_IL Abbrev gfm                       | CD
+pnc he_IL Abbrev gfl                       | CD
+pnc he_IL Abbrev famOnly                   | D
+pnc he_IL Abbrev givenOnly                 | C
+pnc he_IL Abbrev firstLast                 | YM
+pnc vi_VN Default full                     | Appleseed Johnathan
+pnc vi_VN Default gf                       | Darwin Charles
+pnc vi_VN Default gfm                      | Darwin Charles
+pnc vi_VN Default gfl                      | Darwin Charles
+pnc vi_VN Default famOnly                  | Darwin
+pnc vi_VN Default givenOnly                | Charles
+pnc vi_VN Default firstLast                | Mishima Yukio
+pnc vi_VN Short full                       | Johnny
+pnc vi_VN Short gf                         | Charles
+pnc vi_VN Short gfm                        | Charles
+pnc vi_VN Short gfl                        | Charles
+pnc vi_VN Short famOnly                    | Darwin
+pnc vi_VN Short givenOnly                  | Charles
+pnc vi_VN Short firstLast                  | Yukio
+pnc vi_VN Medium full                      | Appleseed Johnathan
+pnc vi_VN Medium gf                        | Darwin Charles
+pnc vi_VN Medium gfm                       | Darwin Charles
+pnc vi_VN Medium gfl                       | Darwin Charles
+pnc vi_VN Medium famOnly                   | Darwin
+pnc vi_VN Medium givenOnly                 | Charles
+pnc vi_VN Medium firstLast                 | Mishima Yukio
+pnc vi_VN Long full                        | Dr. Appleseed Johnathan Maple Esq.
+pnc vi_VN Long gf                          | Darwin Charles
+pnc vi_VN Long gfm                         | Darwin Charles Robert
+pnc vi_VN Long gfl                         | Darwin Charles Robert FRS
+pnc vi_VN Long famOnly                     | Darwin
+pnc vi_VN Long givenOnly                   | Charles
+pnc vi_VN Long firstLast                   | Mishima Yukio
+pnc vi_VN Abbrev full                      | AJ
+pnc vi_VN Abbrev gf                        | DC
+pnc vi_VN Abbrev gfm                       | DC
+pnc vi_VN Abbrev gfl                       | DC
+pnc vi_VN Abbrev famOnly                   | D
+pnc vi_VN Abbrev givenOnly                 | C
+pnc vi_VN Abbrev firstLast                 | MY
+pnc th_TH Default full                     | Johnathan Appleseed
+pnc th_TH Default gf                       | Charles Darwin
+pnc th_TH Default gfm                      | Charles Darwin
+pnc th_TH Default gfl                      | Charles Darwin
+pnc th_TH Default famOnly                  | Darwin
+pnc th_TH Default givenOnly                | Charles
+pnc th_TH Default firstLast                | Yukio Mishima
+pnc th_TH Short full                       | Johnny
+pnc th_TH Short gf                         | Charles
+pnc th_TH Short gfm                        | Charles
+pnc th_TH Short gfl                        | Charles
+pnc th_TH Short famOnly                    | Darwin
+pnc th_TH Short givenOnly                  | Charles
+pnc th_TH Short firstLast                  | Yukio
+pnc th_TH Medium full                      | Johnathan Appleseed
+pnc th_TH Medium gf                        | Charles Darwin
+pnc th_TH Medium gfm                       | Charles Darwin
+pnc th_TH Medium gfl                       | Charles Darwin
+pnc th_TH Medium famOnly                   | Darwin
+pnc th_TH Medium givenOnly                 | Charles
+pnc th_TH Medium firstLast                 | Yukio Mishima
+pnc th_TH Long full                        | Dr. Johnathan Maple Appleseed Esq.
+pnc th_TH Long gf                          | Charles Darwin
+pnc th_TH Long gfm                         | Charles Robert Darwin
+pnc th_TH Long gfl                         | Charles Robert Darwin FRS
+pnc th_TH Long famOnly                     | Darwin
+pnc th_TH Long givenOnly                   | Charles
+pnc th_TH Long firstLast                   | Yukio Mishima
+pnc th_TH Abbrev full                      | JA
+pnc th_TH Abbrev gf                        | CD
+pnc th_TH Abbrev gfm                       | CD
+pnc th_TH Abbrev gfl                       | CD
+pnc th_TH Abbrev famOnly                   | D
+pnc th_TH Abbrev givenOnly                 | C
+pnc th_TH Abbrev firstLast                 | YM
+lsp en_US Default                          | Johnathan Appleseed
+lsp en_US Short                            | Johnny
+lsp en_US Medium                           | Johnathan Appleseed
+lsp en_US Long                             | Dr. Johnathan Maple Appleseed Esq.
+lsp en_US Abbrev                           | JA
+cjkfmt en_US JgJf 0                        | 山田太郎
+cjkfmt en_US JgJf 1                        | 山田太郎
+cjkfmt en_US JgJf 2                        | 山田太郎
+cjkfmt en_US JgJf 3                        | 山田太郎
+cjkfmt en_US JgJf 4                        | 山田
+cjkfmt en_US JfJg 0                        | 太郎山田
+cjkfmt en_US JfJg 1                        | 太郎山田
+cjkfmt en_US JfJg 2                        | 太郎山田
+cjkfmt en_US JfJg 3                        | 太郎山田
+cjkfmt en_US JfJg 4                        | 太郎
+cjkfmt en_US CgCf 0                        | 张伟
+cjkfmt en_US CgCf 1                        | 张伟
+cjkfmt en_US CgCf 2                        | 张伟
+cjkfmt en_US CgCf 3                        | 张伟
+cjkfmt en_US CgCf 4                        | 张
+cjkfmt en_US KgKf 0                        | 김철수
+cjkfmt en_US KgKf 1                        | 김철수
+cjkfmt en_US KgKf 2                        | 김철수
+cjkfmt en_US KgKf 3                        | 김철수
+cjkfmt en_US KgKf 4                        | 철수
+cjkfmt ja_JP JgJf 0                        | 山田太郎
+cjkfmt ja_JP JgJf 1                        | 山田太郎
+cjkfmt ja_JP JgJf 2                        | 山田太郎
+cjkfmt ja_JP JgJf 3                        | 山田太郎
+cjkfmt ja_JP JgJf 4                        | 山田
+cjkfmt ja_JP JfJg 0                        | 太郎山田
+cjkfmt ja_JP JfJg 1                        | 太郎山田
+cjkfmt ja_JP JfJg 2                        | 太郎山田
+cjkfmt ja_JP JfJg 3                        | 太郎山田
+cjkfmt ja_JP JfJg 4                        | 太郎
+cjkfmt ja_JP CgCf 0                        | 张伟
+cjkfmt ja_JP CgCf 1                        | 张伟
+cjkfmt ja_JP CgCf 2                        | 张伟
+cjkfmt ja_JP CgCf 3                        | 张伟
+cjkfmt ja_JP CgCf 4                        | 张
+cjkfmt ja_JP KgKf 0                        | 김철수
+cjkfmt ja_JP KgKf 1                        | 김철수
+cjkfmt ja_JP KgKf 2                        | 김철수
+cjkfmt ja_JP KgKf 3                        | 김철수
+cjkfmt ja_JP KgKf 4                        | 철수
+cjkfmt zh_CN JgJf 0                        | 山田太郎
+cjkfmt zh_CN JgJf 1                        | 山田太郎
+cjkfmt zh_CN JgJf 2                        | 山田太郎
+cjkfmt zh_CN JgJf 3                        | 山田太郎
+cjkfmt zh_CN JgJf 4                        | 山田
+cjkfmt zh_CN JfJg 0                        | 太郎山田
+cjkfmt zh_CN JfJg 1                        | 太郎山田
+cjkfmt zh_CN JfJg 2                        | 太郎山田
+cjkfmt zh_CN JfJg 3                        | 太郎山田
+cjkfmt zh_CN JfJg 4                        | 太郎
+cjkfmt zh_CN CgCf 0                        | 张伟
+cjkfmt zh_CN CgCf 1                        | 张伟
+cjkfmt zh_CN CgCf 2                        | 张伟
+cjkfmt zh_CN CgCf 3                        | 张伟
+cjkfmt zh_CN CgCf 4                        | 张
+cjkfmt zh_CN KgKf 0                        | 김철수
+cjkfmt zh_CN KgKf 1                        | 김철수
+cjkfmt zh_CN KgKf 2                        | 김철수
+cjkfmt zh_CN KgKf 3                        | 김철수
+cjkfmt zh_CN KgKf 4                        | 철수
+cjkfmt ko_KR JgJf 0                        | 山田太郎
+cjkfmt ko_KR JgJf 1                        | 山田太郎
+cjkfmt ko_KR JgJf 2                        | 山田太郎
+cjkfmt ko_KR JgJf 3                        | 山田太郎
+cjkfmt ko_KR JgJf 4                        | 山田
+cjkfmt ko_KR JfJg 0                        | 太郎山田
+cjkfmt ko_KR JfJg 1                        | 太郎山田
+cjkfmt ko_KR JfJg 2                        | 太郎山田
+cjkfmt ko_KR JfJg 3                        | 太郎山田
+cjkfmt ko_KR JfJg 4                        | 太郎
+cjkfmt ko_KR CgCf 0                        | 张伟
+cjkfmt ko_KR CgCf 1                        | 张伟
+cjkfmt ko_KR CgCf 2                        | 张伟
+cjkfmt ko_KR CgCf 3                        | 张伟
+cjkfmt ko_KR CgCf 4                        | 张
+cjkfmt ko_KR KgKf 0                        | 김철수
+cjkfmt ko_KR KgKf 1                        | 김철수
+cjkfmt ko_KR KgKf 2                        | 김철수
+cjkfmt ko_KR KgKf 3                        | 김철수
+cjkfmt ko_KR KgKf 4                        | 철수
+pnc annot str                              | Dr. Johnathan Maple Appleseed Esq.
+pnc annot [0,3]                            | namePrefix
+pnc annot [3,1]                            | delimiter
+pnc annot [4,9]                            | givenName
+pnc annot [13,1]                           | delimiter
+pnc annot [14,5]                           | middleName
+pnc annot [19,1]                           | delimiter
+pnc annot [20,9]                           | familyName
+pnc annot [29,1]                           | delimiter
+pnc annot [30,4]                           | nameSuffix
+pnc const key                              | NSPersonNameComponentKey
+pnc const given                            | givenName
+pnc const family                           | familyName
+pnc const middle                           | middleName
+pnc const prefix                           | namePrefix
+pnc const suffix                           | nameSuffix
+pnc const nickname                         | nickname
+pnc const delimiter                        | delimiter
+pnc enum Default                           | 0
+pnc enum Short                             | 1
+pnc enum Medium                            | 2
+pnc enum Long                              | 3
+pnc enum Abbrev                            | 4
+pnc enum Phonetic                          | 2
+pnc def style                              | 0
+pnc def phonetic                           | 0
+pnc def locale nonnull                     | 1
+pnc style=99                               | 99
+pnc style=7                                | 7
+pnc phonetic nil                           | 
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1

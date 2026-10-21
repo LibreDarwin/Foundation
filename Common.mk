@@ -211,6 +211,7 @@ GATE_SRCS = String.subproj/NSString.m \
             Units.subproj/NSMeasurement.m \
             Units.subproj/NSMeasurementFormatter.m \
             PersonNameComponents.subproj/NSPersonNameComponents.m \
+            PersonNameComponents.subproj/NSPersonNameComponentsFormatter.m \
             Date.subproj/NSDate.m \
             Date.subproj/NSCalendar.m \
             Date.subproj/NSCalendarSearchCore.c \
@@ -299,7 +300,7 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	    build/${CONFIG}/gate/*.o -framework CoreFoundation -licucore
 	@build/${CONFIG}/port_behavior > build/${CONFIG}/port_behavior.out
 	@diff Tests/port_behavior.golden build/${CONFIG}/port_behavior.out \
-	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 1963 probes)"
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 2603 probes)"
 
 verify: pairing-sweep behavior-gate
 

@@ -117,6 +117,21 @@ static void pnDesc(const char *label, id obj) {
     p(label, pnScrub(obj == nil ? @"(null)" : [obj description]));
 }
 
+static NSPersonNameComponents *pncMake(NSString *pre, NSString *given, NSString *mid,
+                                       NSString *fam, NSString *suf, NSString *nick) {
+    NSPersonNameComponents *c = [NSPersonNameComponents new];
+    c.namePrefix = pre; c.givenName = given; c.middleName = mid;
+    c.familyName = fam; c.nameSuffix = suf; c.nickname = nick;
+    return c;
+}
+
+static NSString *pncStyleName(NSInteger s) {
+    switch (s) {
+        case 0: return @"Default"; case 1: return @"Short"; case 2: return @"Medium";
+        case 3: return @"Long"; case 4: return @"Abbrev"; default: return @"?";
+    }
+}
+
 /* NSMeasurementFormatter probes mirror p(): a nil result prints "(null)".
  * They must agree byte-for-byte with /tmp-captured Apple output. */
 static NSMeasurement *mfMeas(NSUnit *unit, double value) {
@@ -4944,6 +4959,127 @@ int main(void) {
         p("pnc arch class", NSStringFromClass([pnBack class]));
         p("pnc arch isEqual", [NSString stringWithFormat:@"%d", [pc isEqual:pnBack]]);
         pnDesc("pnc arch desc", pnBack);
+    }
+
+    /* ---------- NSPersonNameComponentsFormatter ---------- */
+    {
+        NSArray *locales = @[@"en_US", @"en_GB", @"en_AU", @"de_DE", @"fr_FR",
+                             @"hu_HU", @"ja_JP", @"zh_CN", @"ko_KR", @"es_ES",
+                             @"ru_RU", @"ar_EG", @"he_IL", @"vi_VN", @"th_TH"];
+        NSPersonNameComponents *full =
+            pncMake(@"Dr.", @"Johnathan", @"Maple", @"Appleseed", @"Esq.", @"Johnny");
+        NSPersonNameComponents *gf = pncMake(nil, @"Charles", nil, @"Darwin", nil, nil);
+        NSPersonNameComponents *gfm = pncMake(nil, @"Charles", @"Robert", @"Darwin", nil, nil);
+        NSPersonNameComponents *gfl = pncMake(nil, @"Charles", @"Robert", @"Darwin", @"FRS", nil);
+        NSPersonNameComponents *famOnly = pncMake(nil, nil, nil, @"Darwin", nil, nil);
+        NSPersonNameComponents *givenOnly = pncMake(nil, @"Charles", nil, nil, nil, nil);
+        NSPersonNameComponents *firstLast = pncMake(nil, @"Yukio", nil, @"Mishima", nil, nil);
+
+        NSArray *names = @[full, gf, gfm, gfl, famOnly, givenOnly, firstLast];
+        NSArray *tags  = @[@"full", @"gf", @"gfm", @"gfl", @"famOnly", @"givenOnly", @"firstLast"];
+
+        for (NSString *loc in locales) {
+            NSLocale *l = [NSLocale localeWithLocaleIdentifier:loc];
+            for (NSInteger st = 0; st <= 4; st++) {
+                for (NSUInteger ni = 0; ni < names.count; ni++) {
+                    NSPersonNameComponentsFormatter *f = [NSPersonNameComponentsFormatter new];
+                    f.locale = l;
+                    f.style = st;
+                    NSString *r = [f stringFromPersonNameComponents:names[ni]];
+                    NSString *label = [NSString stringWithFormat:@"pnc %@ %@ %@",
+                        loc, pncStyleName(st), tags[ni]];
+                    p(label.UTF8String, r);
+                }
+            }
+        }
+
+        {
+            for (NSInteger st = 0; st <= 4; st++) {
+                NSString *r = [NSPersonNameComponentsFormatter
+                    localizedStringFromPersonNameComponents:full style:st options:0];
+                NSString *label = [NSString stringWithFormat:@"lsp en_US %@", pncStyleName(st)];
+                p(label.UTF8String, r);
+            }
+        }
+
+        {
+            NSArray *locIDs = @[@"en_US", @"ja_JP", @"zh_CN", @"ko_KR"];
+            struct { const char *tag; NSString *g, *f; } cjk[] = {
+                {"JgJf", @"太郎", @"山田"},
+                {"JfJg", @"山田", @"太郎"},
+                {"CgCf", @"伟", @"张"},
+                {"KgKf", @"철수", @"김"},
+            };
+            for (NSString *locID in locIDs) {
+                NSLocale *l = [NSLocale localeWithLocaleIdentifier:locID];
+                for (int i = 0; i < 4; i++) {
+                    for (int style = 0; style <= 4; style++) {
+                        NSPersonNameComponentsFormatter *f = [NSPersonNameComponentsFormatter new];
+                        f.locale = l; f.style = style;
+                        NSPersonNameComponents *c = pncMake(nil, cjk[i].g, nil, cjk[i].f, nil, nil);
+                        NSString *label = [NSString stringWithFormat:@"cjkfmt %@ %s %d",
+                            locID, cjk[i].tag, style];
+                        p(label.UTF8String, [f stringFromPersonNameComponents:c]);
+                    }
+                }
+            }
+        }
+
+        {
+            NSPersonNameComponentsFormatter *f = [NSPersonNameComponentsFormatter new];
+            f.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+            f.style = 3;
+            NSAttributedString *as = [f annotatedStringFromPersonNameComponents:full];
+            p("pnc annot str", [as string]);
+            [as enumerateAttributesInRange:NSMakeRange(0, [as length]) options:0
+                                usingBlock:^(NSDictionary *attrs, NSRange r, BOOL *stop) {
+                NSString *key = attrs[NSPersonNameComponentKey];
+                NSString *label = [NSString stringWithFormat:@"pnc annot [%lu,%lu]",
+                    (unsigned long)r.location, (unsigned long)r.length];
+                p(label.UTF8String, key ? key : @"(none)");
+            }];
+        }
+
+        {
+            p("pnc const key", NSPersonNameComponentKey);
+            p("pnc const given", NSPersonNameComponentGivenName);
+            p("pnc const family", NSPersonNameComponentFamilyName);
+            p("pnc const middle", NSPersonNameComponentMiddleName);
+            p("pnc const prefix", NSPersonNameComponentPrefix);
+            p("pnc const suffix", NSPersonNameComponentSuffix);
+            p("pnc const nickname", NSPersonNameComponentNickname);
+            p("pnc const delimiter", NSPersonNameComponentDelimiter);
+
+            p("pnc enum Default", [NSString stringWithFormat:@"%lu",
+                (unsigned long)NSPersonNameComponentsFormatterStyleDefault]);
+            p("pnc enum Short", [NSString stringWithFormat:@"%lu",
+                (unsigned long)NSPersonNameComponentsFormatterStyleShort]);
+            p("pnc enum Medium", [NSString stringWithFormat:@"%lu",
+                (unsigned long)NSPersonNameComponentsFormatterStyleMedium]);
+            p("pnc enum Long", [NSString stringWithFormat:@"%lu",
+                (unsigned long)NSPersonNameComponentsFormatterStyleLong]);
+            p("pnc enum Abbrev", [NSString stringWithFormat:@"%lu",
+                (unsigned long)NSPersonNameComponentsFormatterStyleAbbreviated]);
+            p("pnc enum Phonetic", [NSString stringWithFormat:@"%lu",
+                (unsigned long)NSPersonNameComponentsFormatterPhonetic]);
+        }
+
+        {
+            NSPersonNameComponentsFormatter *d = [NSPersonNameComponentsFormatter new];
+            p("pnc def style", [NSString stringWithFormat:@"%ld", (long)d.style]);
+            p("pnc def phonetic", [NSString stringWithFormat:@"%d", d.phonetic]);
+            p("pnc def locale nonnull", [NSString stringWithFormat:@"%d", d.locale != nil]);
+            d.style = 99;
+            p("pnc style=99", [NSString stringWithFormat:@"%ld", (long)d.style]);
+            d.style = (NSPersonNameComponentsFormatterStyle)7;
+            p("pnc style=7", [NSString stringWithFormat:@"%ld", (long)d.style]);
+
+            NSPersonNameComponents *ph = pncMake(nil, @"太郎", nil, @"山田", nil, nil);
+            NSString *pho = [NSPersonNameComponentsFormatter
+                localizedStringFromPersonNameComponents:ph style:0
+                options:NSPersonNameComponentsFormatterPhonetic];
+            p("pnc phonetic nil", pho);
+        }
     }
 
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
