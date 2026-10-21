@@ -2643,6 +2643,90 @@ pnc def locale nonnull                     | 1
 pnc style=99                               | 99
 pnc style=7                                | 7
 pnc phonetic nil                           | 
+di class                                   | NSDateInterval
+di alloc class                             | _NSConcreteDateInterval
+di alloc isKind                            | 1
+di secure                                  | 1
+di init dur                                | 0
+di init zero                               | 1
+di init ptr                                | 1
+di a start ti                              | 1000
+di a end ti                                | 1100
+di a dur                                   | 100
+di a start                                 | 2001-01-01 00:16:40 +0000
+di a end                                   | 2001-01-01 00:18:20 +0000
+di a desc                                  | <_NSConcreteDateInterval: 0xPTR> (Start Date) 2001-01-01 00:16:40 +0000 + (Duration) 100.000000 seconds = (End Date) 2001-01-01 00:18:20 +0000
+di a debugdesc                             | <_NSConcreteDateInterval: 0xPTR> (Start Date) 2001-01-01 00:16:40 +0000 + (Duration) 100.000000 seconds = (End Date) 2001-01-01 00:18:20 +0000
+di z dur                                   | 0
+di z end ptr                               | 1
+di z desc                                  | <_NSConcreteDateInterval: 0xPTR> (Start Date) 2001-01-01 00:16:40 +0000 + (Duration) 0.000000 seconds = (End Date) 2001-01-01 00:16:40 +0000
+di endinit dur                             | 0.19999999999993179
+di endinit end ti                          | 1000.3
+di endinit desc                            | <_NSConcreteDateInterval: 0xPTR> (Start Date) 2001-01-01 00:16:40 +0000 + (Duration) 0.200000 seconds = (End Date) 2001-01-01 00:16:40 +0000
+di durinit end ti                          | 1000.2
+di durinit dur                             | 0.20000000000000001
+di nil start dur                           | raise NSInvalidArgumentException
+di nil start end                           | raise NSInvalidArgumentException
+di nil end                                 | raise NSInvalidArgumentException
+di reverse                                 | raise NSGenericException
+di reverse equal                           | <_NSConcreteDateInterval: 0xPTR> (Start Date) 2001-01-01 00:16:40 +0000 + (Duration) 0.000000 seconds = (End Date) 2001-01-01 00:16:40 +0000
+di neg dur                                 | raise NSInvalidArgumentException
+di nan dur                                 | raise NSInvalidArgumentException
+di inf dur                                 | inf
+di inf end ti                              | inf
+di cmp a b                                 | 0
+di cmp a c                                 | -1
+di cmp c a                                 | 1
+di cmp a d                                 | 1
+di cmp d a                                 | -1
+di cmp a e                                 | 1
+di cmp e a                                 | -1
+di cmp self                                | 0
+di cmp nil                                 | 1
+di cmp noninterval                         | raise NSInvalidArgumentException
+di eq a b                                  | 1
+di eq a c                                  | 0
+di eq nil                                  | 0
+di isEqual a b                             | 1
+di isEqual noninterval                     | 0
+di isEqual nil                             | 0
+di hash eq                                 | 1
+di contains start                          | 1
+di contains end                            | 1
+di contains mid                            | 1
+di contains before                         | 0
+di contains after                          | 0
+di contains nil                            | 0
+di inter self                              | 1
+di inter b                                 | 1
+di inter c                                 | 1
+di inter touch                             | 1
+di inter before                            | 0
+di inter after                             | 0
+di inter inside                            | 1
+di inter around                            | 1
+di inter nil                               | 0
+di inter zero                              | 1
+di sect nil                                | nil
+di sect before                             | nil
+di sect after                              | nil
+di sect a b same                           | 1
+di sect a b desc                           | <_NSConcreteDateInterval: 0xPTR> (Start Date) 2001-01-01 00:16:40 +0000 + (Duration) 100.000000 seconds = (End Date) 2001-01-01 00:18:20 +0000
+di sect a c desc                           | <_NSConcreteDateInterval: 0xPTR> (Start Date) 2001-01-01 00:16:40 +0000 + (Duration) 100.000000 seconds = (End Date) 2001-01-01 00:18:20 +0000
+di sect a c startptr                       | 1
+di sect touch desc                         | <_NSConcreteDateInterval: 0xPTR> (Start Date) 2001-01-01 00:18:20 +0000 + (Duration) 0.000000 seconds = (End Date) 2001-01-01 00:18:20 +0000
+di sect touch dur                          | 0
+di sect around desc                        | <_NSConcreteDateInterval: 0xPTR> (Start Date) 2001-01-01 00:16:40 +0000 + (Duration) 100.000000 seconds = (End Date) 2001-01-01 00:18:20 +0000
+di sect around startptr                    | 1
+di sect inside desc                        | <_NSConcreteDateInterval: 0xPTR> (Start Date) 2001-01-01 00:17:05 +0000 + (Duration) 50.000000 seconds = (End Date) 2001-01-01 00:17:55 +0000
+di sect inside startptr                    | 1
+di copy same                               | 1
+di copy class                              | _NSConcreteDateInterval
+di mutablecopy                             | raise NSInvalidArgumentException
+di arch class                              | _NSConcreteDateInterval
+di arch eq                                 | 1
+di arch desc                               | <_NSConcreteDateInterval: 0xPTR> (Start Date) 2001-01-01 00:16:40 +0000 + (Duration) 100.000000 seconds = (End Date) 2001-01-01 00:18:20 +0000
+di arch zero endptr                        | 1
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1

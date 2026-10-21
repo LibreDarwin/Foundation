@@ -5082,6 +5082,182 @@ int main(void) {
         }
     }
 
+    /* ---------- NSDateInterval ---------- */
+    {
+        NSDateInterval *(^diMake)(double, double) = ^NSDateInterval *(double s, double d) {
+            return [[NSDateInterval alloc]
+                initWithStartDate:[NSDate dateWithTimeIntervalSinceReferenceDate:s]
+                         duration:d];
+        };
+        NSDateInterval *(^diMake2)(double, double) = ^NSDateInterval *(double s, double e) {
+            return [[NSDateInterval alloc]
+                initWithStartDate:[NSDate dateWithTimeIntervalSinceReferenceDate:s]
+                          endDate:[NSDate dateWithTimeIntervalSinceReferenceDate:e]];
+        };
+
+        p("di class", NSStringFromClass([NSDateInterval class]));
+        p("di alloc class", NSStringFromClass([[NSDateInterval alloc] class]));
+        p("di alloc isKind", [NSString stringWithFormat:@"%d",
+            [[NSDateInterval alloc] isKindOfClass:[NSDateInterval class]]]);
+        p("di secure", [NSString stringWithFormat:@"%d", [NSDateInterval supportsSecureCoding]]);
+
+        NSDateInterval *init = [[NSDateInterval alloc] init];
+        p("di init dur", [NSString stringWithFormat:@"%.17g", [init duration]]);
+        p("di init zero", [NSString stringWithFormat:@"%d",
+            [[init startDate] isEqualToDate:[init endDate]]]);
+        p("di init ptr", [NSString stringWithFormat:@"%d",
+            [init startDate] == [init endDate]]);
+
+        NSDateInterval *a = diMake(1000.0, 100.0);
+        p("di a start ti", [NSString stringWithFormat:@"%.17g",
+            [[a startDate] timeIntervalSinceReferenceDate]]);
+        p("di a end ti", [NSString stringWithFormat:@"%.17g",
+            [[a endDate] timeIntervalSinceReferenceDate]]);
+        p("di a dur", [NSString stringWithFormat:@"%.17g", [a duration]]);
+        p("di a start", [[a startDate] description]);
+        p("di a end", [[a endDate] description]);
+        p("di a desc", pnScrub([a description]));
+        p("di a debugdesc", pnScrub([a debugDescription]));
+
+        NSDateInterval *z = diMake(1000.0, 0.0);
+        p("di z dur", [NSString stringWithFormat:@"%.17g", [z duration]]);
+        p("di z end ptr", [NSString stringWithFormat:@"%d",
+            [z endDate] == [z startDate]]);
+        p("di z desc", pnScrub([z description]));
+
+        NSDateInterval *f = diMake2(1000.1, 1000.3);
+        p("di endinit dur", [NSString stringWithFormat:@"%.17g", [f duration]]);
+        p("di endinit end ti", [NSString stringWithFormat:@"%.17g",
+            [[f endDate] timeIntervalSinceReferenceDate]]);
+        p("di endinit desc", pnScrub([f description]));
+
+        NSDateInterval *f2 = diMake(1000.0, 0.2);
+        p("di durinit end ti", [NSString stringWithFormat:@"%.17g",
+            [[f2 endDate] timeIntervalSinceReferenceDate]]);
+        p("di durinit dur", [NSString stringWithFormat:@"%.17g", [f2 duration]]);
+
+        NSDate *d0 = [NSDate dateWithTimeIntervalSinceReferenceDate:1000.0];
+        NSDate *d1 = [NSDate dateWithTimeIntervalSinceReferenceDate:1100.0];
+        catchProbe("di nil start dur", ^id {
+            return [[NSDateInterval alloc] initWithStartDate:nil duration:0.0];
+        });
+        catchProbe("di nil start end", ^id {
+            return [[NSDateInterval alloc] initWithStartDate:nil endDate:d0];
+        });
+        catchProbe("di nil end", ^id {
+            return [[NSDateInterval alloc] initWithStartDate:d0 endDate:nil];
+        });
+        catchProbe("di reverse", ^id {
+            return [[NSDateInterval alloc] initWithStartDate:d1 endDate:d0];
+        });
+        NSDateInterval *revEq = [[NSDateInterval alloc]
+            initWithStartDate:d0 endDate:d0];
+        p("di reverse equal", pnScrub([revEq description]));
+        catchProbe("di neg dur", ^id {
+            return [[NSDateInterval alloc] initWithStartDate:d0 duration:-1.0];
+        });
+        catchProbe("di nan dur", ^id {
+            return [[NSDateInterval alloc] initWithStartDate:d0 duration:NAN];
+        });
+        NSDateInterval *infDur = [[NSDateInterval alloc]
+            initWithStartDate:d0 duration:INFINITY];
+        p("di inf dur", [NSString stringWithFormat:@"%.17g", [infDur duration]]);
+        p("di inf end ti", [NSString stringWithFormat:@"%.17g",
+            [[infDur endDate] timeIntervalSinceReferenceDate]]);
+
+        NSDateInterval *b = diMake(1000.0, 100.0);
+        NSDateInterval *c = diMake(1000.0, 200.0);
+        NSDateInterval *d = diMake(900.0, 100.0);
+        NSDateInterval *e = diMake(1000.0, 50.0);
+        p("di cmp a b", [NSString stringWithFormat:@"%ld", (long)[a compare:b]]);
+        p("di cmp a c", [NSString stringWithFormat:@"%ld", (long)[a compare:c]]);
+        p("di cmp c a", [NSString stringWithFormat:@"%ld", (long)[c compare:a]]);
+        p("di cmp a d", [NSString stringWithFormat:@"%ld", (long)[a compare:d]]);
+        p("di cmp d a", [NSString stringWithFormat:@"%ld", (long)[d compare:a]]);
+        p("di cmp a e", [NSString stringWithFormat:@"%ld", (long)[a compare:e]]);
+        p("di cmp e a", [NSString stringWithFormat:@"%ld", (long)[e compare:a]]);
+        p("di cmp self", [NSString stringWithFormat:@"%ld", (long)[a compare:a]]);
+        p("di cmp nil", [NSString stringWithFormat:@"%ld", (long)[a compare:nil]]);
+        catchProbe("di cmp noninterval", ^id {
+            return @([a compare:(NSDateInterval *)@"x"]);
+        });
+
+        p("di eq a b", [NSString stringWithFormat:@"%d", [a isEqualToDateInterval:b]]);
+        p("di eq a c", [NSString stringWithFormat:@"%d", [a isEqualToDateInterval:c]]);
+        p("di eq nil", [NSString stringWithFormat:@"%d", [a isEqualToDateInterval:nil]]);
+        p("di isEqual a b", [NSString stringWithFormat:@"%d", [a isEqual:b]]);
+        p("di isEqual noninterval", [NSString stringWithFormat:@"%d", [a isEqual:@"x"]]);
+        p("di isEqual nil", [NSString stringWithFormat:@"%d", [a isEqual:nil]]);
+        p("di hash eq", [NSString stringWithFormat:@"%d", [a hash] == [b hash]]);
+
+        p("di contains start", [NSString stringWithFormat:@"%d",
+            [a containsDate:[NSDate dateWithTimeIntervalSinceReferenceDate:1000.0]]]);
+        p("di contains end", [NSString stringWithFormat:@"%d",
+            [a containsDate:[NSDate dateWithTimeIntervalSinceReferenceDate:1100.0]]]);
+        p("di contains mid", [NSString stringWithFormat:@"%d",
+            [a containsDate:[NSDate dateWithTimeIntervalSinceReferenceDate:1050.0]]]);
+        p("di contains before", [NSString stringWithFormat:@"%d",
+            [a containsDate:[NSDate dateWithTimeIntervalSinceReferenceDate:999.999]]]);
+        p("di contains after", [NSString stringWithFormat:@"%d",
+            [a containsDate:[NSDate dateWithTimeIntervalSinceReferenceDate:1100.001]]]);
+        p("di contains nil", [NSString stringWithFormat:@"%d", [a containsDate:nil]]);
+
+        NSDateInterval *touch = diMake(1100.0, 100.0);
+        NSDateInterval *before = diMake(800.0, 100.0);
+        NSDateInterval *after = diMake(1200.0, 100.0);
+        NSDateInterval *inside = diMake(1025.0, 50.0);
+        NSDateInterval *around = diMake(900.0, 300.0);
+        p("di inter self", [NSString stringWithFormat:@"%d", [a intersectsDateInterval:a]]);
+        p("di inter b", [NSString stringWithFormat:@"%d", [a intersectsDateInterval:b]]);
+        p("di inter c", [NSString stringWithFormat:@"%d", [a intersectsDateInterval:c]]);
+        p("di inter touch", [NSString stringWithFormat:@"%d", [a intersectsDateInterval:touch]]);
+        p("di inter before", [NSString stringWithFormat:@"%d", [a intersectsDateInterval:before]]);
+        p("di inter after", [NSString stringWithFormat:@"%d", [a intersectsDateInterval:after]]);
+        p("di inter inside", [NSString stringWithFormat:@"%d", [a intersectsDateInterval:inside]]);
+        p("di inter around", [NSString stringWithFormat:@"%d", [a intersectsDateInterval:around]]);
+        p("di inter nil", [NSString stringWithFormat:@"%d", [a intersectsDateInterval:nil]]);
+        p("di inter zero", [NSString stringWithFormat:@"%d", [z intersectsDateInterval:z]]);
+
+        catchProbe("di sect nil", ^id { return [a intersectionWithDateInterval:nil]; });
+        catchProbe("di sect before", ^id { return [a intersectionWithDateInterval:before]; });
+        catchProbe("di sect after", ^id { return [a intersectionWithDateInterval:after]; });
+
+        NSDateInterval *sectAB = [a intersectionWithDateInterval:b];
+        p("di sect a b same", [NSString stringWithFormat:@"%d", sectAB == a]);
+        p("di sect a b desc", pnScrub([sectAB description]));
+        NSDateInterval *sectAC = [a intersectionWithDateInterval:c];
+        p("di sect a c desc", pnScrub([sectAC description]));
+        p("di sect a c startptr", [NSString stringWithFormat:@"%d",
+            [sectAC startDate] == [a startDate]]);
+        NSDateInterval *sectTouch = [a intersectionWithDateInterval:touch];
+        p("di sect touch desc", pnScrub([sectTouch description]));
+        p("di sect touch dur", [NSString stringWithFormat:@"%.17g", [sectTouch duration]]);
+        NSDateInterval *sectAround = [a intersectionWithDateInterval:around];
+        p("di sect around desc", pnScrub([sectAround description]));
+        p("di sect around startptr", [NSString stringWithFormat:@"%d",
+            [sectAround startDate] == [a startDate]]);
+        NSDateInterval *sectInside = [a intersectionWithDateInterval:inside];
+        p("di sect inside desc", pnScrub([sectInside description]));
+        p("di sect inside startptr", [NSString stringWithFormat:@"%d",
+            [sectInside startDate] == [inside startDate]]);
+
+        p("di copy same", [NSString stringWithFormat:@"%d", [a copy] == a]);
+        p("di copy class", NSStringFromClass([[a copy] class]));
+        catchProbe("di mutablecopy", ^id { return [a mutableCopy]; });
+
+        NSData *diArch = [NSKeyedArchiver archivedDataWithRootObject:a];
+        id diBack = [NSKeyedUnarchiver unarchiveObjectWithData:diArch];
+        p("di arch class", diBack ? NSStringFromClass([diBack class]) : @"nil");
+        p("di arch eq", [NSString stringWithFormat:@"%d",
+            [diBack isEqualToDateInterval:a]]);
+        p("di arch desc", pnScrub([diBack description]));
+
+        NSData *diArchZ = [NSKeyedArchiver archivedDataWithRootObject:z];
+        id diBackZ = [NSKeyedUnarchiver unarchiveObjectWithData:diArchZ];
+        p("di arch zero endptr", [NSString stringWithFormat:@"%d",
+            [(NSDateInterval *)diBackZ endDate] == [(NSDateInterval *)diBackZ startDate]]);
+    }
+
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */
     port_behavior_pool();
 
