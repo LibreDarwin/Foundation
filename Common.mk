@@ -217,6 +217,7 @@ GATE_SRCS = String.subproj/NSString.m \
             Date.subproj/NSCalendar.m \
             Date.subproj/NSCalendarSearchCore.c \
             Date.subproj/NSDateComponents.m \
+            Date.subproj/NSDateComponentsFormatter.m \
             Date.subproj/NSDateFormatter.m \
             Date.subproj/NSISO8601DateFormatter.m \
             Date.subproj/NSTimeZone.m \
@@ -301,7 +302,7 @@ behavior-gate: build/gen/Foundation/Foundation.h
 	    build/${CONFIG}/gate/*.o -framework CoreFoundation -licucore
 	@build/${CONFIG}/port_behavior > build/${CONFIG}/port_behavior.out
 	@diff Tests/port_behavior.golden build/${CONFIG}/port_behavior.out \
-	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 2687 probes)"
+	    && echo "   BEHAVIOR GATE: PASS (port == Apple ground truth, 2917 probes)"
 
 verify: pairing-sweep behavior-gate
 

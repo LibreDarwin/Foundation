@@ -2727,6 +2727,236 @@ di arch class                              | _NSConcreteDateInterval
 di arch eq                                 | 1
 di arch desc                               | <_NSConcreteDateInterval: 0xPTR> (Start Date) 2001-01-01 00:16:40 +0000 + (Duration) 100.000000 seconds = (End Date) 2001-01-01 00:18:20 +0000
 di arch zero endptr                        | 1
+dcf class                                  | NSDateComponentsFormatter
+dcf isKind                                 | 1
+dcf def style                              | 0
+dcf def units                              | 0
+dcf def zero                               | 1
+dcf def max                                | 0
+dcf def ref                                | 1
+dcf def collapse                           | 0
+dcf def frac                               | 0
+dcf def approx                             | 0
+dcf def remain                             | 0
+dcf def context                            | 0
+dcf def cal id                             | gregorian
+dcf def cal locale                         | en_US@rg=iszzzz
+dcf def cal same                           | 1
+dcf nil cal                                | 1
+dcf enum pos                               | 0
+dcf enum abbr                              | 1
+dcf enum short                             | 2
+dcf enum full                              | 3
+dcf enum spell                             | 4
+dcf enum brief                             | 5
+dcf enum zdefault                          | 1
+dcf enum zdropall                          | 14
+dcf obj comps                              | raise NSInvalidArgumentException: Specifying positional units with gaps is ambiguous, and therefore unsupported
+dcf obj nil                                | (null)
+dcf obj num                                | (null)
+dcf getobj                                 | 0
+dcf getobj obj                             | (null)
+dcf getobj err                             | (null)
+dcf copy same                              | 0
+dcf copy class                             | NSDateComponentsFormatter
+dcf copy cal nil                           | 1
+dcf copy style                             | 2
+dcf copy units                             | 12
+dcf copy zero                              | 8
+dcf copy max                               | 2
+dcf copy collapse                          | 1
+dcf copy frac                              | 1
+dcf copy approx                            | 1
+dcf copy remain                            | 1
+dcf copy ref nil                           | 1
+dcf copy cal id                            | gregorian
+dcf localized                              | 1 yr, 2 mths, 3 days
+dcf carry 2y14mo                           | 3y 2mo
+dcf carry 0y14mo                           | 1y 2mo
+dcf no carry 14mo                          | 14mo
+interval 93784 st0                         | 1d 2:03:04
+interval 100000000 st0                     | 3y 2mo 0w 2d 9:46:40
+interval 365d st0                          | 1y 0mo 0w 0d 0:00:00
+interval 60s st0                           | 1:00
+interval 1s st0                            | 1
+interval 0 st0                             | 0
+comps full st0                             | raise NSInvalidArgumentException: Specifying positional units with gaps is ambiguous, and therefore unsupported
+comps y1mo2 st0                            | 1y 2mo
+interval 93784 st1                         | 1d 2h 3m 4s
+interval 100000000 st1                     | 3y 2mo 2d 9h 46m 40s
+interval 365d st1                          | 1y
+interval 60s st1                           | 1m
+interval 1s st1                            | 1s
+interval 0 st1                             | 0s
+comps full st1                             | 1y 2mo 25d 5h 6m 7s
+comps y1mo2 st1                            | 1y 2mo
+interval 93784 st2                         | 1 day, 2 hr, 3 min, 4 sec
+interval 100000000 st2                     | 3 yrs, 2 mths, 2 days, 9 hr, 46 min, 40 sec
+interval 365d st2                          | 1 yr
+interval 60s st2                           | 1 min
+interval 1s st2                            | 1 sec
+interval 0 st2                             | 0 sec
+comps full st2                             | 1 yr, 2 mths, 25 days, 5 hr, 6 min, 7 sec
+comps y1mo2 st2                            | 1 yr, 2 mths
+interval 93784 st3                         | 1 day, 2 hours, 3 minutes, 4 seconds
+interval 100000000 st3                     | 3 years, 2 months, 2 days, 9 hours, 46 minutes, 40 seconds
+interval 365d st3                          | 1 year
+interval 60s st3                           | 1 minute
+interval 1s st3                            | 1 second
+interval 0 st3                             | 0 seconds
+comps full st3                             | 1 year, 2 months, 25 days, 5 hours, 6 minutes, 7 seconds
+comps y1mo2 st3                            | 1 year, 2 months
+interval 93784 st4                         | one day, two hours, three minutes, four seconds
+interval 100000000 st4                     | three years, two months, two days, nine hours, forty-six minutes, forty seconds
+interval 365d st4                          | one year
+interval 60s st4                           | one minute
+interval 1s st4                            | one second
+interval 0 st4                             | zero seconds
+comps full st4                             | one year, two months, twenty-five days, five hours, six minutes, seven seconds
+comps y1mo2 st4                            | one year, two months
+interval 93784 st5                         | 1day 2hr 3min 4sec
+interval 100000000 st5                     | 3yrs 2mths 2days 9hr 46min 40sec
+interval 365d st5                          | 1yr
+interval 60s st5                           | 1min
+interval 1s st5                            | 1sec
+interval 0 st5                             | 0sec
+comps full st5                             | 1yr 2mths 25days 5hr 6min 7sec
+comps y1mo2 st5                            | 1yr 2mths
+interval -93784 st0                        | -1d -2:03:04
+interval -61 st0                           | -1:01
+interval -0.5 st0                          | 0
+interval -93784 st1                        | -1d 2h 3m 4s
+au y|d DCFC(1,2)                           | 1y 61d
+au h DCFC(0,1mo,0)                         | 744h
+au d DCFC(y1)                              | 365d
+au m DCFC(h1,s30)                          | 60m
+au s DCFC(h1)                              | 3.600s
+au y|mo DCFC(5,6)                          | 5y 6mo
+au d|h DCFC(100000000s)                    | 1.157d 9h
+au wm DCFC(10d)                            | 1w
+au wm DCFC(3d)                             | 0w
+woy2 d3 st1                                | 17d
+woy2 h3 st1                                | 339h
+woy2 alone st1                             | (null)
+wom2 alone st1                             | 2w
+pos d1 h5                                  | 1d 5h
+pos d1 m5                                  | raise NSInvalidArgumentException: Specifying positional units with gaps is ambiguous, and therefore unsupported
+pos h5 m5                                  | 5:05
+pos h5 s5                                  | raise NSInvalidArgumentException: Specifying positional units with gaps is ambiguous, and therefore unsupported
+pos h5 alone                               | 5
+pos s5 alone                               | 5
+pos ti60 zb0                               | 0y 0mo 0w 0d 0:01:00
+pos ti86400 zb0                            | 0y 0mo 0w 1d 0:00:00
+pos d1h0 zb0                               | 1d 0:00:00
+np ti60 zb0                                | 0y 0mo 0w 0d 0h 1m 0s
+pos ti60 zb1                               | 1:00
+pos ti86400 zb1                            | 1d 0:00:00
+pos d1h0 zb1                               | 1d 0:00:00
+np ti60 zb1                                | 1m
+pos ti60 zb2                               | 1:00
+pos ti86400 zb2                            | 1d 0:00:00
+pos d1h0 zb2                               | 1d 0:00:00
+np ti60 zb2                                | 1m 0s
+pos ti60 zb8                               | 0y 0mo 0w 0d 0:01
+pos ti86400 zb8                            | 0y 0mo 0w 1d
+pos d1h0 zb8                               | 1d
+np ti60 zb8                                | 0y 0mo 0w 0d 0h 1m
+pos ti60 zb4                               | 1:00
+pos ti86400 zb4                            | 1d 0s
+pos d1h0 zb4                               | 1d 0s
+np ti60 zb4                                | 1m 0s
+pos ti60 zb14                              | 1
+pos ti86400 zb14                           | 1d
+pos d1h0 zb14                              | 1d
+np ti60 zb14                               | 1m
+np y1mo2d3 zb0                             | 1y 2mo 3d 0h 0m 0s
+np d1h0 zb0                                | 1d 0h 0m 0s
+np ti0 zb0                                 | 0y 0mo 0w 0d 0h 0m 0s
+np y1mo2d3 zb1                             | 1y 2mo 3d
+np d1h0 zb1                                | 1d
+np ti0 zb1                                 | 0s
+np y1mo2d3 zb2                             | 1y 2mo 3d 0h 0m 0s
+np d1h0 zb2                                | 1d 0h 0m 0s
+np ti0 zb2                                 | 0s
+np y1mo2d3 zb8                             | 1y 2mo 3d
+np d1h0 zb8                                | 1d
+np ti0 zb8                                 | 0s
+np y1mo2d3 zb10                            | 1y 2mo 3d
+np d1h0 zb10                               | 1d
+np ti0 zb10                                | 0s
+np y1mo2d3 zb4                             | 1y 2mo 3d 0s
+np d1h0 zb4                                | 1d 0s
+np ti0 zb4                                 | 0s
+np y1mo2d3 zb12                            | 1y 2mo 3d
+np d1h0 zb12                               | 1d
+np ti0 zb12                                | 0s
+np y1mo2d3 zb14                            | 1y 2mo 3d
+np d1h0 zb14                               | 1d
+np ti0 zb14                                | 0s
+mc1 ti5097600                              | 2mo 0w 0d 0:00:00
+mc2 ti5097600                              | 2mo 0w 0d 0:00:00
+mc3 ti5097600                              | 2mo 0w 0d 0:00:00
+mc4 ti5097600                              | 2mo 0w 0d 0:00:00
+mc1 ti5184000                              | 2mo 0w
+mc2 ti5184000                              | 2mo 0w 1d 0:00:00
+mc3 ti5184000                              | 2mo 0w 1d 0:00:00
+mc4 ti5184000                              | 2mo 0w 1d 0:00:00
+mc1 ti5443200                              | 2mo
+mc2 ti5443200                              | 2mo 0w 4d 0:00:00
+mc3 ti5443200                              | 2mo 0w 4d 0:00:00
+mc4 ti5443200                              | 2mo 0w 4d 0:00:00
+mc1 ti34560000                             | 1y
+mc2 ti34560000                             | 1y 1mo
+mc3 ti34560000                             | 1y 1mo 0w 4d 0:00:00
+mc4 ti34560000                             | 1y 1mo 0w 4d 0:00:00
+mc1 ti100000000                            | 3y
+mc2 ti100000000                            | 3y 2mo 0w
+mc3 ti100000000                            | 3y 2mo 0w 2d
+mc4 ti100000000                            | 3y 2mo 0w 2d 10h
+mc1 ti31536000                             | 1y 0mo 0w 0d 0:00:00
+mc2 ti31536000                             | 1y 0mo 0w 0d 0:00:00
+mc3 ti31536000                             | 1y 0mo 0w 0d 0:00:00
+mc4 ti31536000                             | 1y 0mo 0w 0d 0:00:00
+mc1 ti5011200                              | 2mo
+mc2 ti5011200                              | 1mo 4w
+mc3 ti5011200                              | 1mo 3w 6d 0:00:00
+mc4 ti5011200                              | 1mo 3w 6d 0:00:00
+mc1 ti93784                                | 1d
+mc2 ti93784                                | 1d 2h
+mc3 ti93784                                | 1d 2:03
+mc4 ti93784                                | 1d 2:03:04
+mc1 ti3661                                 | 1
+mc2 ti3661                                 | 1:01
+mc3 ti3661                                 | 1:01:01
+mc4 ti3661                                 | 1:01:01
+mc1 ti5400                                 | 2
+mc2 ti5400                                 | 1:30:00
+mc3 ti5400                                 | 1:30:00
+mc4 ti5400                                 | 1:30:00
+mc1 1y5mo                                  | 1y
+mc2 1y5mo                                  | 1y 5mo
+mc1 1y6mo                                  | 1y
+mc2 1y6mo                                  | 1y 6mo
+mc1 1y7mo                                  | 2y
+mc2 1y7mo                                  | 1y 7mo
+mc1 1y2mo14d10h                            | 3y
+mc2 1y2mo14d10h                            | 3y 2mo
+mc1 1y2mo14d12h                            | 3y
+mc2 1y2mo14d12h                            | 3y 2mo
+mc1 2mo14d                                 | 2mo
+mc2 2mo14d                                 | 2mo 14d
+mc1 2mo16d                                 | 3mo
+mc2 2mo16d                                 | 2mo 16d
+collapse 1y2mo                             | 14mo
+collapse 1y0mo3h                           | 1y 3h
+collapse 1y0mo                             | 1y
+collapse y|d 1y3d                          | 368d
+nil comps                                  | raise NSInternalInconsistencyException: Invalid parameter not satisfying: components != nil
+nan ti                                     | raise NSInternalInconsistencyException: Invalid parameter not satisfying: isfinite(timeInterval) && !isnan(timeInterval)
+empty comps                                | (null)
+bad style                                  | raise NSInternalInconsistencyException: Invalid parameter not satisfying: unitsStyle == NSDateComponentsFormatterUnitsStyleSpellOut || unitsStyle == NSDateComponentsFormatterUnitsStyleFull || unitsStyle == NSDateComponentsFormatterUnitsStyleShort || unitsStyle == NSDateComponentsFormatterUnitsStyleAbbreviated || unitsStyle == NSDateComponentsFormatterUnitsStylePositional || unitsStyle == NSDateComponentsFormatterUnitsStyleBrief
+bad au                                     | raise NSInternalInconsistencyException: Invalid parameter not satisfying: allowedUnits == 0 || !(allowedUnits & ~(NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitWeekOfMonth | NSCalendarUnitDay | NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond))
+approx+remain                              | About 1y 2mo 25d 5h 6m 7s remaining
 arp/class                                  | NSAutoreleasePool
 arp/superclass                             | NSObject
 arp/retainCount                            | 1

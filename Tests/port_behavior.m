@@ -92,6 +92,14 @@ static void catchProbe(const char *label, id (^block)(void)) {
 /* An NSPersonNameComponents description embeds its heap pointer.  Scrub every
  * 0x… run to "0xPTR" so the golden is stable and the port and Apple outputs can
  * still be diffed byte-for-byte. */
+static NSString *dcfTry(NSString *(^block)(void)) {
+    @try {
+        return block();
+    } @catch (NSException *e) {
+        return [NSString stringWithFormat:@"raise %@: %@", e.name, e.reason];
+    }
+}
+
 static NSString *pnScrub(NSString *s) {
     if (s == nil) return nil;
     NSMutableString *out = [NSMutableString string];
@@ -5256,6 +5264,251 @@ int main(void) {
         id diBackZ = [NSKeyedUnarchiver unarchiveObjectWithData:diArchZ];
         p("di arch zero endptr", [NSString stringWithFormat:@"%d",
             [(NSDateInterval *)diBackZ endDate] == [(NSDateInterval *)diBackZ startDate]]);
+    }
+
+    /* ---------- NSDateComponentsFormatter ---------- */
+    {
+        NSDateComponents *(^DCFC)(NSInteger, NSInteger, NSInteger, NSInteger, NSInteger, NSInteger, NSInteger) =
+            ^NSDateComponents *(NSInteger y, NSInteger mo, NSInteger w, NSInteger d, NSInteger h, NSInteger mi, NSInteger s) {
+                NSDateComponents *c = [NSDateComponents new];
+                if (y != NSDateComponentUndefined) c.year = y;
+                if (mo != NSDateComponentUndefined) c.month = mo;
+                if (w != NSDateComponentUndefined) c.weekOfMonth = w;
+                if (d != NSDateComponentUndefined) c.day = d;
+                if (h != NSDateComponentUndefined) c.hour = h;
+                if (mi != NSDateComponentUndefined) c.minute = mi;
+                if (s != NSDateComponentUndefined) c.second = s;
+                return c;
+            };
+        NSDateComponentsFormatter *(^DCFF)(NSInteger, NSCalendarUnit, NSUInteger) =
+            ^NSDateComponentsFormatter *(NSInteger style, NSCalendarUnit au, NSUInteger zb) {
+                NSDateComponentsFormatter *f = [NSDateComponentsFormatter new];
+                f.unitsStyle = style;
+                f.allowedUnits = au;
+                f.zeroFormattingBehavior = zb;
+                return f;
+            };
+
+        p("dcf class", NSStringFromClass([NSDateComponentsFormatter class]));
+        p("dcf isKind", [NSString stringWithFormat:@"%d",
+            [[NSDateComponentsFormatter new] isKindOfClass:[NSFormatter class]]]);
+        NSDateComponentsFormatter *def = [NSDateComponentsFormatter new];
+        p("dcf def style", [NSString stringWithFormat:@"%ld", (long)def.unitsStyle]);
+        p("dcf def units", [NSString stringWithFormat:@"%lu", (unsigned long)def.allowedUnits]);
+        p("dcf def zero", [NSString stringWithFormat:@"%lu", (unsigned long)def.zeroFormattingBehavior]);
+        p("dcf def max", [NSString stringWithFormat:@"%lu", (unsigned long)def.maximumUnitCount]);
+        p("dcf def ref", [NSString stringWithFormat:@"%d", def.referenceDate == nil]);
+        p("dcf def collapse", [NSString stringWithFormat:@"%d", def.collapsesLargestUnit]);
+        p("dcf def frac", [NSString stringWithFormat:@"%d", def.allowsFractionalUnits]);
+        p("dcf def approx", [NSString stringWithFormat:@"%d", def.includesApproximationPhrase]);
+        p("dcf def remain", [NSString stringWithFormat:@"%d", def.includesTimeRemainingPhrase]);
+        p("dcf def context", [NSString stringWithFormat:@"%ld", (long)def.formattingContext]);
+        NSCalendar *dcfCalA = def.calendar;
+        NSCalendar *dcfCalB = def.calendar;
+        p("dcf def cal id", [dcfCalA calendarIdentifier]);
+        p("dcf def cal locale", dcfCalA.locale ? [dcfCalA.locale localeIdentifier] : @"(nil)");
+        p("dcf def cal same", [NSString stringWithFormat:@"%d", dcfCalA == dcfCalB]);
+        def.calendar = nil;
+        p("dcf nil cal", [NSString stringWithFormat:@"%d", def.calendar == nil]);
+
+        p("dcf enum pos", [NSString stringWithFormat:@"%lu",
+            (unsigned long)NSDateComponentsFormatterUnitsStylePositional]);
+        p("dcf enum abbr", [NSString stringWithFormat:@"%lu",
+            (unsigned long)NSDateComponentsFormatterUnitsStyleAbbreviated]);
+        p("dcf enum short", [NSString stringWithFormat:@"%lu",
+            (unsigned long)NSDateComponentsFormatterUnitsStyleShort]);
+        p("dcf enum full", [NSString stringWithFormat:@"%lu",
+            (unsigned long)NSDateComponentsFormatterUnitsStyleFull]);
+        p("dcf enum spell", [NSString stringWithFormat:@"%lu",
+            (unsigned long)NSDateComponentsFormatterUnitsStyleSpellOut]);
+        p("dcf enum brief", [NSString stringWithFormat:@"%lu",
+            (unsigned long)NSDateComponentsFormatterUnitsStyleBrief]);
+        p("dcf enum zdefault", [NSString stringWithFormat:@"%lu",
+            (unsigned long)NSDateComponentsFormatterZeroFormattingBehaviorDefault]);
+        p("dcf enum zdropall", [NSString stringWithFormat:@"%lu",
+            (unsigned long)NSDateComponentsFormatterZeroFormattingBehaviorDropAll]);
+
+        p("dcf obj comps", dcfTry(^NSString *{ return [[NSDateComponentsFormatter new]
+            stringForObjectValue:DCFC(1, 2, NSDateComponentUndefined, 3,
+                NSDateComponentUndefined, NSDateComponentUndefined, NSDateComponentUndefined)]; }));
+        p("dcf obj nil", [[NSDateComponentsFormatter new] stringForObjectValue:nil]);
+        p("dcf obj num", [[NSDateComponentsFormatter new] stringForObjectValue:@(1)]);
+        id dcfObj = @"unchanged";
+        NSString *dcfErr = @"unchanged";
+        p("dcf getobj", [NSString stringWithFormat:@"%d",
+            [[NSDateComponentsFormatter new] getObjectValue:&dcfObj forString:@"x"
+                errorDescription:&dcfErr]]);
+        p("dcf getobj obj", dcfObj);
+        p("dcf getobj err", dcfErr);
+        p("dcf copy same", [NSString stringWithFormat:@"%d",
+            [def copy] == def]);
+
+        p("dcf copy class", NSStringFromClass([[def copy] class]));
+        p("dcf copy cal nil", [NSString stringWithFormat:@"%d", [(NSDateComponentsFormatter *)[def copy] calendar] == nil]);
+        NSDateComponentsFormatter *dcfCopySrc = DCFF(2, NSCalendarUnitYear | NSCalendarUnitMonth, 8);
+        dcfCopySrc.maximumUnitCount = 2;
+        dcfCopySrc.collapsesLargestUnit = YES;
+        dcfCopySrc.allowsFractionalUnits = YES;
+        dcfCopySrc.includesApproximationPhrase = YES;
+        dcfCopySrc.includesTimeRemainingPhrase = YES;
+        dcfCopySrc.referenceDate = [NSDate dateWithTimeIntervalSinceReferenceDate:1000];
+        NSDateComponentsFormatter *dcfCopy = [dcfCopySrc copy];
+        p("dcf copy style", [NSString stringWithFormat:@"%ld", (long)dcfCopy.unitsStyle]);
+        p("dcf copy units", [NSString stringWithFormat:@"%lu", (unsigned long)dcfCopy.allowedUnits]);
+        p("dcf copy zero", [NSString stringWithFormat:@"%lu", (unsigned long)dcfCopy.zeroFormattingBehavior]);
+        p("dcf copy max", [NSString stringWithFormat:@"%lu", (unsigned long)dcfCopy.maximumUnitCount]);
+        p("dcf copy collapse", [NSString stringWithFormat:@"%d", dcfCopy.collapsesLargestUnit]);
+        p("dcf copy frac", [NSString stringWithFormat:@"%d", dcfCopy.allowsFractionalUnits]);
+        p("dcf copy approx", [NSString stringWithFormat:@"%d", dcfCopy.includesApproximationPhrase]);
+        p("dcf copy remain", [NSString stringWithFormat:@"%d", dcfCopy.includesTimeRemainingPhrase]);
+        p("dcf copy ref nil", [NSString stringWithFormat:@"%d", dcfCopy.referenceDate == nil]);
+        p("dcf copy cal id", [dcfCopy.calendar calendarIdentifier]);
+
+        NSString *locF = [NSDateComponentsFormatter
+            localizedStringFromDateComponents:DCFC(1, 2, NSDateComponentUndefined, 3,
+                NSDateComponentUndefined, NSDateComponentUndefined, NSDateComponentUndefined)
+            unitsStyle:NSDateComponentsFormatterUnitsStyleShort];
+        p("dcf localized", locF);
+
+        p("dcf carry 2y14mo", [[NSDateComponentsFormatter new]
+            stringFromDateComponents:DCFC(2, 14, NSDateComponentUndefined,
+                NSDateComponentUndefined, NSDateComponentUndefined, NSDateComponentUndefined,
+                NSDateComponentUndefined)]);
+        p("dcf carry 0y14mo", [[NSDateComponentsFormatter new]
+            stringFromDateComponents:DCFC(0, 14, NSDateComponentUndefined,
+                NSDateComponentUndefined, NSDateComponentUndefined, NSDateComponentUndefined,
+                NSDateComponentUndefined)]);
+        p("dcf no carry 14mo", [[NSDateComponentsFormatter new]
+            stringFromDateComponents:DCFC(NSDateComponentUndefined, 14,
+                NSDateComponentUndefined, NSDateComponentUndefined, NSDateComponentUndefined,
+                NSDateComponentUndefined, NSDateComponentUndefined)]);
+
+
+            NSDateComponentsFormatter *f;
+            for (int style = 0; style <= 5; style++) {
+                f = DCFF(style, 0, 1);
+                p([[NSString stringWithFormat:@"interval 93784 st%d", style] UTF8String], dcfTry(^NSString *{ return [f stringFromTimeInterval:93784]; }));
+                p([[NSString stringWithFormat:@"interval 100000000 st%d", style] UTF8String], dcfTry(^NSString *{ return [f stringFromTimeInterval:100000000]; }));
+                p([[NSString stringWithFormat:@"interval 365d st%d", style] UTF8String], dcfTry(^NSString *{ return [f stringFromTimeInterval:365*86400]; }));
+                p([[NSString stringWithFormat:@"interval 60s st%d", style] UTF8String], dcfTry(^NSString *{ return [f stringFromTimeInterval:60]; }));
+                p([[NSString stringWithFormat:@"interval 1s st%d", style] UTF8String], dcfTry(^NSString *{ return [f stringFromTimeInterval:1]; }));
+                p([[NSString stringWithFormat:@"interval 0 st%d", style] UTF8String], dcfTry(^NSString *{ return [f stringFromTimeInterval:0]; }));
+                p([[NSString stringWithFormat:@"comps full st%d", style] UTF8String], dcfTry(^NSString *{ return [f stringFromDateComponents:DCFC(1,2,NSDateComponentUndefined,25,5,6,7)]; }));
+                p([[NSString stringWithFormat:@"comps y1mo2 st%d", style] UTF8String], dcfTry(^NSString *{ return [f stringFromDateComponents:DCFC(1,2,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined)]; }));
+            }
+            // negative
+            f = DCFF(0, 0, 1); p("interval -93784 st0", [f stringFromTimeInterval:-93784]);
+            p("interval -61 st0", [f stringFromTimeInterval:-61]);
+            p("interval -0.5 st0", [f stringFromTimeInterval:-0.5]);
+            f.unitsStyle = 1; p("interval -93784 st1", [f stringFromTimeInterval:-93784]);
+            // allowed units folding
+            struct { const char *name; NSCalendarUnit au; NSDateComponents *c; } masks[] = {
+                {"au y|d DCFC(1,2)", NSCalendarUnitYear|NSCalendarUnitDay, DCFC(1,2,NSDateComponentUndefined,2,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined)},
+                {"au h DCFC(0,1mo,0)", NSCalendarUnitHour, DCFC(NSDateComponentUndefined,1,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined)},
+                {"au d DCFC(y1)", NSCalendarUnitDay, DCFC(1,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined)},
+                {"au m DCFC(h1,s30)", NSCalendarUnitMinute, DCFC(NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,1,NSDateComponentUndefined,30)},
+                {"au s DCFC(h1)", NSCalendarUnitSecond, DCFC(NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,1,NSDateComponentUndefined,NSDateComponentUndefined)},
+                {"au y|mo DCFC(5,6)", NSCalendarUnitYear|NSCalendarUnitMonth, DCFC(5,6,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined)},
+                {"au d|h DCFC(100000000s)", NSCalendarUnitDay|NSCalendarUnitHour, nil},
+                {"au wm DCFC(10d)", NSCalendarUnitWeekOfMonth, nil},
+                {"au wm DCFC(3d)", NSCalendarUnitWeekOfMonth, nil},
+            };
+            for (unsigned i = 0; i < sizeof(masks)/sizeof(masks[0]); i++) {
+                f = DCFF(1, masks[i].au, 1);
+                NSString *r = masks[i].c ? [f stringFromDateComponents:masks[i].c] : [f stringFromTimeInterval:100000000];
+                if (strstr(masks[i].name, "10d")) r = [f stringFromTimeInterval:10*86400];
+                if (strstr(masks[i].name, "3d)")) r = [f stringFromTimeInterval:3*86400];
+                p(masks[i].name, r);
+            }
+            // weekOfYear folding
+            f = DCFF(1, 0, 1);
+            { NSDateComponents *c = [NSDateComponents new]; c.weekOfYear = 2; c.day = 3; p("woy2 d3 st1", [f stringFromDateComponents:c]); }
+            { NSDateComponents *c = [NSDateComponents new]; c.weekOfYear = 2; c.hour = 3; p("woy2 h3 st1", [f stringFromDateComponents:c]); }
+            { NSDateComponents *c = [NSDateComponents new]; c.weekOfYear = 2; p("woy2 alone st1", [f stringFromDateComponents:c]); }
+            { NSDateComponents *c = [NSDateComponents new]; c.weekOfMonth = 2; p("wom2 alone st1", [f stringFromDateComponents:c]); }
+            // positional gap / weird
+            f = DCFF(0, 0, 1);
+            p("pos d1 h5", [f stringFromDateComponents:DCFC(NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,1,5,NSDateComponentUndefined,NSDateComponentUndefined)]);
+            p("pos d1 m5", dcfTry(^NSString *{ return [f stringFromDateComponents:DCFC(NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,1,NSDateComponentUndefined,5,NSDateComponentUndefined)]; }));
+            p("pos h5 m5", [f stringFromDateComponents:DCFC(NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,5,5,NSDateComponentUndefined)]);
+            p("pos h5 s5", dcfTry(^NSString *{ return [f stringFromDateComponents:DCFC(NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,5,NSDateComponentUndefined,5)]; }));
+            p("pos h5 alone", [f stringFromDateComponents:DCFC(NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,5,NSDateComponentUndefined,NSDateComponentUndefined)]);
+            p("pos s5 alone", [f stringFromDateComponents:DCFC(NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,5)]);
+            // zero behaviors positional
+            NSUInteger zbs[] = {0,1,2,8,4,14};
+            for (unsigned i = 0; i < 6; i++) {
+                f = DCFF(0, 0, zbs[i]);
+                char buf[80];
+                snprintf(buf, sizeof buf, "pos ti60 zb%lu", (unsigned long)zbs[i]);
+                p(buf, dcfTry(^NSString *{ return [f stringFromTimeInterval:60]; }));
+                snprintf(buf, sizeof buf, "pos ti86400 zb%lu", (unsigned long)zbs[i]);
+                p(buf, dcfTry(^NSString *{ return [f stringFromTimeInterval:86400]; }));
+                snprintf(buf, sizeof buf, "pos d1h0 zb%lu", (unsigned long)zbs[i]);
+                p(buf, dcfTry(^NSString *{ return [f stringFromDateComponents:DCFC(NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,1,0,0,0)]; }));
+                // non-positional
+                f.unitsStyle = 1;
+                snprintf(buf, sizeof buf, "np ti60 zb%lu", (unsigned long)zbs[i]);
+                p(buf, dcfTry(^NSString *{ return [f stringFromTimeInterval:60]; }));
+            }
+            // nonpos zero behaviors full matrix
+            NSUInteger nzbs[] = {0,1,2,8,10,4,12,14};
+            for (unsigned i = 0; i < 8; i++) {
+                f = DCFF(1, 0, nzbs[i]);
+                char buf[80];
+                snprintf(buf, sizeof buf, "np y1mo2d3 zb%lu", (unsigned long)nzbs[i]);
+                p(buf, dcfTry(^NSString *{ return [f stringFromDateComponents:DCFC(1,2,NSDateComponentUndefined,3,0,0,0)]; }));
+                snprintf(buf, sizeof buf, "np d1h0 zb%lu", (unsigned long)nzbs[i]);
+                p(buf, dcfTry(^NSString *{ return [f stringFromDateComponents:DCFC(NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,1,0,0,0)]; }));
+                snprintf(buf, sizeof buf, "np ti0 zb%lu", (unsigned long)nzbs[i]);
+                p(buf, dcfTry(^NSString *{ return [f stringFromTimeInterval:0]; }));
+            }
+            // mc interval
+            NSInteger tis[] = {59*86400, 60*86400, 63*86400, 400*86400, 100000000, 365*86400, 58*86400, 93784, 3661, 5400};
+            for (unsigned i = 0; i < sizeof(tis)/sizeof(tis[0]); i++) {
+                for (int mc = 1; mc <= 4; mc++) {
+                    f = DCFF(0, 0, 1); f.maximumUnitCount = mc;
+                    NSTimeInterval tv = (NSTimeInterval)tis[i];
+                    char buf[80]; snprintf(buf, sizeof buf, "mc%d ti%ld", mc, (long)tis[i]);
+                    p(buf, dcfTry(^NSString *{ return [f stringFromTimeInterval:tv]; }));
+                }
+            }
+            // mc components
+            NSDateComponents *mcs[] = {
+                DCFC(1,5,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined),
+                DCFC(1,6,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined),
+                DCFC(1,7,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined),
+                DCFC(2,14,NSDateComponentUndefined,10,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined),
+                DCFC(2,14,NSDateComponentUndefined,12,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined),
+                DCFC(NSDateComponentUndefined,2,NSDateComponentUndefined,14,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined),
+                DCFC(NSDateComponentUndefined,2,NSDateComponentUndefined,16,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined),
+            };
+            const char *mcNames[] = {"1y5mo","1y6mo","1y7mo","1y2mo14d10h","1y2mo14d12h","2mo14d","2mo16d"};
+            for (unsigned i = 0; i < 7; i++) {
+                for (int mc = 1; mc <= 2; mc++) {
+                    f = DCFF(1, 0, 1); f.maximumUnitCount = mc;
+                    NSDateComponents *cc = mcs[i];
+                    char buf[80]; snprintf(buf, sizeof buf, "mc%d %s", mc, mcNames[i]);
+                    p(buf, dcfTry(^NSString *{ return [f stringFromDateComponents:cc]; }));
+                }
+            }
+            // collapses
+            f = DCFF(1, 0, 1); f.collapsesLargestUnit = YES;
+            p("collapse 1y2mo", [f stringFromDateComponents:DCFC(1,2,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined)]);
+            p("collapse 1y0mo3h", [f stringFromDateComponents:DCFC(1,0,NSDateComponentUndefined,NSDateComponentUndefined,3,NSDateComponentUndefined,NSDateComponentUndefined)]);
+            p("collapse 1y0mo", [f stringFromDateComponents:DCFC(1,0,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined)]);
+            f.allowedUnits = NSCalendarUnitYear | NSCalendarUnitDay;
+            p("collapse y|d 1y3d", [f stringFromDateComponents:DCFC(1,NSDateComponentUndefined,NSDateComponentUndefined,3,NSDateComponentUndefined,NSDateComponentUndefined,NSDateComponentUndefined)]);
+            // exceptions
+            f = DCFF(0,0,1);
+            p("nil comps", dcfTry(^NSString *{ return [f stringFromDateComponents:nil]; }));
+            p("nan ti", dcfTry(^NSString *{ return [f stringFromTimeInterval:NAN]; }));
+            p("empty comps", [f stringFromDateComponents:[NSDateComponents new]]);
+            p("bad style", dcfTry(^NSString *{ NSString *r; f.unitsStyle = 99; r=@"set"; return r; }));
+            p("bad au", dcfTry(^NSString *{ NSString *r; f.allowedUnits = NSCalendarUnitWeekOfYear; r=@"set"; return r; }));
+            // approx / remaining
+            f = DCFF(1,0,1); f.includesApproximationPhrase = YES; f.includesTimeRemainingPhrase = YES;
+            p("approx+remain", [f stringFromDateComponents:DCFC(1,2,NSDateComponentUndefined,25,5,6,7)]);
+
     }
 
     /* ---------- NSAutoreleasePool (MRC translation unit) ---------- */

@@ -23,6 +23,7 @@
 		C209B1196FEF24C22DBECEE2 /* Date.subproj/NSCalendar.m in Sources */ = {isa = PBXBuildFile; fileRef = A9B8D866BCA53F02D07FCA2B /* Date.subproj/NSCalendar.m */; };
 		BA42DB5FEDD59DD656FBA82B /* Date.subproj/NSDate.m in Sources */ = {isa = PBXBuildFile; fileRef = 74A08F4F0C36A564A27F551A /* Date.subproj/NSDate.m */; };
 		2D97EAD4A4070D661F4525E7 /* Date.subproj/NSDateComponents.m in Sources */ = {isa = PBXBuildFile; fileRef = B443410340599ED9F8B4D1A7 /* Date.subproj/NSDateComponents.m */; };
+		5F77FD1089F4CE27461B6056 /* Date.subproj/NSDateComponentsFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = DDE5EDAECB02DD0AF4DEFF9B /* Date.subproj/NSDateComponentsFormatter.m */; };
 		B89DD242653A31E8E4E71EA4 /* Date.subproj/NSDateFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = A50F11204C5E6986FDFDE7F7 /* Date.subproj/NSDateFormatter.m */; };
 		89889334CA2E93D580755FB2 /* Date.subproj/NSDateInterval.m in Sources */ = {isa = PBXBuildFile; fileRef = 1DC336B9BB9EB6B67792469E /* Date.subproj/NSDateInterval.m */; };
 		AA67EE6069F0D5F5FD4B9A59 /* Date.subproj/NSISO8601DateFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 462E6143ABDF9AC51D56585A /* Date.subproj/NSISO8601DateFormatter.m */; };
@@ -118,6 +119,7 @@
 		A9B8D866BCA53F02D07FCA2B /* Date.subproj/NSCalendar.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSCalendar.m"; path = "Date.subproj/NSCalendar.m"; sourceTree = "<group>"; };
 		74A08F4F0C36A564A27F551A /* Date.subproj/NSDate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDate.m"; path = "Date.subproj/NSDate.m"; sourceTree = "<group>"; };
 		B443410340599ED9F8B4D1A7 /* Date.subproj/NSDateComponents.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDateComponents.m"; path = "Date.subproj/NSDateComponents.m"; sourceTree = "<group>"; };
+		DDE5EDAECB02DD0AF4DEFF9B /* Date.subproj/NSDateComponentsFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDateComponentsFormatter.m"; path = "Date.subproj/NSDateComponentsFormatter.m"; sourceTree = "<group>"; };
 		A50F11204C5E6986FDFDE7F7 /* Date.subproj/NSDateFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDateFormatter.m"; path = "Date.subproj/NSDateFormatter.m"; sourceTree = "<group>"; };
 		1DC336B9BB9EB6B67792469E /* Date.subproj/NSDateInterval.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSDateInterval.m"; path = "Date.subproj/NSDateInterval.m"; sourceTree = "<group>"; };
 		462E6143ABDF9AC51D56585A /* Date.subproj/NSISO8601DateFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = "NSISO8601DateFormatter.m"; path = "Date.subproj/NSISO8601DateFormatter.m"; sourceTree = "<group>"; };
@@ -242,6 +244,7 @@
 				A9B8D866BCA53F02D07FCA2B /* Date.subproj/NSCalendar.m */,
 				74A08F4F0C36A564A27F551A /* Date.subproj/NSDate.m */,
 				B443410340599ED9F8B4D1A7 /* Date.subproj/NSDateComponents.m */,
+				DDE5EDAECB02DD0AF4DEFF9B /* Date.subproj/NSDateComponentsFormatter.m */,
 				A50F11204C5E6986FDFDE7F7 /* Date.subproj/NSDateFormatter.m */,
 				1DC336B9BB9EB6B67792469E /* Date.subproj/NSDateInterval.m */,
 				462E6143ABDF9AC51D56585A /* Date.subproj/NSISO8601DateFormatter.m */,
@@ -417,6 +420,7 @@
 				C209B1196FEF24C22DBECEE2 /* Date.subproj/NSCalendar.m in Sources */,
 				BA42DB5FEDD59DD656FBA82B /* Date.subproj/NSDate.m in Sources */,
 				2D97EAD4A4070D661F4525E7 /* Date.subproj/NSDateComponents.m in Sources */,
+				5F77FD1089F4CE27461B6056 /* Date.subproj/NSDateComponentsFormatter.m in Sources */,
 				B89DD242653A31E8E4E71EA4 /* Date.subproj/NSDateFormatter.m in Sources */,
 				89889334CA2E93D580755FB2 /* Date.subproj/NSDateInterval.m in Sources */,
 				AA67EE6069F0D5F5FD4B9A59 /* Date.subproj/NSISO8601DateFormatter.m in Sources */,
