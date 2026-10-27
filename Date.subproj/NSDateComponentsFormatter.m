@@ -232,6 +232,7 @@ static BOOL LDPatternContains(NSString *pattern, unichar field) {
     BOOL _includesApproximationPhrase;
     BOOL _includesTimeRemainingPhrase;
     NSFormattingContext _formattingContext;
+    BOOL _ldSourceWeekDefined;
 }
 
 - (instancetype)init {
@@ -394,6 +395,8 @@ static BOOL LDPatternContains(NSString *pattern, unichar field) {
                 referenceDate:(NSDate *)reference
                    calendar:(NSCalendar *)calendar
                        into:(LDUnitSet *)units {
+    _ldSourceWeekDefined = (_allowedUnits == 0) ||
+        ((_allowedUnits & NSCalendarUnitWeekOfMonth) != 0);
     NSDate *end = [reference dateByAddingTimeInterval:magnitude];
     NSCalendarUnit flags = NSCalendarUnitYear | NSCalendarUnitMonth |
         NSCalendarUnitDay | NSCalendarUnitHour | NSCalendarUnitMinute |
@@ -410,8 +413,14 @@ static BOOL LDPatternContains(NSString *pattern, unichar field) {
     units->value[LDUnitSecond] = LDIsDefined(components.second) ? components.second : 0;
     units->value[LDUnitWeek] = units->value[LDUnitDay] / 7;
     units->value[LDUnitDay] = units->value[LDUnitDay] % 7;
-    for (int unit = 0; unit < LDUnitCount; unit++) units->present[unit] = YES;
+    for (int unit = 0; unit < LDUnitCount; unit++) {
+        if (units->value[unit] < 0) units->value[unit] = -units->value[unit];
+        units->present[unit] = YES;
+    }
     if (_allowedUnits == 0) return;
+
+    NSInteger full[LDUnitCount];
+    for (int unit = 0; unit < LDUnitCount; unit++) full[unit] = units->value[unit];
 
     NSDate *cursor = reference;
     for (int unit = 0; unit < LDUnitCount; unit++) {
@@ -424,6 +433,10 @@ static BOOL LDPatternContains(NSString *pattern, unichar field) {
         [step setValue:amount forComponent:LDCalendarUnit(unit)];
         NSDate *next = [calendar dateByAddingComponents:step toDate:cursor options:0];
         if (next != nil) cursor = next;
+    }
+    for (int unit = 0; unit < LDUnitCount; unit++) {
+        if (units->value[unit] < 0) units->value[unit] = -units->value[unit];
+        if (!units->present[unit] && unit == LDUnitMonth) units->value[unit] = full[unit];
     }
     [self ldValidatePositionalUnits:units strict:NO];
 }
@@ -448,6 +461,7 @@ static BOOL LDPatternContains(NSString *pattern, unichar field) {
                          calendar:(NSCalendar *)calendar
                          reference:(NSDate *)reference
                               into:(LDUnitSet *)units {
+    _ldSourceWeekDefined = NO;
     for (int unit = 0; unit < LDUnitCount; unit++) {
         units->value[unit] = 0;
         units->present[unit] = NO;
@@ -502,6 +516,8 @@ static BOOL LDPatternContains(NSString *pattern, unichar field) {
             }
         }
     }
+
+    _ldSourceWeekDefined = defined[LDUnitWeek];
 
     if (_allowedUnits == 0) {
         /* Without a mask the defined quantity units are the output units.
@@ -561,6 +577,15 @@ static BOOL LDPatternContains(NSString *pattern, unichar field) {
         [step setValue:amount forComponent:LDCalendarUnit(unit)];
         NSDate *next = [calendar dateByAddingComponents:step toDate:cursor options:0];
         if (next != nil) cursor = next;
+    }
+    NSDate *fullCursor = reference;
+    for (int unit = 0; unit < LDUnitCount; unit++) {
+        NSInteger amount = [self ldCountOfUnit:unit fromDate:fullCursor toDate:end calendar:calendar];
+        if (!units->present[unit] && unit == LDUnitMonth) units->value[unit] = amount;
+        NSDateComponents *step = [[NSDateComponents alloc] init];
+        [step setValue:amount forComponent:LDCalendarUnit(unit)];
+        NSDate *next = [calendar dateByAddingComponents:step toDate:fullCursor options:0];
+        if (next != nil) fullCursor = next;
     }
     return YES;
 }
@@ -626,6 +651,20 @@ static NSInteger LDSubValue(const LDUnitSet *units, int unit) {
               calendar:(NSCalendar *)calendar
              reference:(NSDate *)reference {
     NSInteger sub = LDSubValue(units, unit);
+    if (_allowedUnits == 0) {
+        int subUnit = -1;
+        for (int candidate = unit + 1; candidate < LDUnitCount; candidate++) {
+            if (units->present[candidate]) { subUnit = candidate; break; }
+        }
+        if (subUnit > unit + 1 && unit >= LDUnitWeek) {
+            NSInteger value = units->value[subUnit];
+            if (subUnit == LDUnitHour) return value * 2 >= 24;
+            if (subUnit == LDUnitMinute || subUnit == LDUnitSecond) {
+                return value * 2 >= 60;
+            }
+            if (subUnit == LDUnitDay) return value * 2 >= 24;
+        }
+    }
     switch (unit) {
         case LDUnitYear:
             return sub * 2 > 12;
@@ -660,6 +699,7 @@ static NSInteger LDSubValue(const LDUnitSet *units, int unit) {
                  calendar:(NSCalendar *)calendar
                 reference:(NSDate *)reference {
     if (!_collapsesLargestUnit) return;
+    if (_ldSourceWeekDefined) return;
     int first = -1;
     for (int unit = 0; unit < LDUnitCount; unit++) {
         if (units->present[unit]) { first = unit; break; }
@@ -682,7 +722,8 @@ static NSInteger LDSubValue(const LDUnitSet *units, int unit) {
 
 - (void)ldApplyMaximumUnitCountTo:(LDUnitSet *)units
                          calendar:(NSCalendar *)calendar
-                        reference:(NSDate *)reference {
+                        reference:(NSDate *)reference
+                         negative:(BOOL)negative {
     if (_maximumUnitCount <= 0) return;
     int indices[LDUnitCount];
     int count = 0;
@@ -713,11 +754,16 @@ static NSInteger LDSubValue(const LDUnitSet *units, int unit) {
             /* A zero final unit that would round up is dropped rather than
              * promoted; only an already-present unit may round. */
             units->present[lastUnit] = NO;
+        } else if (negative && lastUnit == LDUnitMonth) {
+            /* Apple carries a rounded negative month as one year plus thirteen
+             * months, leaving the result unnormalized. */
+            units->value[lastUnit] += 14;
+            units->value[LDUnitYear] += 1;
         } else {
             units->value[lastUnit] += 1;
         }
     }
-    for (int position = stop; position < count; position++) {
+    for (int position = lastPosition + 1; position < count; position++) {
         units->present[indices[position]] = NO;
     }
 }
@@ -790,7 +836,8 @@ static int LDSmallestPresent(const LDUnitSet *units) {
             return;
         }
         if ((behavior & NSDateComponentsFormatterZeroFormattingBehaviorDropTrailing) != 0) {
-            if ((behavior & NSDateComponentsFormatterZeroFormattingBehaviorDropLeading) != 0) {
+            if ((behavior & NSDateComponentsFormatterZeroFormattingBehaviorDropLeading) != 0 ||
+                (behavior & NSDateComponentsFormatterZeroFormattingBehaviorDropMiddle) != 0) {
                 LDDropLeadingZeros(units, keep);
             }
             LDDropTrailingZeros(units, keep);
@@ -847,14 +894,9 @@ static int LDSmallestPresent(const LDUnitSet *units) {
         if ((behavior & NSDateComponentsFormatterZeroFormattingBehaviorDropTrailing) == 0 ||
             _allowedUnits != 0) {
             LDDropLeadingZeros(units, keep);
-            BOOL any = NO;
-            for (int unit = 0; unit < LDUnitCount; unit++) if (keep[unit]) { any = YES; break; }
-            if (any) {
-                for (int unit = LDUnitCount - 1; unit >= 0; unit--) {
-                    if (units->present[unit]) { keep[unit] = YES; break; }
-                }
-                LDDropInteriorZeros(units, keep);
-            }
+            LDDropInteriorZeros(units, keep);
+        } else {
+            LDDropInteriorZeros(units, keep);
         }
     }
     BOOL any = NO;
@@ -930,7 +972,7 @@ static int LDSmallestPresent(const LDUnitSet *units) {
         NSString *piece = formatter != NULL ? LDFormatWithICU(formatter, (double)value, unit)
                                             : [NSString stringWithFormat:@"%ld", (long)value];
         if (!first) [result appendString:separator];
-        if (first && negative) [result appendString:@"-"];
+        if (first && negative && value != 0) [result appendString:@"-"];
         [result appendString:piece];
         first = NO;
     }
@@ -943,6 +985,12 @@ static int LDSmallestPresent(const LDUnitSet *units) {
                         calendar:(NSCalendar *)calendar
                           locale:(NSLocale *)locale
                         negative:(BOOL)negative {
+    BOOL any = NO;
+    for (int unit = 0; unit < LDUnitCount; unit++) if (keep[unit]) { any = YES; break; }
+    if (!any && _allowedUnits != 0) {
+        int smallest = LDSmallestPresent(units);
+        if (smallest >= 0) keep[smallest] = YES;
+    }
     BOOL anyDate = NO, anyTime = NO;
     for (int unit = LDUnitYear; unit <= LDUnitDay; unit++) if (keep[unit]) anyDate = YES;
     for (int unit = LDUnitHour; unit <= LDUnitSecond; unit++) if (keep[unit]) anyTime = YES;
@@ -963,7 +1011,7 @@ static int LDSmallestPresent(const LDUnitSet *units) {
                 ? LDFormatWithICU(abbreviated, (double)units->value[unit], unit)
                 : [NSString stringWithFormat:@"%ld", (long)units->value[unit]];
             if (!first) [result appendString:@" "];
-            if (first && negative) {
+            if (first && negative && units->value[unit] != 0) {
                 [result appendString:@"-"];
                 dateSignPlaced = YES;
             }
@@ -1008,7 +1056,7 @@ static int LDSmallestPresent(const LDUnitSet *units) {
         } else if (hasHour && hasSecond) {
             time = LDFormatTimePattern(@"h:mm:ss", hour, minute, second, locale);
         } else if (hasHour) {
-            if (anyDate || (_allowedUnits != 0 && (_zeroFormattingBehavior & NSDateComponentsFormatterZeroFormattingBehaviorDropMiddle) == 0)) {
+            if (anyDate || _includesApproximationPhrase || _includesTimeRemainingPhrase) {
                 time = abbreviated != NULL
                     ? LDFormatWithICU(abbreviated, (double)hour, LDUnitHour)
                     : [NSString stringWithFormat:@"%ld", (long)hour];
@@ -1016,7 +1064,7 @@ static int LDSmallestPresent(const LDUnitSet *units) {
                 time = LDDecimalString(hour, locale);
             }
         } else if (hasMinute) {
-            if (anyDate || (_allowedUnits != 0 && (_zeroFormattingBehavior & NSDateComponentsFormatterZeroFormattingBehaviorDropMiddle) == 0)) {
+            if (anyDate || _includesApproximationPhrase || _includesTimeRemainingPhrase) {
                 time = abbreviated != NULL
                     ? LDFormatWithICU(abbreviated, (double)minute, LDUnitMinute)
                     : [NSString stringWithFormat:@"%ld", (long)minute];
@@ -1024,7 +1072,7 @@ static int LDSmallestPresent(const LDUnitSet *units) {
                 time = LDDecimalString(minute, locale);
             }
         } else if (hasSecond) {
-            if (anyDate || (_allowedUnits != 0 && (_zeroFormattingBehavior & NSDateComponentsFormatterZeroFormattingBehaviorDropMiddle) == 0)) {
+            if (anyDate || _includesApproximationPhrase || _includesTimeRemainingPhrase) {
                 time = abbreviated != NULL
                     ? LDFormatWithICU(abbreviated, (double)second, LDUnitSecond)
                     : [NSString stringWithFormat:@"%ld", (long)second];
@@ -1033,8 +1081,9 @@ static int LDSmallestPresent(const LDUnitSet *units) {
             }
         }
         if (time != nil) {
+            BOOL patternedTime = (hasHour + hasMinute + hasSecond) > 1;
             if (anyDate) [result appendString:@" "];
-            if (negative) [result appendString:@"-"];
+            if (negative && (!anyDate || patternedTime)) [result appendString:@"-"];
             [result appendString:time];
         }
     }
@@ -1044,22 +1093,12 @@ static int LDSmallestPresent(const LDUnitSet *units) {
 }
 
 - (void)ldValidatePositionalUnits:(const LDUnitSet *)units strict:(BOOL)strict {
+    (void)strict;
     if (_unitsStyle != NSDateComponentsFormatterUnitsStylePositional) return;
-    int sequence[6] = { LDUnitYear, LDUnitMonth, LDUnitDay, LDUnitHour,
-                        LDUnitMinute, LDUnitSecond };
-    BOOL year = units->present[LDUnitYear];
-    BOOL month = units->present[LDUnitMonth];
-    BOOL day = units->present[LDUnitDay];
-    BOOL hour = units->present[LDUnitHour];
-    BOOL minute = units->present[LDUnitMinute];
-    BOOL second = units->present[LDUnitSecond];
-
-    if (strict && (year || month) && (day || hour || minute || second)) {
-        [NSException raise:NSInvalidArgumentException
-                    format:@"Specifying positional units with gaps is ambiguous, and therefore unsupported"];
-    }
+    int sequence[7] = { LDUnitYear, LDUnitMonth, LDUnitWeek, LDUnitDay,
+                        LDUnitHour, LDUnitMinute, LDUnitSecond };
     int first = -1, last = -1;
-    for (int index = 0; index < 6; index++) {
+    for (int index = 0; index < 7; index++) {
         if (units->present[sequence[index]]) {
             if (first < 0) first = index;
             last = index;
@@ -1081,7 +1120,7 @@ static int LDSmallestPresent(const LDUnitSet *units) {
     NSLocale *locale = [self ldLocaleForCalendar:calendar];
 
     [self ldApplyCollapseTo:units calendar:calendar reference:reference];
-    [self ldApplyMaximumUnitCountTo:units calendar:calendar reference:reference];
+    [self ldApplyMaximumUnitCountTo:units calendar:calendar reference:reference negative:negative];
 
     BOOL keep[LDUnitCount];
     [self ldApplyZeroFormattingTo:units positional:positional keep:keep];
@@ -1153,12 +1192,11 @@ static int LDSmallestPresent(const LDUnitSet *units) {
                     format:@"Invalid parameter not satisfying: isfinite(timeInterval) && !isnan(timeInterval)"];
     }
     BOOL negative = interval < 0;
-    NSTimeInterval magnitude = negative ? -interval : interval;
 
     NSCalendar *calendar = [self ldEffectiveCalendarForComponents:nil];
     NSDate *reference = startDate;
     LDUnitSet units;
-    [self ldDecomposeInterval:magnitude referenceDate:reference calendar:calendar into:&units];
+    [self ldDecomposeInterval:interval referenceDate:reference calendar:calendar into:&units];
     return [self ldStringFromUnits:&units calendar:calendar reference:reference negative:negative];
 }
 
@@ -1168,14 +1206,13 @@ static int LDSmallestPresent(const LDUnitSet *units) {
                     format:@"Invalid parameter not satisfying: isfinite(timeInterval) && !isnan(timeInterval)"];
     }
     BOOL negative = ti < 0;
-    NSTimeInterval magnitude = negative ? -ti : ti;
 
     NSCalendar *calendar = [self ldEffectiveCalendarForComponents:nil];
     NSDate *reference = _referenceDate != nil
         ? _referenceDate
         : [NSDate dateWithTimeIntervalSinceReferenceDate:0];
     LDUnitSet units;
-    [self ldDecomposeInterval:magnitude referenceDate:reference calendar:calendar into:&units];
+    [self ldDecomposeInterval:ti referenceDate:reference calendar:calendar into:&units];
     return [self ldStringFromUnits:&units calendar:calendar reference:reference negative:negative];
 }
 
